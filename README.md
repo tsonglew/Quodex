@@ -8,6 +8,8 @@
 
 当前开发版本为 `0.1.0-alpha17`，新增诊断报告的系统后台受限标记，帮助排查后台刷新延迟。既有 alpha16 的 [PR #16 六组 CI](https://github.com/tsonglew/QuotaPal/actions/runs/38037325156) 已通过，覆盖 API 29／31／35／36／37.0／37.2。已提供本机诊断报告、最近 7 天的请求与刷新统计、后台任务状态，以及分品牌后台引导和小组件即时手动刷新。alpha16 修正诊断弹窗的主线程约束，固定签名覆盖升级已通过，验证记录见 [alpha16](docs/VALIDATION_ALPHA16.md)。真实账号续期、OEM 后台恢复和长期自用仍待验收。
 
+已核验版本：[0.1.0-alpha17 预发布](https://github.com/tsonglew/QuotaPal/releases/tag/v0.1.0-alpha17)。
+
 合并到 master 后自动运行完整 CI，生成固定签名 APK 并上传 [GitHub Releases](https://github.com/tsonglew/QuotaPal/releases)。每次构建以 `build-<runId>-<attempt>` 创建独立预发布，附 APK、SHA256SUMS 和来源信息，保留历史包；Actions 中的 `android-signed-apk` 同时保留 14 天。正式版本仍可按版本 tag 发布。
 
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
