@@ -1,6 +1,6 @@
 # QuotaPal 开发与验收 Checklist
 
-记录日期：2026-10-10。状态：开发进行中。进度与验证证据见 [开发进度](PROGRESS.md)。
+记录日期：2026-10-11。状态：开发进行中。进度与验证证据见 [开发进度](PROGRESS.md)。
 
 首版范围为 Android 平台的 Codex 单账号额度监控与桌面小组件，发布路线为先自用验证，再公开发布。完整产品范围、技术方案、阶段交付物与工期见 [开发计划](DEVELOPMENT_PLAN.md)，阶段跟踪见 [GitHub milestones](https://github.com/tsonglew/QuotaPal/milestones)。
 
@@ -125,7 +125,9 @@
 - [ ] **G05** 版本 tag 与 Android 版本一致、来自主分支，通过完整验证后使用固定签名发布。
 - [x] **G06** PR 构建无发布凭据；有写权限的预览 job 不执行 PR 代码；签名只在发布环境使用。
 - [x] **G07** 说明环境配置、签名保管、版本更新、失败恢复、重跑和预览过期规则。
-- [ ] **G08** 实际运行预览 deployment 与签名 Release 流程，核对下载、签名、提交和部署状态。
+- [x] **G08** 实际运行预览 deployment 与签名 Release 流程，核对下载、签名、提交和部署状态。
+
+  2026-10-11：master 1772586 的 [自动发布运行](https://github.com/tsonglew/QuotaPal/actions/runs/38109285393) 完整六组 CI／gate／固定签名及 Releases 上传全部成功。[预发布](https://github.com/tsonglew/QuotaPal/releases/tag/build-38109285393-1) 的 APK 已下载验证版本 17、固定证书、来源、SHA-256 及 16 KB 对齐，远端资产摘要一致；android-release deployment 6990644275 状态 success 且链接指向该 Release。预览 deployment 6975361817 的历史 success 及实际下载证据见 G03；合并后正常 inactive。见 [证据](diagnostics/alpha17-automatic-release.json)。版本 tag 专项仍由 G05 单独验收。
 
 实现与验证详见 [CI/CD 与部署](CI_CD.md)。配置落盘、脚本测试和静态检查不代替 G08 的 GitHub 实际运行记录。
 
