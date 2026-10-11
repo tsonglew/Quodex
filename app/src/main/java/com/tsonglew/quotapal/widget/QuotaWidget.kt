@@ -72,22 +72,22 @@ open class QuotaWidget : GlanceAppWidget() {
             .padding(horizontal = 12.dp, vertical = if (notice != null) 8.dp else 12.dp)
             .clickable(actionStartActivity(widgetLaunchIntent(LocalContext.current)))) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Codex", style = TextStyle(color = foreground, fontSize = 15.sp, fontWeight = FontWeight.Medium), modifier = GlanceModifier.defaultWeight())
+                Text("Codex", style = TextStyle(color = foreground, fontSize = 15.sp, fontWeight = FontWeight.Medium), modifier = GlanceModifier.defaultWeight().openApp())
                 Text(if (state.syncing) "…" else "↻", style = TextStyle(color = muted, fontSize = 20.sp), modifier = GlanceModifier.padding(horizontal = 8.dp)
                     .semantics { contentDescription = "刷新额度" }
                     .clickable(if (!state.connected && !state.demo) actionStartActivity(widgetLaunchIntent(LocalContext.current)) else actionRunCallback<RefreshWidgetAction>()))
             }
             Spacer(GlanceModifier.height(8.dp))
             if (state.snapshot == null) {
-                Text("连接你的 Codex", style = TextStyle(color = foreground, fontSize = 16.sp, fontWeight = FontWeight.Medium))
+                Text("连接你的 Codex", style = TextStyle(color = foreground, fontSize = 16.sp, fontWeight = FontWeight.Medium), modifier = GlanceModifier.openApp())
                 Spacer(GlanceModifier.height(8.dp))
-                Text(state.failure?.userMessage() ?: "轻点打开 QuotaPal", style = TextStyle(color = muted, fontSize = 11.sp))
+                Text(state.failure?.userMessage() ?: "轻点打开 QuotaPal", style = TextStyle(color = muted, fontSize = 11.sp), modifier = GlanceModifier.openApp())
             } else {
                 val windows = state.snapshot.windows.take(if (size.width >= 280.dp || size.height >= 230.dp) 2 else 1)
                 if (windows.isEmpty()) {
-                    Text(notice?.title ?: "未提供周期额度", style = TextStyle(color = foreground, fontSize = 16.sp, fontWeight = FontWeight.Medium), maxLines = 2)
+                    Text(notice?.title ?: "未提供周期额度", style = TextStyle(color = foreground, fontSize = 16.sp, fontWeight = FontWeight.Medium), maxLines = 2, modifier = GlanceModifier.openApp())
                     Spacer(GlanceModifier.height(6.dp))
-                    Text(notice?.description ?: "请以账号实际权益为准。", style = TextStyle(color = muted, fontSize = 10.sp), maxLines = 3)
+                    Text(notice?.description ?: "请以账号实际权益为准。", style = TextStyle(color = muted, fontSize = 10.sp), maxLines = 3, modifier = GlanceModifier.openApp())
                 } else if (size.width >= 280.dp && windows.size > 1) {
                     Row(GlanceModifier.fillMaxWidth()) {
                         windows.forEachIndexed { index, window ->
@@ -102,7 +102,7 @@ open class QuotaWidget : GlanceAppWidget() {
                 Spacer(GlanceModifier.defaultWeight())
                 Text(if (state.demo) "示例数据 · ${absoluteTime(state.snapshot.fetchedAt)}" else
                     "更新于 ${absoluteTime(state.snapshot.fetchedAt, true)}${if (state.failure != null) " · ${state.failure.userMessage()}" else ""}",
-                    style = TextStyle(color = muted, fontSize = 10.sp), maxLines = 2)
+                    style = TextStyle(color = muted, fontSize = 10.sp), maxLines = 2, modifier = GlanceModifier.openApp())
             }
         }
     }
@@ -139,19 +139,19 @@ open class QuotaWidget : GlanceAppWidget() {
                 Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     if (metered) {
                         Text(when { state.failure != null -> "旧"; state.demo -> "示例"; remaining -> "剩余"; else -> "已用" },
-                            style = TextStyle(color = muted, fontSize = 7.sp), modifier = GlanceModifier.defaultWeight(), maxLines = 1)
+                            style = TextStyle(color = muted, fontSize = 7.sp), modifier = GlanceModifier.defaultWeight().openApp(), maxLines = 1)
                         Text(value, style = TextStyle(color = foreground, fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium), maxLines = 1)
+                            fontWeight = FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.openApp())
                     } else Text(value, style = TextStyle(color = foreground, fontSize = 10.sp),
-                        modifier = GlanceModifier.defaultWeight(), maxLines = 1)
+                        modifier = GlanceModifier.defaultWeight().openApp(), maxLines = 1)
                     RefreshControl(state, muted, 6.dp, 10.sp)
                 }
                 Spacer(GlanceModifier.defaultWeight())
                 // Keep every compact variant within the 50 dp minimum, including legacy hosts.
-                Text(timestamp, style = TextStyle(color = muted, fontSize = 6.sp), maxLines = 1)
+                Text(timestamp, style = TextStyle(color = muted, fontSize = 6.sp), maxLines = 1, modifier = GlanceModifier.openApp())
             } else {
                 if (windows.isEmpty()) {
-                    Column {
+                    Column(GlanceModifier.openApp()) {
                         Text(if (state.demo) "示例额度" else "Codex", style = TextStyle(color = muted, fontSize = 10.sp))
                         Text(if (snapshot == null) "未连接" else notice?.title ?: "无周期",
                             style = TextStyle(color = foreground, fontSize = 12.sp), maxLines = 2)
@@ -170,7 +170,7 @@ open class QuotaWidget : GlanceAppWidget() {
                 }
                 Spacer(GlanceModifier.defaultWeight())
                 Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(timestamp, style = TextStyle(color = muted, fontSize = 8.sp), modifier = GlanceModifier.defaultWeight(), maxLines = 1)
+                    Text(timestamp, style = TextStyle(color = muted, fontSize = 8.sp), modifier = GlanceModifier.defaultWeight().openApp(), maxLines = 1)
                     RefreshControl(state, muted)
                 }
             }
@@ -181,7 +181,7 @@ open class QuotaWidget : GlanceAppWidget() {
     private fun LargeWindow(window: QuotaWindow, state: AppState, remaining: Boolean, foreground: ColorProvider,
         muted: ColorProvider, track: ColorProvider) {
         val restricted = state.snapshot?.allowed == false || state.snapshot?.limitReached == true
-        Column {
+        Column(GlanceModifier.openApp()) {
             Row(GlanceModifier.fillMaxWidth()) {
                 Text(window.name, style = TextStyle(color = muted, fontSize = 8.sp),
                     modifier = GlanceModifier.defaultWeight(), maxLines = 1)
@@ -200,6 +200,12 @@ open class QuotaWidget : GlanceAppWidget() {
             Text(resetLabel(window), style = TextStyle(color = muted, fontSize = 7.sp), maxLines = 1)
         }
     }
+
+    // Bind visible content too: some hosts do not deliver a child tap to the
+    // background's listener. Keep the refresh control outside these body targets.
+    @Composable
+    private fun GlanceModifier.openApp(): GlanceModifier =
+        clickable(actionStartActivity(widgetLaunchIntent(LocalContext.current)))
 
     @Composable
     private fun RefreshControl(state: AppState, color: ColorProvider, horizontalPadding: androidx.compose.ui.unit.Dp = 8.dp,
@@ -239,7 +245,7 @@ open class QuotaWidget : GlanceAppWidget() {
         Column(GlanceModifier.fillMaxSize().appWidgetBackground().background(background).cornerRadius(20.dp)
             .padding(horizontal = 8.dp, vertical = if (short) 4.dp else 6.dp)
             .clickable(actionStartActivity(widgetLaunchIntent(LocalContext.current)))) {
-            Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(GlanceModifier.fillMaxWidth().openApp(), verticalAlignment = Alignment.CenterVertically) {
                 Text(label, style = TextStyle(color = foreground, fontSize = 11.sp, fontWeight = FontWeight.Medium),
                     modifier = GlanceModifier.defaultWeight(), maxLines = 1)
                 Text(value, style = TextStyle(color = foreground, fontSize = if (metered) (if (short) 16.sp else 18.sp) else 11.sp,
@@ -252,7 +258,7 @@ open class QuotaWidget : GlanceAppWidget() {
             Spacer(GlanceModifier.defaultWeight())
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(if (metered) "${if (remaining) "剩余" else "已用"} · $timestamp" else timestamp,
-                    style = TextStyle(color = muted, fontSize = 8.sp), modifier = GlanceModifier.defaultWeight(), maxLines = 1)
+                    style = TextStyle(color = muted, fontSize = 8.sp), modifier = GlanceModifier.defaultWeight().openApp(), maxLines = 1)
                 Text(if (state.syncing) "…" else "↻", style = TextStyle(color = muted, fontSize = 14.sp), modifier = GlanceModifier.width(24.dp)
                     .semantics { contentDescription = "刷新额度" }
                     .clickable(if (!state.connected && !state.demo) actionStartActivity(widgetLaunchIntent(LocalContext.current)) else actionRunCallback<RefreshWidgetAction>()))
@@ -262,7 +268,7 @@ open class QuotaWidget : GlanceAppWidget() {
 
     @Composable
     private fun Window(window: QuotaWindow, remaining: Boolean, foreground: ColorProvider, muted: ColorProvider, track: ColorProvider, note: String?) {
-        Column {
+        Column(GlanceModifier.openApp()) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(window.name, style = TextStyle(color = foreground, fontSize = 11.sp), modifier = GlanceModifier.defaultWeight(), maxLines = 2)
             Text("${window.percentageLabel(remaining)}${if (window.usedPercent != null) "%" else ""}",

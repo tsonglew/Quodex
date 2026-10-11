@@ -40,7 +40,9 @@ class WidgetOpenAppDeviceTest {
 
     @Test fun slimWidgetBodyOpensAppWithQuota() = checkBodyOpensApp(slim = true)
 
-    private fun checkBodyOpensApp(slim: Boolean) {
+    @Test fun standardQuotaValueOpensApp() = checkBodyOpensApp(slim = false, quotaValue = true)
+
+    private fun checkBodyOpensApp(slim: Boolean, quotaValue: Boolean = false) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val app = context.quotaApp
@@ -50,7 +52,7 @@ class WidgetOpenAppDeviceTest {
         try {
             runBlocking {
                 app.repository.logout()
-                if (slim) app.repository.demo()
+                if (slim || quotaValue) app.repository.demo()
             }
             ActivityScenario.launch<WidgetTestHostActivity>(
                 Intent(context, WidgetTestHostActivity::class.java)
@@ -70,11 +72,11 @@ class WidgetOpenAppDeviceTest {
                     var focused = false
                     scenario.onActivity { host ->
                         focused = host.hasWindowFocus()
-                        // Tap the visible title itself, away from the refresh action.
+                        // Tap visible body content, away from the refresh action.
                         // No performClick or direct Activity launch: dispatch must reach
                         // the widget body listener through the actual child TextView.
                         val title = descendants(host.widgetView).filterIsInstance<TextView>()
-                            .firstOrNull { it.text.toString().startsWith("Codex") }
+                            .firstOrNull { if (quotaValue) it.text.toString() == "62%" else it.text.toString().startsWith("Codex") }
                         val action = title?.let {
                             generateSequence<View>(it) { child -> child.parent as? View }
                                 .takeWhile { child -> child !== host.widgetView }
@@ -127,7 +129,8 @@ class WidgetOpenAppDeviceTest {
                     scenario.onActivity { host ->
                         detail = "bounds=$target; touches=${host.touchEvents}; focus=${host.hasWindowFocus()}; " +
                             "tree=" + descendants(host.widgetView).joinToString { view ->
-                                "${view.javaClass.simpleName}(text=${(view as? TextView)?.text}, clickable=${view.hasOnClickListeners()}, shown=${view.isShown})"
+                                val screen = IntArray(2).also(view::getLocationOnScreen)
+                                "${view.javaClass.simpleName}(text=${(view as? TextView)?.text}, clickable=${view.hasOnClickListeners()}, shown=${view.isShown}, enabled=${view.isEnabled}, bounds=${screen.toList()}+${view.width}x${view.height})"
                             }
                     }
                 }
