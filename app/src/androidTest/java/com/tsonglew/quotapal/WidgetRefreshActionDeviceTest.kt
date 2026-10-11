@@ -11,11 +11,16 @@ import org.junit.Test
 import java.util.concurrent.TimeUnit
 
 class WidgetRefreshActionDeviceTest {
-    @Test fun realRemoteViewsClickFetchesOnceForThreeWidgets() {
+    @Test fun realRemoteViewsClickFetchesOnceForThreeWidgets() = checkRefresh(slim = true)
+
+    @Test fun standardWidgetRefreshFetchesWithoutOpeningApp() = checkRefresh(slim = false)
+
+    private fun checkRefresh(slim: Boolean) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val app = context.quotaApp as TestQuotaApplication
         val manager = WorkManager.getInstance(context)
+        val activityMonitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
         instrumentation.uiAutomation.adoptShellPermissionIdentity(android.Manifest.permission.BIND_APPWIDGET)
         try {
             runBlocking {
@@ -24,8 +29,8 @@ class WidgetRefreshActionDeviceTest {
                 app.repository.connect(com.tsonglew.quotapal.data.Session("test-access", "test-refresh", "test-account", Long.MAX_VALUE))
             }
             androidx.test.core.app.ActivityScenario.launch<WidgetTestHostActivity>(
-                android.content.Intent(context, WidgetTestHostActivity::class.java).putExtra("slim", true)
-                    .putExtra("width", 280).putExtra("height", 70)).use { scenario ->
+                android.content.Intent(context, WidgetTestHostActivity::class.java).putExtra("slim", slim)
+                    .putExtra("width", 280).putExtra("height", if (slim) 70 else 150)).use { scenario ->
                 scenario.onActivity { it.addStandardWidget(); it.addThirdWidget() }
                 runBlocking { app.updateWidgets(); app.reconcileSync() }
                 fun labels(view: android.view.View): List<android.widget.TextView> = when (view) {
@@ -159,10 +164,12 @@ class WidgetRefreshActionDeviceTest {
                 }
                 awaitBoth("83%")
                 assertEquals("Repeated clicks share one request", before + 1, app.usageRequests.get())
+                assertEquals("Refresh must update in place without opening the app", 0, activityMonitor.hits)
                 assertEquals(1, manager.getWorkInfosForUniqueWork("codex-periodic-sync").get(10, TimeUnit.SECONDS)
                     .count { !it.state.isFinished })
             }
         } finally {
+            instrumentation.removeMonitor(activityMonitor)
             app.usageResponseGate?.countDown()
             app.usageResponseGate = null
             app.responseDelayMillis = 0
