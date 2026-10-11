@@ -120,3 +120,15 @@ Android 17 新候选启用官方 Vulkan composition（`-feature VulkanNativeSwap
 ### 每次 master 出包自动上传 Releases
 
 2026-10-11 用户授权每次打包上传 GitHub Releases。master push 的完整 CI 与固定签名验证通过后，先保留 Actions artifact，再创建指向本次准确源提交的 `build-<runId>-<attempt>` tag，建立 draft、上传三个资产，全部成功后公开为 prerelease。每次重跑使用新的 attempt；不覆盖旧 tag 或已公开资产。上传失败留下草稿供排查，重新运行失败 job 会产生新的构建条目。PR debug 包及手动 check-signing 仍不公开；稳定版本可继续通过 `v<versionName>` 发布。
+
+### 自动 Releases 实际验收（2026-10-11）
+
+[PR #20](https://github.com/tsonglew/QuotaPal/pull/20) 的最终提交 c0990f1 完整六组 CI 通过，合并为 master 177258647bbd7e78e7b011ca65982ec07e4c53dd。[运行 38109285393](https://github.com/tsonglew/QuotaPal/actions/runs/38109285393) 全部成功，自动生成 [build-38109285393-1](https://github.com/tsonglew/QuotaPal/releases/tag/build-38109285393-1) 预发布，三个资产完整；发布环境状态 success，链接及 tag 源提交正确。
+
+下载 alpha17 APK 后独立核验 versionCode=17、minSdk=29、targetSdk=36、非 debuggable、固定证书和 16 KB 对齐。SHA-256 为 `3639f0ff2e194772215b3192eda8e7687be212e36082db8487e40d65b1fb6af4`，与 GitHub 资产摘要一致。固定证书 SHA-256 为 `5e7980c122100ccf9799a5174cb0e5a1748b8c442c09c015e145003145d2b5d4`。结构化证据见 [自动发布记录](diagnostics/alpha17-automatic-release.json)。
+
+G08 的实际预览与签名 Release 验收完成；这不表示真机、真实账号或长期稳定性完成。G05 的版本 tag 发布另行核验。
+
+### 版本 tag 实际验收（2026-10-11）
+
+[v0.1.0-alpha17](https://github.com/tsonglew/QuotaPal/releases/tag/v0.1.0-alpha17) 指向 master 1772586，与实际 APK versionName／versionCode=17 一致。[运行 38117976113](https://github.com/tsonglew/QuotaPal/actions/runs/38117976113) 完整六组设备、gate、签名及公开预发布成功。三个附件已重新下载，哈希、远端摘要、固定证书、来源及 16 KB 对齐通过；APK 与同源自动构建发布的哈希完全一致。deployment 6992019277 为 success，环境链接指向该版本 Release。G05 完成，结构化证据见 [版本发布记录](diagnostics/alpha17-version-release.json)。

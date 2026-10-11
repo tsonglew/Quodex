@@ -1,0 +1,19 @@
+{
+  "run": "38117976113",
+  "source_sha": "177258647bbd7e78e7b011ca65982ec07e4c53dd",
+  "tag": "v0.1.0-alpha17",
+  "url": "https://github.com/tsonglew/QuotaPal/releases/tag/v0.1.0-alpha17",
+  "version_code": 17,
+  "sha256": "3639f0ff2e194772215b3192eda8e7687be212e36082db8487e40d65b1fb6af4",
+  "signing_cert_sha256": "5e7980c122100ccf9799a5174cb0e5a1748b8c442c09c015e145003145d2b5d4",
+  "remote_assets_match": true,
+  "deployments": [
+    {
+      "id": 6992019277,
+      "sha": "177258647bbd7e78e7b011ca65982ec07e4c53dd",
+      "environment": "android-release",
+      "state": "success",
+      "url": "https://github.com/tsonglew/QuotaPal/releases/tag/v0.1.0-alpha17"
+    }
+  ]
+}
