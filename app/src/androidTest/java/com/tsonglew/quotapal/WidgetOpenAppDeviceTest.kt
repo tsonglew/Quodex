@@ -19,6 +19,23 @@ import org.junit.Test
 
 /** Exercise the PendingIntent installed in real RemoteViews, including logged-out widgets. */
 class WidgetOpenAppDeviceTest {
+    @Test fun launcherEntryStartsFromNonActivityContext() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext.applicationContext
+        val monitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
+        var opened: Activity? = null
+        try {
+            // A PendingIntent sender can hide missing task flags. Starting through
+            // an application Context also checks the intent's explicit task boundary.
+            context.startActivity(com.tsonglew.quotapal.widget.widgetLaunchIntent(context))
+            opened = monitor.waitForActivityWithTimeout(10_000)
+            assertTrue("Main entry must support a non-Activity caller", opened is MainActivity)
+        } finally {
+            opened?.let { activity -> instrumentation.runOnMainSync { activity.finish() } }
+            instrumentation.removeMonitor(monitor)
+        }
+    }
+
     @Test fun standardWidgetBodyOpensAppWithoutAccount() = checkBodyOpensApp(slim = false)
 
     @Test fun slimWidgetBodyOpensAppWithQuota() = checkBodyOpensApp(slim = true)
