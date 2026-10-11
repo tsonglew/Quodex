@@ -44,6 +44,7 @@ class WidgetOpenAppDeviceTest {
                 val deadline = SystemClock.uptimeMillis() + 20_000
                 var bounds: Rect? = null
                 var stableView: View? = null
+                var stableAction: View? = null
                 var stableBounds: Rect? = null
                 var stableSince = 0L
                 var recoveredLauncher = false
@@ -57,21 +58,29 @@ class WidgetOpenAppDeviceTest {
                         // the widget body listener through the actual child TextView.
                         val title = descendants(host.widgetView).filterIsInstance<TextView>()
                             .firstOrNull { it.text.toString().startsWith("Codex") }
+                        val action = title?.let {
+                            generateSequence<View>(it) { child -> child.parent as? View }
+                                .takeWhile { child -> child !== host.widgetView }
+                                .firstOrNull { child -> child.hasOnClickListeners() }
+                        }
+                        val hasRefresh = descendants(host.widgetView).any { it.contentDescription == "刷新额度" }
                         val visible = Rect()
-                        if (focused && title != null && title.isShown &&
+                        if (focused && title != null && action != null && hasRefresh && title.isShown &&
                             title.getLocalVisibleRect(visible) && !visible.isEmpty) {
                             val screen = IntArray(2)
                             title.getLocationOnScreen(screen)
                             visible.offset(screen[0], screen[1])
                             val now = SystemClock.uptimeMillis()
-                            if (title !== stableView || visible != stableBounds) {
+                            if (title !== stableView || action !== stableAction || visible != stableBounds) {
                                 stableView = title
+                                stableAction = action
                                 stableBounds = Rect(visible)
                                 stableSince = now
                             }
                             if (now - stableSince >= 500 && now - host.lastWidgetUpdateAt >= 500) bounds = visible
                         } else {
                             stableView = null
+                            stableAction = null
                             stableBounds = null
                         }
                     }
@@ -93,7 +102,19 @@ class WidgetOpenAppDeviceTest {
                     if (action == MotionEvent.ACTION_DOWN) Thread.sleep(50)
                 }
                 opened = monitor.waitForActivityWithTimeout(10_000)
-                assertTrue("Widget body must launch QuotaPal MainActivity (slim=$slim)", opened is MainActivity)
+                var detail = ""
+                if (opened !is MainActivity) {
+                    instrumentation.uiAutomation.takeScreenshot()?.let {
+                        saveDeviceScreenshot(context, "widget-open-app-no-launch-$slim", it)
+                    }
+                    scenario.onActivity { host ->
+                        detail = "bounds=$target; touches=${host.touchEvents}; focus=${host.hasWindowFocus()}; " +
+                            "tree=" + descendants(host.widgetView).joinToString { view ->
+                                "${view.javaClass.simpleName}(text=${(view as? TextView)?.text}, clickable=${view.hasOnClickListeners()}, shown=${view.isShown})"
+                            }
+                    }
+                }
+                assertTrue("Widget body must launch QuotaPal MainActivity (slim=$slim); $detail; diagnostics=${app.diagnostics.report()}", opened is MainActivity)
             }
         } finally {
             opened?.let { activity -> instrumentation.runOnMainSync { activity.finish() } }
