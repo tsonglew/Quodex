@@ -421,6 +421,7 @@ private fun DiagnosticEntry() {
                         "powerSave=${power.isPowerSaveMode} idle=${power.isDeviceIdleMode} batteryExempt=${power.isIgnoringBatteryOptimizations(context.packageName)}\n" +
                         "backgroundRestricted=${activity.isBackgroundRestricted}\n" +
                         "networkValidated=${caps?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)}\n" +
+                        com.tsonglew.quotapal.widget.widgetDiagnosticReport(context) +
                         com.tsonglew.quotapal.sync.SyncScheduler.diagnosticReport(context) +
                         app.diagnostics.report()
                 }

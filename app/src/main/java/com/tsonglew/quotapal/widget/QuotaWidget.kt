@@ -26,7 +26,7 @@ import com.tsonglew.quotapal.sync.SyncScheduler
 import kotlinx.coroutines.launch
 
 open class QuotaWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(DpSize(140.dp, 150.dp), DpSize(140.dp, 230.dp), DpSize(280.dp, 150.dp)))
+    override val sizeMode: SizeMode = SizeMode.Responsive(setOf(DpSize(140.dp, 150.dp), DpSize(140.dp, 230.dp), DpSize(280.dp, 150.dp)))
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val app = context.quotaApp
         app.repository.initialize()
@@ -303,15 +303,23 @@ open class QuotaWidget : GlanceAppWidget() {
 }
 
 class SlimQuotaWidget : QuotaWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(DpSize(130.dp, 50.dp), DpSize(130.dp, 70.dp), DpSize(280.dp, 70.dp)))
+    // The horizontal widget has one content structure at every supported width.
+    // Send one flexible RemoteViews tree rather than asking the host to choose
+    // between size-mapped trees with separate action bindings.
+    override val sizeMode = SizeMode.Single
 }
 
 class RefreshWidgetAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: androidx.glance.action.ActionParameters) {
         val app = context.quotaApp
+        // Record callback delivery before initialization, so an initialization
+        // failure cannot be mistaken for a launcher that never delivered the tap.
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            app.diagnostics.record(com.tsonglew.quotapal.diagnostics.DiagnosticEvent.WIDGET_CLICK)
+        }
         app.repository.initialize()
         refreshFromWidget(
-            refresh = { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.diagnostics.record(com.tsonglew.quotapal.diagnostics.DiagnosticEvent.WIDGET_CLICK) }; app.repository.refresh(force = true) },
+            refresh = { app.repository.refresh(force = true) },
             enqueue = { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { SyncScheduler.refresh(context).result.get() } },
             update = { app.updateWidgets() },
         )

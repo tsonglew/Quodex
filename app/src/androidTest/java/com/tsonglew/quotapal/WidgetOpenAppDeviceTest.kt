@@ -42,7 +42,14 @@ class WidgetOpenAppDeviceTest {
 
     @Test fun standardQuotaValueOpensApp() = checkBodyOpensApp(slim = false, quotaValue = true)
 
-    private fun checkBodyOpensApp(slim: Boolean, quotaValue: Boolean = false) {
+    @Test fun minimumSlimWidgetBodyOpensApp() = checkBodyOpensApp(slim = true, width = 130, height = 50)
+
+    @Test fun narrowSlimWidgetBodyOpensApp() = checkBodyOpensApp(slim = true, width = 130, height = 70)
+
+    @Test fun minimumSlimQuotaValueOpensApp() = checkBodyOpensApp(slim = true, quotaValue = true, width = 130, height = 50)
+
+    private fun checkBodyOpensApp(slim: Boolean, quotaValue: Boolean = false, width: Int = 280,
+        height: Int = if (slim) 70 else 150) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val app = context.quotaApp
@@ -56,8 +63,8 @@ class WidgetOpenAppDeviceTest {
             }
             ActivityScenario.launch<WidgetTestHostActivity>(
                 Intent(context, WidgetTestHostActivity::class.java)
-                    .putExtra("slim", slim).putExtra("width", 280)
-                    .putExtra("height", if (slim) 70 else 150),
+                    .putExtra("slim", slim).putExtra("width", width)
+                    .putExtra("height", height),
             ).use { scenario ->
                 runBlocking { app.updateWidgets() }
                 val deadline = SystemClock.uptimeMillis() + 20_000

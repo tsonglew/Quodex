@@ -15,7 +15,11 @@ class WidgetRefreshActionDeviceTest {
 
     @Test fun standardWidgetRefreshFetchesWithoutOpeningApp() = checkRefresh(slim = false)
 
-    private fun checkRefresh(slim: Boolean) {
+    @Test fun minimumSlimWidgetRefreshFetchesWithoutOpeningApp() = checkRefresh(slim = true, width = 130, height = 50)
+
+    @Test fun narrowSlimWidgetRefreshFetchesWithoutOpeningApp() = checkRefresh(slim = true, width = 130, height = 70)
+
+    private fun checkRefresh(slim: Boolean, width: Int = 280, height: Int = if (slim) 70 else 150) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val app = context.quotaApp as TestQuotaApplication
@@ -30,7 +34,7 @@ class WidgetRefreshActionDeviceTest {
             }
             androidx.test.core.app.ActivityScenario.launch<WidgetTestHostActivity>(
                 android.content.Intent(context, WidgetTestHostActivity::class.java).putExtra("slim", slim)
-                    .putExtra("width", 280).putExtra("height", if (slim) 70 else 150)).use { scenario ->
+                    .putExtra("width", width).putExtra("height", height)).use { scenario ->
                 scenario.onActivity { it.addStandardWidget(); it.addThirdWidget() }
                 runBlocking { app.updateWidgets(); app.reconcileSync() }
                 fun labels(view: android.view.View): List<android.widget.TextView> = when (view) {
