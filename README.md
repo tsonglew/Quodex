@@ -6,7 +6,7 @@
 
 基于原生界面截图合成的展示效果图，额度均为示例数据。[查看原生截图](docs/SCREENSHOTS.md)。
 
-当前开发版本为 `0.1.0-alpha18`，小组件为标题、额度和状态内容分别绑定打开应用动作，使用显式主入口唤起应用，并记录组件打开应用的诊断事件；小米桌面点击无响应的问题仍待真机复验。alpha17 已新增诊断报告的系统后台受限标记，帮助排查后台刷新延迟。既有 alpha16 的 [PR #16 六组 CI](https://github.com/tsonglew/QuotaPal/actions/runs/38037325156) 已通过，覆盖 API 29／31／35／36／37.0／37.2。已提供本机诊断报告、最近 7 天的请求与刷新统计、后台任务状态，以及分品牌后台引导和小组件即时手动刷新。alpha16 修正诊断弹窗的主线程约束，固定签名覆盖升级已通过，验证记录见 [alpha16](docs/VALIDATION_ALPHA16.md)。真实账号续期、OEM 后台恢复和长期自用仍待验收。
+当前开发版本为 `0.1.0-alpha19`，小组件在 Android 12 及以上改用直接接收点击的透明 TextView，分开处理打开与刷新；固定 Glance 1.1.1 的布局覆盖由构建检查保护。最终候选已通过 API29／37 各 16 项模拟器回归，以及 API37 两项真实 TalkBack 探索／双击专项。小米完整 preview 的标题、时间、刷新手指点击与外观已验收；示例模式刷新跳过联网且不更新时间，正式签名覆盖升级与真实账号刷新仍待验收，见 [验证记录](docs/VALIDATION_XIAOMI_WIDGET_TOUCH.md)。alpha17 已新增诊断报告的系统后台受限标记，帮助排查后台刷新延迟。既有 alpha16 的 [PR #16 六组 CI](https://github.com/tsonglew/QuotaPal/actions/runs/38037325156) 已通过，覆盖 API 29／31／35／36／37.0／37.2。已提供本机诊断报告、最近 7 天的请求与刷新统计、后台任务状态，以及分品牌后台引导和小组件即时手动刷新。alpha16 修正诊断弹窗的主线程约束，固定签名覆盖升级已通过，验证记录见 [alpha16](docs/VALIDATION_ALPHA16.md)。真实账号续期、OEM 后台恢复和长期自用仍待验收。
 
 已核验版本：[0.1.0-alpha17 预发布](https://github.com/tsonglew/QuotaPal/releases/tag/v0.1.0-alpha17)。
 

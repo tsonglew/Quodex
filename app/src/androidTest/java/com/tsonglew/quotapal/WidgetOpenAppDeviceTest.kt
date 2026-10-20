@@ -12,8 +12,11 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
+import com.tsonglew.quotapal.data.Session
+import com.tsonglew.quotapal.data.absoluteTime
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -42,24 +45,47 @@ class WidgetOpenAppDeviceTest {
 
     @Test fun standardQuotaValueOpensApp() = checkBodyOpensApp(slim = false, quotaValue = true)
 
-    private fun checkBodyOpensApp(slim: Boolean, quotaValue: Boolean = false) {
+    @Test fun slimWidgetTimestampOpensAppWithoutRefreshing() = checkBodyOpensApp(slim = true, footerTimestamp = true)
+
+    @Test fun largeFontStandardQuotaValueOpensApp() = withWidgetFontScale(2f) {
+        checkBodyOpensApp(slim = false, quotaValue = true, width = 140)
+    }
+
+    @Test fun largeFontSlimQuotaValueOpensApp() = withWidgetFontScale(2f) {
+        checkBodyOpensApp(slim = true, quotaValue = true, width = 130)
+    }
+
+    private fun checkBodyOpensApp(slim: Boolean, quotaValue: Boolean = false, width: Int = 280,
+        footerTimestamp: Boolean = false) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
-        val app = context.quotaApp
+        val app = context.quotaApp as TestQuotaApplication
+        val createdWidgetIds = mutableSetOf<Int>()
         val monitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
         var opened: Activity? = null
         instrumentation.uiAutomation.adoptShellPermissionIdentity(Manifest.permission.BIND_APPWIDGET)
         try {
             runBlocking {
                 app.repository.logout()
-                if (slim || quotaValue) app.repository.demo()
+                if (footerTimestamp) {
+                    app.usedPercent = 38
+                    app.repository.connect(Session("test-access", "test-refresh", "test-account", Long.MAX_VALUE))
+                } else if (slim || quotaValue) app.repository.demo()
             }
+            val timestamp = if (footerTimestamp)
+                absoluteTime(requireNotNull(app.repository.state.value.snapshot).fetchedAt, true) else null
             ActivityScenario.launch<WidgetTestHostActivity>(
                 Intent(context, WidgetTestHostActivity::class.java)
-                    .putExtra("slim", slim).putExtra("width", 280)
+                    .putExtra("slim", slim).putExtra("width", width)
                     .putExtra("height", if (slim) 70 else 150),
             ).use { scenario ->
-                runBlocking { app.updateWidgets() }
+                scenario.onActivity { createdWidgetIds += it.widgetId }
+                runBlocking {
+                    // Seed the fixture's own instance even when an emulator retains
+                    // preferences for this ID or uses a different global preference.
+                    createdWidgetIds.forEach { app.settings.saveWidget(it, true, "system") }
+                    app.updateWidgets()
+                }
                 val deadline = SystemClock.uptimeMillis() + 20_000
                 var bounds: Rect? = null
                 var stableView: View? = null
@@ -72,23 +98,26 @@ class WidgetOpenAppDeviceTest {
                     var focused = false
                     scenario.onActivity { host ->
                         focused = host.hasWindowFocus()
-                        // Tap visible body content, away from the refresh action.
-                        // No performClick or direct Activity launch: dispatch must reach
-                        // the widget body listener through the actual child TextView.
-                        val title = descendants(host.widgetView).filterIsInstance<TextView>()
-                            .firstOrNull { if (quotaValue) it.text.toString() == "62%" else it.text.toString().startsWith("Codex") }
-                        val action = title?.let {
-                            generateSequence<View>(it) { child -> child.parent as? View }
-                                .takeWhile { child -> child !== host.widgetView }
-                                .firstOrNull { child -> child.hasOnClickListeners() }
+                        // Keep the touch on the visible title/value/timestamp, not the
+                        // center of the action. Its listener is a sibling overlay,
+                        // so searching the TextView's ancestors would miss it.
+                        val views = descendants(host.widgetView).toList()
+                        val title = views.filterIsInstance<TextView>()
+                            .firstOrNull { when {
+                                timestamp != null -> it.text.toString().contains(timestamp)
+                                quotaValue -> it.text.toString() == "62%"
+                                else -> it.text.toString().startsWith("Codex")
+                            } }
+                        val visible = title?.let(::screenVisibleBounds)
+                        val action = visible?.let { textBounds ->
+                            views.filter { it.hasOnClickListeners() && it.isEnabled && it.contentDescription != "刷新额度" }
+                                .mapNotNull { candidate -> screenVisibleBounds(candidate)?.let { candidate to it } }
+                                .filter { (_, actionBounds) -> actionBounds.contains(textBounds.centerX(), textBounds.centerY()) }
+                                .minByOrNull { (_, actionBounds) -> actionBounds.width().toLong() * actionBounds.height() }
+                                ?.first
                         }
-                        val hasRefresh = descendants(host.widgetView).any { it.contentDescription == "刷新额度" }
-                        val visible = Rect()
-                        if (focused && title != null && action != null && hasRefresh && title.isShown &&
-                            title.getLocalVisibleRect(visible) && !visible.isEmpty) {
-                            val screen = IntArray(2)
-                            title.getLocationOnScreen(screen)
-                            visible.offset(screen[0], screen[1])
+                        val hasRefresh = views.any { it.contentDescription == "刷新额度" }
+                        if (focused && title != null && action != null && hasRefresh) {
                             val now = SystemClock.uptimeMillis()
                             if (title !== stableView || action !== stableAction || visible != stableBounds) {
                                 stableView = title
@@ -96,7 +125,10 @@ class WidgetOpenAppDeviceTest {
                                 stableBounds = Rect(visible)
                                 stableSince = now
                             }
-                            if (now - stableSince >= 500 && now - host.lastWidgetUpdateAt >= 500) bounds = visible
+                            if (now - stableSince >= 500 && now - host.lastWidgetUpdateAt >= 500) {
+                                assertWidgetActionLayout(host.widgetView)
+                                bounds = visible
+                            }
                         } else {
                             stableView = null
                             stableAction = null
@@ -109,8 +141,16 @@ class WidgetOpenAppDeviceTest {
                 if (bounds == null) instrumentation.uiAutomation.takeScreenshot()?.let {
                     saveDeviceScreenshot(context, "widget-open-app-missing-target-$slim", it)
                 }
-                assertNotNull("Widget title must be visible and stable (slim=$slim)", bounds)
+                assertNotNull("Widget body text and its covering action must be visible and stable (slim=$slim, width=$width)", bounds)
                 val target = requireNotNull(bounds)
+                val requestsBeforeTap = if (footerTimestamp) {
+                    // A mistaken refresh must be observable: a demo account or the
+                    // recent-attempt guard would otherwise hide an extra request.
+                    // MainActivity's ordinary foreground refresh still uses the
+                    // fresh cache, whereas the widget refresh forces a new request.
+                    runBlocking { app.settings.syncResult(null, lastAttemptAt = 0) }
+                    app.usageRequests.get()
+                } else null
                 val downTime = SystemClock.uptimeMillis()
                 for (action in listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP)) {
                     val event = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action,
@@ -135,11 +175,23 @@ class WidgetOpenAppDeviceTest {
                     }
                 }
                 assertTrue("Widget body must launch QuotaPal MainActivity (slim=$slim); $detail; diagnostics=${app.diagnostics.report()}", opened is MainActivity)
+                if (requestsBeforeTap != null) {
+                    val observationDeadline = SystemClock.uptimeMillis() + 1_000
+                    do {
+                        assertEquals("Tapping the footer timestamp must not activate refresh",
+                            requestsBeforeTap, app.usageRequests.get())
+                        Thread.sleep(50)
+                    } while (SystemClock.uptimeMillis() < observationDeadline)
+                }
             }
         } finally {
             opened?.let { activity -> instrumentation.runOnMainSync { activity.finish() } }
             instrumentation.removeMonitor(monitor)
-            runBlocking { app.repository.logout(); app.reconcileSync() }
+            runBlocking {
+                createdWidgetIds.forEach { app.settings.deleteWidget(it) }
+                app.repository.logout()
+                app.reconcileSync()
+            }
             instrumentation.uiAutomation.dropShellPermissionIdentity()
         }
     }
@@ -147,5 +199,14 @@ class WidgetOpenAppDeviceTest {
     private fun descendants(view: View): Sequence<View> = sequence {
         yield(view)
         if (view is ViewGroup) for (index in 0 until view.childCount) yieldAll(descendants(view.getChildAt(index)))
+    }
+
+    private fun screenVisibleBounds(view: View): Rect? {
+        val visible = Rect()
+        if (!view.isShown || !view.getLocalVisibleRect(visible) || visible.isEmpty) return null
+        val screen = IntArray(2)
+        view.getLocationOnScreen(screen)
+        visible.offset(screen[0], screen[1])
+        return visible
     }
 }

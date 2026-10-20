@@ -23,6 +23,8 @@ bash scripts/power_smoke.sh
 
 组件测试临时通过系统 shell 授予绑定权限，结束时撤销。测试宿主仅包含在 debug 变体中，未导出，不进入 release。实现依据 [Android widget host 文档](https://developer.android.com/develop/ui/views/appwidgets/host) 和 [AOSP appwidget shell 命令](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/cmds/appwidget/src/com/android/commands/appwidget/AppWidget.java)。宿主测试不能替代真实 Launcher、系统选择器和 OEM 验证。
 
+小米触摸修复的定向集合现为 16 项：`WidgetOpenAppDeviceTest` 7 项、`WidgetRefreshActionDeviceTest` 5 项，加既有 4 项组件渲染回归；TalkBack 另有 2 项显式专项。打开与刷新均注入真实 DOWN/UP；API 31+ 还检查实际动作节点的类精确为 `TextView`（不能用会同时接受 Button 的子类判断），同组件的动作 ID 有效且唯一，动作区域不重叠。新增 slim 页脚时间中心点击以已连接的合成账号验证打开应用且不新增 HTTP 请求，并预先解除最近尝试节流，避免误刷新被示例模式或节流掩盖。打开、刷新及 TalkBack 夹具显式初始化和清理自己创建的组件偏好，不依赖旧模拟器中同 ID 的残留设置。API 31 覆盖基础资源、API 33+ 覆盖限定资源，API 29/30 继续验证 Glance 的旧版模拟路径；资源替换后的通过结论须来自新 APK 实跑，下面的 v3 记录不覆盖这次替换。
+
 CI 产物 `android-build` 含 debug APK、单元测试与 lint 报告；设备矩阵配置 API 29、31、35、36、37.0 与 37.2／16KB；配置覆盖不等于全部通过，最新结果须核对 CI gate。`android-device-tests-api-<API>` 各含对应设备测试报告和截图，保留 14 天。不上传凭据或真实账号数据。模拟器矩阵不替代 OEM Launcher、真实授权与连续自用。
 
 ## 首次自用验收
@@ -74,7 +76,9 @@ alpha12 新增 `scripts/system_time_smoke.sh`：仅在自建测试模拟器执�
 
 `scripts/network_smoke.sh` 显式关闭自建模拟器的 Wi-Fi 与移动数据，要求 OS 从有效互联网变为无网络，再恢复原连接。检查真实 WorkManager 约束与调度：离线不执行请求、成功缓存保留，重连后只请求一次。用量响应由测试 runner 拦截，不把合成凭据发到外部。该探针普通套件默认跳过，CI 在系统时间探针后单独运行。仅“有 activeNetwork”不算恢复，必须满足 NET_CAPABILITY_VALIDATED；本地受代理限制的宿主须先配置其测试网络并在结束后恢复。
 
-TalkBack 专项仅在装有 Google TalkBack 的测试模拟器显式执行：`adb -e shell am instrument -w -e class com.tsonglew.quotapal.TalkBackDeviceTest -e talkbackProbe true com.tsonglew.quotapal.test/com.tsonglew.quotapal.QuotaTestRunner`。会临时启用真实 TalkBack 和 200% 字体，检查标准／紧凑组件的可访问树、焦点、双击和共享请求，并保存 talkback-*-focus／updated 截图；结束恢复原设置。普通套件按条件跳过，不以无 TalkBack 服务的模拟结果代替实际验证。
+TalkBack 专项仅在装有 Google TalkBack 的 API 37 测试模拟器显式执行：`adb -s emulator-5580 shell am instrument --no-hidden-api-checks -w -e class com.tsonglew.quotapal.TalkBackDeviceTest -e talkbackProbe true com.tsonglew.quotapal.test/com.tsonglew.quotapal.QuotaTestRunner`。会临时启用真实 TalkBack，分别检查默认字体下额度文本的焦点／探索，以及 200% 字体下标准／紧凑组件的双击刷新和共享请求，保存截图后恢复设置。探针反射调用平台测试 API `injectInputEventToInputFilter`，缺失或不可访问直接失败；默认字体探索还必须收到 `TYPE_TOUCH_EXPLORATION_GESTURE_START`。普通 `injectInputEvent` 会跳过无障碍输入过滤器，不能作为 TalkBack 手势证据；此前基于该入口的双击通过记录应按普通注入刷新理解，见 [证据校正](VALIDATION_XIAOMI_WIDGET_TOUCH.md)。普通套件按条件跳过该显式探针。
+
+2026-10-20 的固定 v3 APK 在 API 37 两项专项均通过（60.637 秒），普通字体标准／slim 探索焦点包含 62%；200% 字体先真实探索刷新入口建立 TalkBack 焦点，再以明确手指类型、受系统双击时限约束的输入触发刷新点击事件，确认各一次请求、仓库额度和可访问摘要更新到 83%。同一 APK 的六项打开应用测试通过（63.617 秒），证据在 `artifacts/xiaomi-alpha18/emulator-widget-fix-v3/`，结束字体恢复 1.0、无障碍服务恢复关闭。此结果证明输入处理和可访问内容，未录制实际语音；`talkback-slim-updated (3).png` 捕获时仍绘制 62%，因此不把该帧作为已显示 83% 的视觉证据。
 
 
 ## 省电恢复探针
