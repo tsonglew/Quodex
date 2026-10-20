@@ -23,13 +23,15 @@ Android 12 及以上的 12 个 Glance Button XML（base 1 个、v33 11 个）仅
 | v5 API 37 | 同一固定 APK 重跑 16/16 通过；187.4 秒，31 张新增截图。覆盖打开 7 项、刷新 5 项、布局 4 项，以及精确 TextView 类、动作 ID 唯一与范围不重叠断言。首次开机 ANR 污染的中止轮单独保留。 |
 | v5 TalkBack | API37 两项 2/2 通过；JUnit 51.111 秒，进程 53.6 秒，8 张新增截图。默认字体 standard/slim 探索额度可读出 62%；200% 字体下分别探索刷新并双击，产生真实点击事件、各一次 HTTP 请求，存储及无障碍树变为 83%。两张更新截图也均显示 83%。 |
 | 独立直接叶子探针的手指触摸 | 用户确认去掉灰底后，顶部标题／额度能打开应用。此探针曾有页脚错位，仅作为顶部路径对照。 |
-| 完整生产实现 preview | 已构建并安装至独立测试包；手机目前需要手动解锁，标题、时间、刷新及最终外观仍待验收。 |
+| 完整生产实现 preview | 小米桌面截图确认三个灰底均消失，时间左下、刷新右下，无页脚错位，区域互不重叠。无障碍动作检查 3/3 后，用户手指依次验证标题、时间、刷新；两次打开事件及两次刷新事件均已收到，刷新留在桌面。用户指出刷新时间未变，日志确认每次均为 `WIDGET_CLICK → REFRESH_START → SKIP_DEMO → REFRESH_END`，符合固定示例模式跳过联网且不更新时间的逻辑，无组件错误。真实账号联网刷新不在本次小米 preview 验收范围内。 |
 | 当前分支 CI | 分支已推送，PR 尚未创建：GitHub 连接器返回 403 写入权限不足，浏览器控制超时。API31 等其余版本尚未启动云端验证。 |
 | 正式签名覆盖升级 | 未执行。 |
 
 v5 固定 APK 位于本地忽略目录 `artifacts/xiaomi-alpha18/emulator-widget-fix-v5/apks/`：app SHA-256 `7f89a559994ca0a00144db838bf6918822e89e4108a916b3923fe4aa60c79c63`；androidTest SHA-256 `7d469770ed2fc45d6aee07e631a954e7c00eab31434c823ac02cca3276a5082d`。普通设备测试检查真实触摸、MainActivity、实际 TextView 更新、单 HTTP 请求、刷新进度和刷新不打开应用；API31+ 另检查精确 TextView 类、有效且唯一的动作 ID、互不重叠的动作范围。跨版本以相应提交的 CI 为准。
 
 API37 普通回归保存在 `api37-regression-retry/`，TalkBack 专项保存在 `api37-talkback/`（均位于上述 v5 目录）。专项运行前确认 `emulator-5580` 为 qemu、API37、`quotapal-widget-api37`，并核对已安装 app／androidTest APK 哈希与固定文件一致；使用 `--no-hidden-api-checks -e talkbackProbe true` 调用真实 `injectInputEventToInputFilter`，没有普通输入 fallback。测试后字体 `1.0`、无障碍服务 `null`、accessibility enabled `0`、touch exploration `0`、TalkBack 通知权限未授予，均与测试前一致；系统服务状态也确认触摸探索关闭且无绑定服务。命令、哈希、设置前后值、恢复比对、有效截图基线和结果日志均已保存，crash buffer 为空。
+
+小米最终 preview 的 helper 结果与人工前后日志保存在本地忽略目录 `artifacts/xiaomi-alpha18/launcher-background-probe/production-leaf-*`。人工验证的两次打开分别为北京时间 09:15:59、09:16:02，刷新为 09:16:08、09:16:11；读取日志时前台仍是 MIUI 桌面。该阶段未改变正式包、真实账号或系统偏好，也未以示例跳过请求当作真实联网成功。
 
 ## 实机对照与外观排查
 
@@ -56,4 +58,4 @@ API37 普通回归保存在 `api37-regression-retry/`，TalkBack 专项保存在
 - 更正输入入口后的 v2 探针实际收到触摸探索开始事件，额度中心却只聚焦“打开 QuotaPal”，确认摘要回归。补充完整摘要后，v3 TalkBack 两项 2/2（60.637 秒）通过：默认字体 standard/slim 探索能读出 62%；200% 字体两组件探索刷新、双击产生点击事件、状态与无障碍树变为 83% 且各一次请求。没有普通注入 fallback。测试后字体 1.0、服务 null、touch exploration 0 已恢复。
 - v3 slim 的一张更新截图仍捕获旧一帧 62%，不作为 83% 视觉证明。专项使用请求、存储和无障碍树断言；普通刷新回归另等实际 TextView 更新。v3 新摘要下打开应用 6/6（63.617 秒）通过，亦不代替最终 v5 验收。
 
-历史证据按 v2／v3／v4／v5 分目录保留，不覆盖失败日志。后续补充完整 preview 手指结果、CI 与正式升级结果后再判断交付。
+历史证据按 v2／v3／v4／v5 分目录保留，不覆盖失败日志。完整 preview 的点击与外观已验收；CI、正式签名覆盖升级和真实账号刷新仍待完成。
