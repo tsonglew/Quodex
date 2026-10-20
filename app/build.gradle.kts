@@ -1,3 +1,7 @@
+import java.util.zip.ZipFile
+import javax.xml.parsers.DocumentBuilderFactory
+import org.w3c.dom.Element
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -13,8 +17,8 @@ android {
         applicationId = "com.tsonglew.quotapal"
         minSdk = 29
         targetSdk = 36
-        versionCode = 18
-        versionName = "0.1.0-alpha18"
+        versionCode = 19
+        versionName = "0.1.0-alpha19"
         testInstrumentationRunner = "com.tsonglew.quotapal.QuotaTestRunner"
     }
     buildTypes {
@@ -65,3 +69,63 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
+
+// These native leaf layouts work around an OEM host's Button rendering and
+// clickable-wrapper handling. Review the override whenever Glance changes.
+val verifyGlanceButtonLayouts by tasks.registering {
+    group = "verification"
+    description = "Verify widget leaf overrides against the resolved Glance layouts"
+    doLast {
+        val artifacts = listOf("debugRuntimeClasspath", "releaseRuntimeClasspath").map { configuration ->
+            configurations.getByName(configuration).resolvedConfiguration.resolvedArtifacts.single {
+                it.moduleVersion.id.group == "androidx.glance" && it.name == "glance-appwidget"
+            }
+        }
+        check(artifacts.all { it.moduleVersion.id.version == "1.1.1" }) {
+            "Review widget leaf overrides before changing Glance 1.1.1"
+        }
+        check(artifacts.map { it.file }.distinct().size == 1) {
+            "Debug and release must use the same reviewed Glance widget layouts"
+        }
+        val artifact = artifacts.first()
+        val pattern = Regex("res/layout[^/]*/glance_button(?:_[^/]+)?\\.xml")
+        val resourceRoot = file("src/main/res")
+        val overrides = resourceRoot.walkTopDown().filter { it.isFile }
+            .map { "res/" + it.relativeTo(resourceRoot).invariantSeparatorsPath }
+            .filter { pattern.matches(it) }.toSet()
+        val parser = DocumentBuilderFactory.newInstance().apply {
+            setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+        }.newDocumentBuilder()
+        fun attributes(element: Element): Map<String, String> =
+            (0 until element.attributes.length).associate { index ->
+                element.attributes.item(index).let { it.nodeName to it.nodeValue }
+            }
+        val leafAttributes = mapOf(
+            "android:gravity" to "center", "android:padding" to "0dp",
+            "android:clickable" to "true", "android:focusable" to "true",
+            "android:importantForAccessibility" to "yes",
+            "android:background" to "@android:color/transparent",
+        )
+        ZipFile(artifact.file).use { archive ->
+            val layouts = archive.entries().asSequence().map { it.name }
+                .filter { pattern.matches(it) }.toSet()
+            check(layouts.size == 12 && overrides == layouts) {
+                "Glance widget layout coverage changed: missing=${layouts - overrides}, extra=${overrides - layouts}"
+            }
+            layouts.forEach { name ->
+                val original = archive.getInputStream(archive.getEntry(name)).use {
+                    parser.parse(it).documentElement
+                }
+                val replacement = parser.parse(file("src/main/$name")).documentElement
+                check(original.tagName == "Button" && replacement.tagName == "TextView") {
+                    "Unexpected widget leaf type in $name"
+                }
+                check(attributes(replacement) == attributes(original) - "style" + leafAttributes) {
+                    "Widget leaf override must preserve Glance layout metadata: $name"
+                }
+            }
+        }
+    }
+}
+
+tasks.named("preBuild") { dependsOn(verifyGlanceButtonLayouts) }

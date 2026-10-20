@@ -15,11 +15,20 @@ class WidgetRefreshActionDeviceTest {
 
     @Test fun standardWidgetRefreshFetchesWithoutOpeningApp() = checkRefresh(slim = false)
 
-    private fun checkRefresh(slim: Boolean) {
+    @Test fun largeFontStandardWidgetRefreshFetchesWithoutOpeningApp() = withWidgetFontScale(2f) {
+        checkRefresh(slim = false, width = 140)
+    }
+
+    @Test fun largeFontSlimWidgetRefreshFetchesWithoutOpeningApp() = withWidgetFontScale(2f) {
+        checkRefresh(slim = true, width = 130)
+    }
+
+    private fun checkRefresh(slim: Boolean, width: Int = 280) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val app = context.quotaApp as TestQuotaApplication
         val manager = WorkManager.getInstance(context)
+        val createdWidgetIds = mutableSetOf<Int>()
         val activityMonitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
         instrumentation.uiAutomation.adoptShellPermissionIdentity(android.Manifest.permission.BIND_APPWIDGET)
         try {
@@ -30,9 +39,20 @@ class WidgetRefreshActionDeviceTest {
             }
             androidx.test.core.app.ActivityScenario.launch<WidgetTestHostActivity>(
                 android.content.Intent(context, WidgetTestHostActivity::class.java).putExtra("slim", slim)
-                    .putExtra("width", 280).putExtra("height", if (slim) 70 else 150)).use { scenario ->
-                scenario.onActivity { it.addStandardWidget(); it.addThirdWidget() }
-                runBlocking { app.updateWidgets(); app.reconcileSync() }
+                    .putExtra("width", width).putExtra("height", if (slim) 70 else 150)).use { scenario ->
+                scenario.onActivity {
+                    createdWidgetIds += it.widgetId
+                    createdWidgetIds += it.addStandardWidget()
+                    createdWidgetIds += it.addThirdWidget()
+                }
+                runBlocking {
+                    // A reused emulator can retain preferences for an allocated ID.
+                    // This fixture expects remaining quota, independently of earlier
+                    // tests and the user's global display preference.
+                    createdWidgetIds.forEach { app.settings.saveWidget(it, true, "system") }
+                    app.updateWidgets()
+                    app.reconcileSync()
+                }
                 fun labels(view: android.view.View): List<android.widget.TextView> = when (view) {
                     is android.widget.TextView -> listOf(view)
                     is android.view.ViewGroup -> (0 until view.childCount).flatMap { labels(view.getChildAt(it)) }
@@ -57,7 +77,10 @@ class WidgetRefreshActionDeviceTest {
                         actual = listOf(activity.widgetView, requireNotNull(activity.secondaryWidgetView), requireNotNull(activity.thirdWidgetView))
                             .joinToString(" | ") { labels(it).joinToString { label -> label.text.toString() } }
                     }
-                    org.junit.Assert.assertTrue("All three widgets must show $expected; actual=$actual; touch=$touchDescription; delivered=$deliveredTouches; requests=${app.usageRequests.get()}; state=${app.repository.state.value}; diagnostics=${app.diagnostics.report()}", matched)
+                    val widgetPreferences = runBlocking {
+                        createdWidgetIds.associateWith { app.settings.widgetSettings(it) }
+                    }
+                    org.junit.Assert.assertTrue("All three widgets must show $expected; actual=$actual; widgetPreferences=$widgetPreferences; touch=$touchDescription; delivered=$deliveredTouches; requests=${app.usageRequests.get()}; state=${app.repository.state.value}; diagnostics=${app.diagnostics.report()}", matched)
                 }
                 awaitBoth("62%")
                 val before = app.usageRequests.get()
@@ -115,6 +138,7 @@ class WidgetRefreshActionDeviceTest {
                                 // UP. Wait for both the actual hit target and host updates
                                 // to settle before starting the real gesture.
                                 if (now - stableSince >= 500 && now - activity.lastWidgetUpdateAt >= 500) {
+                                    assertWidgetActionLayout(activity.widgetView)
                                     refreshBounds = bounds
                                     touchDescription = "screenBounds=$bounds; action=${action.javaClass.simpleName}; target=${target.javaClass.simpleName}; tree=$lastTree"
                                 }
@@ -173,7 +197,12 @@ class WidgetRefreshActionDeviceTest {
             app.usageResponseGate?.countDown()
             app.usageResponseGate = null
             app.responseDelayMillis = 0
-            runBlocking { app.repository.logout(); app.reconcileSync() }
+            runBlocking {
+                // Clean only this fixture's settings, including after a failed assertion.
+                createdWidgetIds.forEach { app.settings.deleteWidget(it) }
+                app.repository.logout()
+                app.reconcileSync()
+            }
             instrumentation.uiAutomation.dropShellPermissionIdentity()
         }
     }
