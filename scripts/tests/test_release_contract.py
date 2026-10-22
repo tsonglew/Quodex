@@ -3,6 +3,7 @@ import base64
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
@@ -50,6 +51,12 @@ if sys.argv[1:3]==['release','view']:
         path = self.root / 'gh-calls.jsonl'
         return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
 
+    def update_metadata(self):
+        notes = (self.root / 'artifacts/release/release-notes.md').read_text()
+        blocks = re.findall(r'<!-- quotapal-update\n(.*?)\n-->', notes, flags=re.DOTALL)
+        self.assertEqual(1, len(blocks))
+        return json.loads(blocks[0])
+
     def test_upload_finishes_before_draft_is_published(self):
         result = self.run_release()
         self.assertEqual(0, result.returncode, result.stderr)
@@ -59,6 +66,9 @@ if sys.argv[1:3]==['release','view']:
         self.assertIn('--prerelease', calls[1])
         self.assertIn('--draft=false', calls[-1])
         self.assertTrue((self.root / 'artifacts/release/provenance.json').exists())
+        self.assertEqual(dict(schema=1, version_code=4, version_name='0.1.0-alpha04', source_sha='b'*40,
+                              signing_cert_sha256='a'*64, apk_name='QuotaPal-0.1.0-alpha04.apk'),
+                         self.update_metadata())
 
     def test_signing_check_produces_assets_without_github_mutation(self):
         self.env['RELEASE_SIGN_ONLY'] = 'true'
@@ -68,6 +78,21 @@ if sys.argv[1:3]==['release','view']:
         provenance = json.loads((self.root / 'artifacts/release/provenance.json').read_text())
         self.assertEqual('signing-check', provenance['mode'])
         self.assertEqual('a'*64, provenance['signing_cert_sha256'])
+        update = self.update_metadata()
+        self.assertEqual(provenance['signing_cert_sha256'], update['signing_cert_sha256'])
+        self.assertEqual(provenance['source_sha'], update['source_sha'])
+        self.assertEqual(provenance['version_code'], update['version_code'])
+
+    def test_invalid_version_codes_never_call_github(self):
+        for code in (0, -1, True, '4', 4.5, 2100000001):
+            with self.subTest(code=code):
+                (self.root / 'unsigned/output-metadata.json').write_text(json.dumps(dict(
+                    applicationId='com.tsonglew.quotapal',
+                    elements=[dict(versionName='0.1.0-alpha04', versionCode=code)])))
+                result = self.run_release()
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn('Invalid version code', result.stderr)
+                self.assertEqual([], self.calls())
 
     def test_signing_check_still_rejects_certificate_mismatch(self):
         self.env['RELEASE_SIGN_ONLY'] = 'true'

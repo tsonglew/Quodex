@@ -46,7 +46,7 @@ Secrets 保存以上四项；不要把密码放到 Environment variables。macOS
 
 master push 会自动生成固定签名 APK；需要手动复验时，在 Actions → Android build and tests → Run workflow 选择 master，勾选 `check-signing`。它会运行完整 CI、构建 minified release，成功后使用 android-release 签名并上传 `android-fixed-signature-check`（保留 14 天），不会创建 GitHub Release。若环境配置了分支／tag 限制，需要同时允许 master 执行此验证及版本 tag 执行正式发布。下载验证产物后核对 provenance 中的源提交、版本、证书指纹和 APK SHA-256；仅配置环境不能证明密钥与指纹匹配。
 
-先更新 `versionCode`（递增）和 `versionName`，经 PR 合并到 master，再创建 `v<versionName>` tag。示例：`versionName = "0.1.0-alpha04"` 对应 `v0.1.0-alpha04`。Release 的手动运行也必须选择已有版本 tag，不能在分支上运行。
+先更新 `versionCode`（递增）和 `versionName`，经 PR 合并到 master，再创建 `v<versionName>` tag。示例：`versionName = "0.1.0-alpha04"` 对应 `v0.1.0-alpha04`。Release 的手动运行也必须选择已有版本 tag，不能在分支上运行。需要向用户提醒升级的 master 构建同样必须递增 `versionCode`；同 code 的构建存档、重跑或后补版本 tag 不构成新的升级，不触发更新提醒。`build-<runId>-<attempt>` 只标识发布记录，不能作为 Android 版本号比较。
 
 最终资产为 `QuotaPal-<version>.apk`、`SHA256SUMS`、`provenance.json`。带连字符的版本标为 prerelease，稳定版本为普通 Release。发布 URL 在 GitHub Deployments 的 `android-release` 中可见。稳定 tag 应在 M4–M5 的真机、长期使用及公开发布验收后创建。
 
@@ -105,7 +105,7 @@ Android 17 新候选启用官方 Vulkan composition（`-feature VulkanNativeSwap
 
 所有 APK 必须签名，后续更新需要维持签名兼容性，见 [Android 官方签名说明](https://developer.android.com/studio/publish/app-signing)。包名维持 com.tsonglew.quotapal，versionCode 递增，固定正式密钥与证书指纹校验使用现有 release job；用户已创建正式密钥并配置 GitHub environment，仍需离线保管。实际固定签名及自动出包已通过，alpha15→alpha16 正式覆盖升级的 F02 也已通过，真实 Release 仍待 G05／G08 验收。
 
-对用户提供 Android 10+ 支持范围、独立第三方身份、实验接入限制、隐私说明、安装／更新步骤和反馈入口。GitHub 版当前不做自动下载或后台安装；用户从 Releases 手动安装，Android 的安装来源权限由系统确认。切换 debug 与正式签名通常需要卸载重装并重新连接，安装前先导出需要保留的诊断报告。
+对用户提供 Android 10+ 支持范围、独立第三方身份、实验接入限制、隐私说明、安装／更新步骤和反馈入口。GitHub 版可定期检查新版本并提醒，用户点击后从 Releases 下载、手动安装；不自动下载或后台安装，Android 的安装来源权限由系统确认。后台检查可能受系统调度、网络和通知权限影响，不保证发布后立即送达。切换 debug 与正式签名通常需要卸载重装并重新连接，安装前先导出需要保留的诊断报告。
 
 
 历史失败记录（已由后续修复和验证更新）：PR #9 已合并，主分支 70c4580 的 [运行 38013679974](https://github.com/tsonglew/QuotaPal/actions/runs/38013679974) 因 API 35／37.0 的三组件刷新进度断言失败而 gate 失败，预览被跳过。此前 38007906590 的全绿仅证明对应源提交，不代表最新主分支 gate 通过。当前分支增加诊断时序与页面回归，后续运行通过后再更新 G02／G03。android-release 环境已通过只读 API 确认存在；四项签名 secrets、证书变量和真实发布尚待验证。
@@ -120,6 +120,22 @@ Android 17 新候选启用官方 Vulkan composition（`-feature VulkanNativeSwap
 ### 每次 master 出包自动上传 Releases
 
 2026-10-11 用户授权每次打包上传 GitHub Releases。master push 的完整 CI 与固定签名验证通过后，先保留 Actions artifact，再创建指向本次准确源提交的 `build-<runId>-<attempt>` tag，建立 draft、上传三个资产，全部成功后公开为 prerelease。每次重跑使用新的 attempt；不覆盖旧 tag 或已公开资产。上传失败留下草稿供排查，重新运行失败 job 会产生新的构建条目。PR debug 包及手动 check-signing 仍不公开；稳定版本可继续通过 `v<versionName>` 发布。
+
+### App 更新检查元数据
+
+从 alpha20 的发布工具开始，版本 tag 和自动构建的 Release notes 都包含一个隐藏的机器可读块，供 App 从公开 Releases 列表检查升级，无需逐个下载来源文件：
+
+```text
+<!-- quotapal-update
+{"schema":1,"version_code":20,"version_name":"0.1.0-alpha20","source_sha":"<40 位小写十六进制源提交>","signing_cert_sha256":"<64 位小写十六进制证书摘要>","apk_name":"QuotaPal-0.1.0-alpha20.apk"}
+-->
+```
+
+以上是格式示例，占位符须由真实产物替换。发布脚本在验证固定签名证书、包名、版本和源提交后生成该块；`version_code` 必须是 1–2100000000 的整数。自动构建发布还会核对 notes 与 `provenance.json` 完全一致，元数据缺失、重复或不一致时停止，不创建远端 tag。来源信息与 APK 校验和仍作为独立附件保留。
+
+App 检查非 draft 的发布及其 APK 资产，并按安装证书兼容性和严格大于本机的 `version_code` 选择升级。预发布可参与检查；不使用会排除预发布的 `/releases/latest`，也不以列表顺序、发布时间或版本名称的字典序决定新旧。没有上述元数据的历史发布不用于自动提醒，仍可手动访问下载页。此注释是官方发布来源的版本信息，不代替 Android 安装时的 APK 签名校验。
+
+客户端单轮上限为 5 页、每页 100 条、每页 2 MiB、整轮 60 秒；超出预算会提示检查失败并保留已有缓存，不会把不完整扫描当成最新版本。发布记录接近 500 条前需迁移到专门的更新索引或调整分页策略。
 
 ### 自动 Releases 实际验收（2026-10-11）
 

@@ -98,7 +98,15 @@ class SettingsStore(context: Context) : SyncSettings {
         p[demo] ?: false, p[failure]?.let { runCatching { FailureKind.valueOf(it) }.getOrNull() }, p[retry] ?: 0, p[attempt] ?: 0) }
     override suspend fun read() = flow.first()
     suspend fun refreshMinutes(value: Long) { require(value in listOf(15L, 30L, 60L)); store.edit { it[minutes] = value } }
-    suspend fun showRemaining(value: Boolean) { store.edit { it[remaining] = value } }
+    suspend fun showRemaining(value: Boolean) {
+        store.edit { p ->
+            p[remaining] = value
+            // A global display change also applies to previously configured widgets.
+            // Their themes remain independent; a later widget configuration can override again.
+            val widgetRemaining = Regex("widget_\\d+_remaining")
+            p.asMap().keys.filter { widgetRemaining.matches(it.name) }.forEach { p.remove(it) }
+        }
+    }
     suspend fun theme(value: String) { require(value in listOf("system", "light", "dark")); store.edit { it[theme] = value } }
     override suspend fun demo(value: Boolean) { store.edit { it[demo] = value } }
     override suspend fun syncResult(kind: FailureKind?, retryAt: Long, lastAttemptAt: Long?) {

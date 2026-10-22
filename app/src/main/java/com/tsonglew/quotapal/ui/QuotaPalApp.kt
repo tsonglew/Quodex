@@ -8,7 +8,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +16,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,12 +26,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,6 +57,7 @@ fun QuotaPalApp(model: MainViewModel) {
     val prefs by model.preferences.collectAsStateWithLifecycle()
     val login by model.login.collectAsStateWithLifecycle()
     val operationError by model.error.collectAsStateWithLifecycle()
+    val updates by model.updates.collectAsStateWithLifecycle()
     val clock by produceState(Instant.now().epochSecond, timeRevision) {
         while (true) { value = Instant.now().epochSecond; delay(30_000) }
     }
@@ -73,39 +76,59 @@ fun QuotaPalApp(model: MainViewModel) {
                 if (prefs.showRemaining) 1 else 0, listOf("system", "light", "dark").indexOf(prefs.theme).toLong())
         }
     }
+    val pageStates = rememberSaveableStateHolder()
+    val destinations = listOf(Triple("quota", "额度", Icons.Outlined.DonutLarge),
+        Triple("widgets", "小组件", Icons.Outlined.Widgets), Triple("settings", "设置", Icons.Outlined.Tune))
     QuotaTheme(prefs.theme) {
-        Scaffold(containerColor = MaterialTheme.colorScheme.background, bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
-                listOf(Triple("quota", "额度", Icons.Outlined.DonutLarge), Triple("widgets", "小组件", Icons.Outlined.Widgets),
-                    Triple("settings", "设置", Icons.Outlined.Tune)).forEach { (id, label, icon) ->
-                    NavigationBarItem(selected = tab == id, onClick = { tab = id }, icon = { Icon(icon, null) },
-                        label = { Text(label) }, modifier = Modifier.testTag("tab-$id"),
-                        colors = NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.surfaceVariant))
-                }
-            }
-        }) { padding ->
-            key(tab) {
-            Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
-                Spacer(Modifier.height(28.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    BrandMark(34)
-                    Spacer(Modifier.width(10.dp))
-                    Text("QuotaPal", fontSize = 21.sp, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.weight(1f))
-                    if (tab == "quota" && state.snapshot != null) IconButton(onClick = model::refresh, enabled = !state.syncing && !state.demo,
-                        modifier = Modifier.testTag("refresh-button")) {
-                        if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                        else Icon(Icons.Outlined.Refresh, "刷新额度")
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val useRail = maxWidth >= 600.dp && maxHeight >= 480.dp
+            Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    Row(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                        .heightIn(min = 64.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        BrandMark(28)
+                        Spacer(Modifier.width(10.dp))
+                        Text("QuotaPal", Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                        if (tab == "quota" && state.snapshot != null) IconButton(onClick = model::refresh,
+                            enabled = !state.syncing && !state.demo, modifier = Modifier.testTag("refresh-button")) {
+                            if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp).semantics { contentDescription = "正在刷新额度" }, strokeWidth = 2.dp)
+                            else Icon(Icons.Outlined.Refresh, "刷新额度")
+                        }
                     }
                 }
-                Spacer(Modifier.height(32.dp))
-                when (tab) {
-                    "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock) }
-                    "widgets" -> WidgetPage(state, prefs)
-                    else -> SettingsPage(state, prefs, model)
+            }, bottomBar = {
+                if (!useRail) NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+                    destinations.forEach { (id, label, icon) ->
+                        NavigationBarItem(selected = tab == id, onClick = { tab = id }, icon = { Icon(icon, null) },
+                            label = { Text(label) }, modifier = Modifier.testTag("tab-$id"))
+                    }
                 }
-                Spacer(Modifier.height(28.dp))
-            }
+            }) { padding ->
+                Row(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+                    if (useRail) NavigationRail(Modifier.fillMaxHeight(), containerColor = MaterialTheme.colorScheme.surface,
+                        windowInsets = WindowInsets(0)) {
+                        destinations.forEach { (id, label, icon) ->
+                            NavigationRailItem(selected = tab == id, onClick = { tab = id }, icon = { Icon(icon, null) },
+                                label = { Text(label) }, modifier = Modifier.testTag("tab-$id"))
+                        }
+                    }
+                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+                        // Keep each destination's render nodes separate as well as its saved state.
+                        key(tab) { pageStates.SaveableStateProvider(tab) {
+                            Column(Modifier.widthIn(max = 640.dp).fillMaxSize().testTag("page-$tab")
+                                .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+                                Spacer(Modifier.height(16.dp))
+                                if (tab != "settings") updates.saved.available?.let { AvailableUpdateNotice(it) }
+                                when (tab) {
+                                    "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock) }
+                                    "widgets" -> WidgetPage(state, prefs)
+                                    else -> SettingsPage(state, prefs, model)
+                                }
+                                Spacer(Modifier.height(28.dp))
+                            }
+                        } }
+                    }
+                }
             }
         }
         operationError?.let { message ->
@@ -119,19 +142,22 @@ fun QuotaPalApp(model: MainViewModel) {
 
 @Composable
 fun BrandMark(size: Int = 40) {
-    Box(Modifier.size(size.dp).clip(RoundedCornerShape((size / 3).dp)).background(Color(0xFF17191D)), contentAlignment = Alignment.Center) {
-        Text("Q", color = Color.White, fontFamily = FontFamily.Monospace, fontSize = (size * 0.65).sp, fontWeight = FontWeight.Medium)
+    Box(Modifier.clearAndSetSemantics { }.size(size.dp).clip(RoundedCornerShape((size / 3).dp)).background(Color(0xFF17191D)), contentAlignment = Alignment.Center) {
+        val logoSize = with(LocalDensity.current) { (size * 0.65).dp.toSp() }
+        Text("Q", color = Color.White, fontFamily = FontFamily.Monospace, fontSize = logoSize,
+            lineHeight = logoSize, fontWeight = FontWeight.Medium)
     }
 }
 
 @Composable
 private fun PageTitle(title: String, subtitle: String) {
-    Text(title, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.7).sp)
+    Text(title, fontSize = 26.sp, lineHeight = 34.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
     Spacer(Modifier.height(8.dp))
     Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, lineHeight = 22.sp)
     Spacer(Modifier.height(24.dp))
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewModel, now: Long) {
     if (state.snapshot == null) {
@@ -139,7 +165,7 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
         Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Code, null, tint = QuotaBlue, modifier = Modifier.size(30.dp))
+                    Icon(Icons.Outlined.Code, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp))
                     Spacer(Modifier.width(12.dp)); Text("Codex", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
                 }
                 Text("连接现有账号，查看订阅额度。凭据加密保存在此设备，额度直接从 OpenAI 获取。", lineHeight = 24.sp,
@@ -158,38 +184,36 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
         return
     }
     Column(Modifier.testTag("dashboard")) {
-        PageTitle("你的 Codex 额度", if (state.demo) "看看桌面上的额度，会是什么样子。" else "留一点余量，安心开始下一段工作。")
+        PageTitle("额度概览", if (state.demo) "预览额度、小组件与用量趋势。" else "查看可用额度、重置时间与 Token 用量。")
         if (state.demo) {
             Notice("示例数据", "当前仅用于预览，不代表你的真实额度。", Icons.Outlined.Visibility)
             Spacer(Modifier.height(16.dp))
         }
         Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.fillMaxWidth().padding(24.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Code, null, modifier = Modifier.size(24.dp))
-                    Spacer(Modifier.width(10.dp)); Text("Codex", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Code, null, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(10.dp)); Text("Codex", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    }
                     state.snapshot.plan?.let {
-                        Spacer(Modifier.width(8.dp))
                         Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(7.dp)) {
-                            Text(it.uppercase(), Modifier.padding(horizontal = 7.dp, vertical = 3.dp), fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                            Text(it.uppercase(), Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         }
                     }
-                    Spacer(Modifier.weight(1f))
-                    Box(Modifier.size(7.dp).clip(CircleShape).background(if (state.failure == null) Color(0xFF5A9B7C) else QuotaAmber))
                 }
-                Spacer(Modifier.height(28.dp))
+                Spacer(Modifier.height(20.dp))
                 QuotaStatusNotice(state.snapshot)
                 state.snapshot.windows.forEachIndexed { index, window ->
                     if (index > 0) { Spacer(Modifier.height(24.dp)); HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant); Spacer(Modifier.height(24.dp)) }
                     QuotaWindowCard(window, prefs.showRemaining, now = now)
                 }
                 Spacer(Modifier.height(24.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Schedule, null, Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(5.dp))
-                    Text("${if (state.demo) "示例更新于" else "更新于"} ${absoluteTime(state.snapshot.fetchedAt, true)}", fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                    if (state.snapshot.resetCredits != null) Text("${state.snapshot.resetCredits} 次重置可用", fontSize = 11.sp,
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("${if (state.demo) "示例更新于" else "更新于"} ${absoluteTime(state.snapshot.fetchedAt, true)}", fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (state.snapshot.resetCredits != null) Text("${state.snapshot.resetCredits} 次重置可用", fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -201,6 +225,8 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
             if (state.failure in listOf(FailureKind.AUTH, FailureKind.STORAGE)) TextButton(onClick = model::startLogin) { Text("重新连接") }
         } else Text(if (state.demo) "连接账号后，这里会显示真实额度。" else "后台目标间隔 ${prefs.refreshMinutes} 分钟 · 系统可能延迟更新",
             fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 20.sp)
+        Spacer(Modifier.height(20.dp))
+        TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage)
         if (state.demo) {
             Spacer(Modifier.height(18.dp))
             Button(onClick = model::startLogin, modifier = Modifier.fillMaxWidth()) { Text("连接我的 Codex") }
@@ -219,38 +245,51 @@ fun QuotaStatusNotice(snapshot: UsageSnapshot) {
 @Composable
 fun QuotaWindowCard(window: QuotaWindow, remaining: Boolean, compact: Boolean = false, now: Long = Instant.now().epochSecond) {
     val value = window.displayedPercent(remaining)
-    Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.weight(1f)) {
-            Text(window.name, fontSize = if (compact) 13.sp else 15.sp, fontWeight = FontWeight.Medium)
-            Spacer(Modifier.height(5.dp))
-            Text(resetLabel(window, now), fontSize = if (compact) 10.sp else 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stack = maxWidth / LocalDensity.current.fontScale < 250.dp
+        val details: @Composable () -> Unit = {
+            Column {
+                Text(window.name, fontSize = if (compact) 14.sp else 15.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(5.dp))
+                Text(resetLabel(window, now), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(window.percentageLabel(remaining), fontFamily = if (value == null) FontFamily.Default else FontFamily.Monospace,
-                fontSize = if (value == null) 16.sp else if (compact) 32.sp else 46.sp,
-                fontWeight = FontWeight.Normal, letterSpacing = if (value == null) 0.sp else (-2).sp)
-            Text(if (value == null) "" else "%", fontSize = 15.sp, modifier = Modifier.padding(bottom = 7.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val percentage: @Composable () -> Unit = {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(window.percentageLabel(remaining),
+                    fontFamily = if (value == null) FontFamily.Default else FontFamily.Monospace,
+                    fontSize = if (value == null) 16.sp else if (compact) 32.sp else 40.sp,
+                    fontWeight = FontWeight.Normal, letterSpacing = if (value == null) 0.sp else (-1).sp,
+                    modifier = Modifier.alignByBaseline())
+                if (value != null) Text("%", fontSize = 16.sp, modifier = Modifier.alignByBaseline(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (stack) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { details(); percentage() }
+        else Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.weight(1f)) { details() }
+            percentage()
         }
     }
     Spacer(Modifier.height(12.dp))
     if (value == null) {
-        Text("服务暂未提供有效的用量数据，请稍后刷新。", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("服务暂未提供有效的用量数据，请稍后刷新。", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     } else {
         SegmentedBar(value, "${window.name}，${if (remaining) "剩余" else "已用"} ${window.percentageLabel(remaining)}%")
         Spacer(Modifier.height(6.dp))
-        Text(if (remaining) "剩余额度" else "已用额度", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(if (remaining) "剩余额度" else "已用额度", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 fun SegmentedBar(percent: Double?, description: String) {
     val track = MaterialTheme.colorScheme.surfaceVariant
+    val fill = MaterialTheme.colorScheme.primary
     Canvas(Modifier.fillMaxWidth().height(17.dp).semantics { contentDescription = description }) {
         val count = 40
         val gap = 3.dp.toPx()
         val width = (size.width - gap * (count - 1)) / count
         repeat(count) { i ->
-            drawRoundRect(if (percent != null && i < percent / 100 * count) QuotaBlue else track,
+            drawRoundRect(if (percent != null && i < percent / 100 * count) fill else track,
                 Offset(i * (width + gap), 0f), Size(width.coerceAtLeast(1f), size.height), CornerRadius(1.dp.toPx()))
         }
     }
@@ -283,13 +322,13 @@ private fun Notice(title: String, subtitle: String, icon: ImageVector) {
 private fun WidgetPage(state: AppState, prefs: PreferencesState) {
     val context = LocalContext.current
     var help by remember { mutableStateOf(false) }
-    PageTitle("留在桌面，一眼可见。", "2×1 横条、紧凑与宽版布局。长按小组件可调整大小与显示方式。")
+    PageTitle("桌面小组件", "选择布局添加到桌面，长按小组件可调整大小与显示方式。")
     val preview = state.snapshot ?: remember { demoSnapshot(Instant.now().epochSecond) }
     if (state.snapshot == null || state.demo) Text("布局预览 · 示例数据", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Spacer(Modifier.height(12.dp))
     Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().padding(22.dp)) {
-            Row { Text("Codex", fontWeight = FontWeight.SemiBold); Spacer(Modifier.weight(1f)); Text("${absoluteTime(preview.fetchedAt)}", fontSize = 11.sp) }
+            Row { Text("Codex", fontWeight = FontWeight.SemiBold); Spacer(Modifier.weight(1f)); Text("${absoluteTime(preview.fetchedAt)}", fontSize = 12.sp) }
             Spacer(Modifier.height(20.dp))
             QuotaStatusNotice(preview)
             preview.windows.take(2).forEachIndexed { i, window ->
@@ -320,33 +359,36 @@ private fun WidgetPage(state: AppState, prefs: PreferencesState) {
     if (help) Text("长按桌面空白处 → 小组件 → QuotaPal，即可添加。", Modifier.padding(top = 12.dp), fontSize = 13.sp)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainViewModel) {
     var confirmLogout by remember { mutableStateOf(false) }
-    PageTitle("按你的习惯。", "显示、更新与账号连接，都在这里。")
+    PageTitle("设置", "管理显示方式、后台更新与账号连接。")
     Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().padding(20.dp)) {
             Text("显示方式", fontWeight = FontWeight.Medium)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("显示剩余额度", Modifier.weight(1f), fontSize = 14.sp)
-                Switch(prefs.showRemaining, onCheckedChange = model::showRemaining)
-            }
+            PreferenceToggle("显示剩余额度", prefs.showRemaining, model::showRemaining,
+                modifier = Modifier.testTag("show-remaining-toggle"), supportingText = "同步更新所有桌面小组件。")
+            Spacer(Modifier.height(8.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(Modifier.height(16.dp)); Text("外观", fontSize = 14.sp)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("system" to "跟随系统", "light" to "浅色", "dark" to "深色").forEach { (id, label) ->
-                    FilterChip(prefs.theme == id, onClick = { model.theme(id) }, label = { Text(label, fontSize = 12.sp) }, modifier = Modifier.testTag("theme-$id"))
+                    FilterChip(prefs.theme == id, onClick = { model.theme(id) }, label = { Text(label, fontSize = 14.sp) }, modifier = Modifier.testTag("theme-$id"))
                 }
             }
             Spacer(Modifier.height(12.dp)); Text("后台目标间隔", fontSize = 14.sp)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(15L, 30L, 60L).forEach { minutes -> FilterChip(prefs.refreshMinutes == minutes, onClick = { model.refreshMinutes(minutes) }, label = { Text("$minutes 分钟", fontSize = 12.sp) }) }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(15L, 30L, 60L).forEach { minutes -> FilterChip(prefs.refreshMinutes == minutes, onClick = { model.refreshMinutes(minutes) }, label = { Text("$minutes 分钟", fontSize = 14.sp) }) }
             }
             Text("后台刷新受系统省电与网络影响，可能延迟。持续失败时每轮最多尝试 3 次，之后等待下一周期或手动刷新。", fontSize = 12.sp, lineHeight = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
     Spacer(Modifier.height(18.dp))
     BackgroundGuide()
+    Spacer(Modifier.height(18.dp))
+    val updates by model.updates.collectAsStateWithLifecycle()
+    AppUpdatesCard(updates, model::checkForUpdates, model::automaticUpdates, model::updateNotificationPermissionChanged)
     Spacer(Modifier.height(18.dp))
     Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().padding(20.dp)) {
@@ -361,10 +403,10 @@ private fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainVi
     DiagnosticEntry()
     PrivacyNoticeEntry()
     Spacer(Modifier.height(24.dp))
-    Text("QuotaPal ${com.tsonglew.quotapal.BuildConfig.VERSION_NAME}\n独立第三方工具 · 连接能力处于实验阶段\n应用仅获取额度；登录凭据的权限可能覆盖更多能力。", fontSize = 11.sp,
+    Text("QuotaPal ${com.tsonglew.quotapal.BuildConfig.VERSION_NAME}\n独立第三方工具 · 连接能力处于实验阶段\n应用仅读取额度与用量统计；登录凭据的权限可能覆盖更多能力。", fontSize = 12.sp,
         lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     if (confirmLogout) AlertDialog(onDismissRequest = { confirmLogout = false }, title = { Text("清除本机连接？") },
-        text = { Text("本机凭据、额度缓存与后台任务将被清除，桌面小组件恢复为未连接。远程授权不会在此操作中撤销。") },
+        text = { Text("本机凭据、额度缓存与额度后台任务将被清除，桌面小组件恢复为未连接。显示与应用更新偏好会保留。远程授权不会在此操作中撤销。") },
         confirmButton = { TextButton(onClick = { confirmLogout = false; model.logout() }, modifier = Modifier.testTag("confirm-logout")) { Text("清除") } },
         dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("取消") } })
 }
@@ -384,7 +426,7 @@ private fun LoginDialog(login: LoginState, cancel: () -> Unit, retry: () -> Unit
                 SelectionContainer { Text(login.challenge.userCode, fontFamily = FontFamily.Monospace, fontSize = 26.sp, fontWeight = FontWeight.SemiBold) }
                 Text("等待授权完成 · 15 分钟内有效", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text("设备登录与额度接口为实验性兼容接入。凭据加密保存在本机，应用不执行模型请求或消耗重置次数。", fontSize = 11.sp,
+            Text("设备登录与额度接口为实验性兼容接入。凭据加密保存在本机，应用不执行模型请求或消耗重置次数。", fontSize = 12.sp,
                 lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             DiagnosticEntry()
     PrivacyNoticeEntry()
@@ -431,7 +473,7 @@ private fun DiagnosticEntry() {
     TextButton(onClick = { scope.launch(Dispatchers.Main.immediate) { val result = withContext(Dispatchers.IO) { runCatching { context.quotaApp.diagnostics.clear() } }; result.onFailure { failed = true } } }, modifier = Modifier.testTag("diagnostics-clear")) { Text("清除诊断记录") }
     report?.let { text ->
         AlertDialog(onDismissRequest = { report = null }, title = { Text("诊断报告") },
-            text = { SelectionContainer { Text(text, fontSize = 11.sp, modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()).testTag("diagnostics-report")) } },
+            text = { SelectionContainer { Text(text, fontSize = 12.sp, modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()).testTag("diagnostics-report")) } },
             confirmButton = { TextButton(onClick = {
                 runCatching { context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text)
