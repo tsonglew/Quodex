@@ -30,6 +30,7 @@ data class UsageSnapshot(
     val resetCredits: Int? = null,
     val allowed: Boolean? = null,
     val limitReached: Boolean? = null,
+    val tokenUsage: TokenUsageSnapshot? = null,
 ) {
     fun quotaNotice(): QuotaNotice? {
         val mainWindows = windows.filter { it.id.startsWith("codex:") || it.id.startsWith("demo:") }

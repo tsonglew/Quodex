@@ -27,6 +27,7 @@ class CodexApi(
     private val usageUrl: String = "https://chatgpt.com/backend-api/wham/usage",
     private val now: () -> Long = { Instant.now().epochSecond },
     private val diagnostics: Diagnostics? = null,
+    private val tokenUsageUrl: String = "https://chatgpt.com/backend-api/wham/profiles/me",
 ) {
     companion object {
         // Public client identifier from openai/codex; not a client secret.
@@ -37,7 +38,11 @@ class CodexApi(
     private data class Reply(val status: Int, val body: String, val retryAfter: String?)
     private suspend fun send(request: Request): Reply = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         suspendCancellableCoroutine { cont ->
-            val operation = if (request.url.toString() == usageUrl) 0L else 1L
+            val operation = when (request.url.toString()) {
+                usageUrl -> 0L
+                tokenUsageUrl -> 2L
+                else -> 1L
+            }
             val started = System.nanoTime()
             diagnostics?.record(DiagnosticEvent.HTTP_START, operation)
             val call = client.newCall(request.newBuilder().header("User-Agent", "QuotaPal/0.1 Android")
@@ -141,6 +146,12 @@ class CodexApi(
             .header("ChatGPT-Account-Id", session.accountId).get().build())
         return UsageParser.parse(check(reply), session.accountId, now())
     }
+
+    suspend fun tokenUsage(session: Session): TokenUsageSnapshot = kotlinx.coroutines.withTimeoutOrNull(10_000) {
+        val reply = send(Request.Builder().url(tokenUsageUrl).header("Authorization", "Bearer ${session.accessToken}")
+            .header("ChatGPT-Account-Id", session.accountId).get().build())
+        TokenUsageParser.parse(check(reply), now())
+    } ?: throw ApiFailure(FailureKind.NETWORK)
 
     private fun jwtClaims(token: String): JsonObject = try {
         val part = token.split('.')[1]

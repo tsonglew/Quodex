@@ -30,10 +30,26 @@ def publish(directory, source, run_id, attempt, repo, execute=subprocess.run):
     digest = hashlib.sha256(apk.read_bytes()).hexdigest()
     if digest != provenance['sha256'] or (directory / 'SHA256SUMS').read_text() != f'{digest}  {apk.name}\n':
         raise ValueError('APK checksum mismatch')
+    version_code = provenance.get('version_code')
+    certificate = provenance.get('signing_cert_sha256')
+    if type(version_code) is not int or not 1 <= version_code <= 2100000000:
+        raise ValueError('Invalid version code')
+    if not isinstance(certificate, str) or not re.fullmatch(r'[0-9a-f]{64}', certificate):
+        raise ValueError('Invalid signing certificate')
+    release_notes = (directory / 'release-notes.md').read_text()
+    blocks = re.findall(r'<!-- quotapal-update\n(.*?)\n-->', release_notes, flags=re.DOTALL)
+    expected_update = dict(schema=1, version_code=version_code, version_name=version_tag[1:],
+                           source_sha=source, signing_cert_sha256=certificate, apk_name=apk.name)
+    if len(blocks) != 1 or release_notes.count('<!-- quotapal-update') != 1:
+        raise ValueError('Missing or duplicate update metadata')
+    update = json.loads(blocks[0])
+    if (update != expected_update or type(update.get('schema')) is not int
+            or type(update.get('version_code')) is not int):
+        raise ValueError('Update metadata does not match signed provenance')
     # Each workflow attempt gets its own tag; published assets are never replaced.
     tag = f'build-{run_id}-{attempt}'
     notes = directory / 'build-release-notes.md'
-    notes.write_text((directory / 'release-notes.md').read_text() +
+    notes.write_text(release_notes +
                     f'\n自动构建预发布：{tag}。真机及长期稳定性验收仍在进行。\n\n'
                     f'构建记录：https://github.com/{repo}/actions/runs/{run_id}\n')
     # Creating a fresh ref fails closed on collision, including an existing draft.

@@ -18,6 +18,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import com.tsonglew.quotapal.update.*
 
 open class QuotaPalApplication : Application() {
     val diagnostics by lazy { Diagnostics(File(noBackupFilesDir, "diagnostics/events.log")) }
@@ -27,6 +28,10 @@ open class QuotaPalApplication : Application() {
     fun wallClockChanged() { mutableWallClockRevision.update { it + 1 } }
     open val api by lazy { CodexApi(diagnostics = diagnostics) }
     val settings by lazy { SettingsStore(this) }
+    open val updateSource: UpdateSource by lazy {
+        GitHubUpdateClient(BuildConfig.VERSION_CODE.toLong(), installedSigningCertificate(this))
+    }
+    val updates by lazy { UpdateRepository(updateSource, AndroidUpdateStore(this), AndroidUpdateNotifier(this), BuildConfig.VERSION_CODE.toLong()) }
     val repository by lazy {
         UsageRepository(api, CredentialVault(this), Room.databaseBuilder(this, QuotaDatabase::class.java, "quota.db").build().snapshots(), settings, diagnostics = diagnostics)
     }
@@ -36,6 +41,13 @@ open class QuotaPalApplication : Application() {
             Thread.setDefaultUncaughtExceptionHandler(CrashRecorder(previous, diagnostics, android.os.Looper.getMainLooper().thread))
         }
         scope.launch { diagnostics.record(DiagnosticEvent.APP_START); repository.initialize() }
+        scope.launch {
+            try {
+                updates.initialize()
+                AppUpdateScheduler.reconcile(this@QuotaPalApplication, updates.state.value.saved.enabled)
+            } catch (cancel: CancellationException) { throw cancel }
+            catch (_: Exception) { /* A storage error must not prevent quota display. */ }
+        }
     }
     suspend fun updateWidgets() = withContext(Dispatchers.IO) {
         diagnostics.record(DiagnosticEvent.WIDGET_START)

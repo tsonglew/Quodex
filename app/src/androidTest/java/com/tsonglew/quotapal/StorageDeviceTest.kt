@@ -43,4 +43,43 @@ class StorageDeviceTest {
             assertEquals(true to "light", settings.widgetSettings(70002))
         } finally { settings.deleteWidget(70001); settings.deleteWidget(70002) }
     }
+
+    @Test fun globalRemainingSwitchUpdatesAllInstancesAndPreservesTheirThemes() = runBlocking {
+        val settings = context.quotaApp.settings
+        val originalRemaining = settings.read().showRemaining
+        val firstId = 71001
+        val secondId = 71002
+        val unconfiguredId = 71003
+        val ownIds = listOf(firstId, secondId, unconfiguredId)
+        try {
+            ownIds.forEach { settings.deleteWidget(it) }
+            settings.saveWidget(firstId, false, "dark")
+            settings.saveWidget(secondId, true, "light")
+
+            // A global change must override already-configured instances as well as defaults.
+            for (remaining in listOf(false, true)) {
+                settings.showRemaining(remaining)
+                val reloaded = SettingsStore(context)
+                assertEquals(remaining, reloaded.read().showRemaining)
+                assertEquals(remaining to "dark", reloaded.widgetSettings(firstId))
+                assertEquals(remaining to "light", reloaded.widgetSettings(secondId))
+                assertEquals(remaining to "system", reloaded.widgetSettings(unconfiguredId))
+            }
+
+            // Individual configuration still applies until the next global synchronization.
+            settings.saveWidget(firstId, false, "dark")
+            assertTrue(settings.read().showRemaining)
+            assertEquals(false to "dark", settings.widgetSettings(firstId))
+            assertEquals(true to "light", settings.widgetSettings(secondId))
+            assertEquals(true to "system", settings.widgetSettings(unconfiguredId))
+            settings.showRemaining(true)
+            val reloaded = SettingsStore(context)
+            assertEquals(true to "dark", reloaded.widgetSettings(firstId))
+            assertEquals(true to "light", reloaded.widgetSettings(secondId))
+            assertEquals(true to "system", reloaded.widgetSettings(unconfiguredId))
+        } finally {
+            ownIds.forEach { settings.deleteWidget(it) }
+            settings.showRemaining(originalRemaining)
+        }
+    }
 }

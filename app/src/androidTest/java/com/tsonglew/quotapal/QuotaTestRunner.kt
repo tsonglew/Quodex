@@ -18,7 +18,13 @@ class QuotaTestRunner : AndroidJUnitRunner() {
 }
 
 class TestQuotaApplication : QuotaPalApplication() {
+    val updateRequests = AtomicInteger()
+    @Volatile var availableUpdate: com.tsonglew.quotapal.update.AppUpdate? = null
+    override val updateSource = com.tsonglew.quotapal.update.UpdateSource { updateRequests.incrementAndGet(); availableUpdate }
     val usageRequests = AtomicInteger()
+    val tokenUsageRequests = AtomicInteger()
+    @Volatile var tokenUsageStatusCode = 200
+    @Volatile var tokenUsageBody = """{"stats":{"lifetime_tokens":1234567,"peak_daily_tokens":45000,"daily_usage_buckets":[{"start_date":"2026-10-20","tokens":12000},{"start_date":"2026-10-21","tokens":0},{"start_date":"2026-10-22","tokens":45000}]}}"""
     val usageRequestTimes = java.util.concurrent.ConcurrentLinkedQueue<Long>()
     @Volatile var usedPercent = 38
     @Volatile var responseDelayMillis = 0L
@@ -28,6 +34,12 @@ class TestQuotaApplication : QuotaPalApplication() {
     @Volatile var usageTransportFailure: java.io.IOException? = null
     override val api by lazy {
         CodexApi(OkHttpClient.Builder().addInterceptor { chain ->
+            if (chain.request().url.encodedPath == "/backend-api/wham/profiles/me") {
+                tokenUsageRequests.incrementAndGet()
+                return@addInterceptor Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                    .code(tokenUsageStatusCode).message("Test token response")
+                    .body(tokenUsageBody.toResponseBody("application/json".toMediaType())).build()
+            }
             if (chain.request().url.encodedPath != "/backend-api/wham/usage") {
                 throw java.io.IOException("No external network in device tests")
             }

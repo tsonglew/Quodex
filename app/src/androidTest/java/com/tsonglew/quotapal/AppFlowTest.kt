@@ -40,6 +40,30 @@ class AppFlowTest {
         compose.onNodeWithTag("connect-button").assertExists()
         screenshot("welcome-dark")
     }
+    @Test fun manualAppUpdateCheckWorksWithAutomaticChecksOffAndShowsDownloadEntry() {
+        val app = compose.activity.quotaApp as TestQuotaApplication
+        val quotaRequests = app.usageRequests.get()
+        val originalEnabled = app.updates.state.value.saved.enabled
+        runBlocking { app.updates.setEnabled(false) }
+        app.availableUpdate = com.tsonglew.quotapal.update.AppUpdate(BuildConfig.VERSION_CODE + 1L,
+            "0.1.0-alpha22", "https://github.com/tsonglew/QuotaPal/releases/tag/v0.1.0-alpha22", "a".repeat(40))
+        try {
+            compose.onNodeWithTag("tab-settings").performClick()
+            compose.onNodeWithTag("automatic-app-updates").performScrollTo().assertIsOff()
+            val before = app.updateRequests.get()
+            compose.onNodeWithTag("check-app-update").performScrollTo().performClick()
+            compose.waitUntil(10_000) { app.updateRequests.get() > before && !app.updates.state.value.checking }
+            compose.onNodeWithTag("open-app-update").performScrollTo().assertIsDisplayed()
+            screenshot("app-update-settings")
+            compose.onNodeWithTag("tab-quota").performClick()
+            compose.onNodeWithTag("open-app-update").assertIsDisplayed()
+            org.junit.Assert.assertEquals(quotaRequests, app.usageRequests.get())
+        } finally {
+            app.availableUpdate = null
+            runBlocking { app.updates.check(force = true); app.updates.setEnabled(originalEnabled) }
+        }
+    }
+
     @Test fun backgroundGuideCanSwitchBrandsAndCollapse() {
         compose.onNodeWithTag("tab-settings").performClick()
         compose.onNodeWithTag("background-guide-toggle").performScrollTo().performClick()
@@ -58,7 +82,7 @@ class AppFlowTest {
     @Test fun privacyNoticeIsAvailableOfflineInSettingsAndBeforeLogin() {
         compose.onNodeWithTag("tab-settings").performClick()
         compose.onNodeWithTag("privacy-notice-button").performScrollTo().performClick()
-        compose.onNodeWithTag("privacy-notice-text").assertTextContains("额度缓存本身不是加密数据库", substring = true)
+        compose.onNodeWithTag("privacy-notice-text").assertTextContains("缓存本身不是加密数据库", substring = true)
         saveDeviceScreenshot(compose.activity, "privacy-notice", compose.onNode(isDialog()).captureToImage().asAndroidBitmap())
         compose.onNodeWithTag("privacy-notice-close").performClick()
         compose.onNodeWithTag("privacy-notice-text").assertDoesNotExist()

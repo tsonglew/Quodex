@@ -2,6 +2,22 @@
 
 自动化结果以 [Android CI](https://github.com/tsonglew/QuotaPal/actions/workflows/android.yml) 为准；阶段进度见 [PROGRESS.md](PROGRESS.md)，完整验收见 [DEVELOPMENT_CHECKLIST.md](DEVELOPMENT_CHECKLIST.md)。
 
+## alpha21 Android UI/UX 优化
+
+2026-10-22，按 [官方指南与设计取舍](UI_UX.md) 调整页面、主题和控件。本地 `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest` 成功：152 项 JVM 测试、0 失败；lint 0 错误、43 项既有警告；App 与测试 APK 生成成功。
+
+API 31 专用模拟器通过 17 项不同的原生回归：
+
+- `UiExperienceTest` 手机 3 项通过（12.345 秒），验证两个标签独立滚动恢复、30 天周期保持、固定刷新入口、开关标签与状态语义、至少 48dp 的触摸范围、点击文字切换，以及真实系统 200% 字体与 320dp 容器中的文字布局和主要操作。字体设置结束后恢复。
+- 宽屏专项在普通手机配置按条件跳过，随后将专用模拟器临时调整为 160dpi，在实际宽窗口中单独运行通过（7.494 秒）；检查侧边导航的位置、纵向排列与内容最大 640dp，之后恢复密度。
+- 最终 AppFlow 6 项、TokenUsage 3 项、QuotaStatus 3 项、真实全局开关／三个小组件联动 1 项全部通过（35.334 秒）。
+
+已查看最终浅深色首页、设置、320dp／200% 字体的趋势与更新页面，以及宽屏额度／设置截图。测试捕获到品牌标识在大字体下继承正文行高而裁切，已修正标识字号和行高；首次切换标签出现复用的旧渲染画面，已恢复按标签隔离渲染节点，同时保留可保存状态，并以新截图及回归核对。
+
+Compose 1.8.2 的 SimpleText 语义接口按原最大宽度重建 `MultiParagraph`，同时保留文字实际测量宽度，直接读取 `didOverflowWidth` 会将正常的短文本误报为溢出。依据 Google Maven 官方 `ParagraphLayoutCache` 源码，测试改为逐行实际文字宽度与测量宽度比较，仍检查高度溢出、最大行数和省略号；原始诊断全部保留。截图在原生渲染帧完成后捕获，早期失败／旧画面不作为通过证据。
+
+本地证据位于 `artifacts/ui-ux-validation/`：最终构建 `gradle-layout-fix.log`、手机专项 `ux-device-final.txt`、宽屏专项 `wide-device-test.txt`、既有回归 `existing-device-final.txt`、`contrast.json`、`ui-layout-diagnostics.txt` 及 `screenshots/`。本轮未运行远端 CI、真实 TalkBack 人工体验或 OEM 验收，改动尚未发布。
+
 ## 自动化验证
 
 ```sh
@@ -173,3 +189,41 @@ alpha17 本地验证：71 项 JVM 测试、lint 和构建通过；完整 AppFlow
 Doze、后台受限、系统省电三种真实状态的单周期观察均通过，配合 API 29／31 的真实 503 指数退避、第三次终止及新请求恢复验证，E03 完成。实际正式包来源均为 alpha16／6ac605a；alpha17 仅新增诊断字段与测试，未修改这些后台生产路径。此结论不扩展为 OEM、真实账号或长期稳定性通过。
 
 [清理记录](diagnostics/power-api31/cleanup.txt) 确认合成账号和 APK 已删除、hosts 恢复、临时 CA 和 adb reverse 移除、全局代理关闭；模拟器实际重启后再次核验，实验服务停止、临时私钥删除。用户的 APK 签名 keystore 未读取或修改。
+
+
+## alpha20 应用更新提醒
+
+2026-10-22 本地通过 109 项 JVM 回归、46 项发布工具回归、debug lint（0 错误、43 既有警告）、App 与 instrumentation APK 构建。新增客户端测试覆盖正式／预发布筛选、版本号顺序、签名不匹配、同版本／降级、无资产、非法 URL、损坏元数据、分页与预算、限流／失败、取消及请求不含账号凭据。仓库回归覆盖 12 小时节流、并发合并、关闭后手动检查、权限拒绝后补通知、跨进程去重、升级清理、断网缓存、时间回拨和取消恢复。发布工具核对 metadata 与签名来源一致，失败前不得写入 GitHub。
+
+API 31 ARM64 本地模拟器执行 `AppUpdatesDeviceTest` 和 `AppFlowTest#manualAppUpdateCheckWorksWithAutomaticChecksOffAndShowsDownloadEntry`：3 项实际通过，Android 13+ 通知权限拒绝项按条件跳过。实际验证 WorkManager 唯一任务、关闭任务、通知显示与清除、自动检查关闭后的手动检查、设置及首页下载入口，且不增加额度请求；原生设置截图已查看。运行记录保存在本机 `artifacts/app-update-validation/`，模拟器验证后关闭。
+
+发布后还需验收：
+
+1. Android 13+ 首次通知授权、拒绝、再次从系统设置开启及渠道关闭；拒绝后仍能查看 App 内提示。权限拒绝设备测试在无授权环境运行，通知投递测试在已授权环境或 API 29/31 运行，避免测试内撤销权限杀死自身进程。
+2. 安装固定签名的 alpha20，再发布更高 versionCode 候选：仅提醒一次，点击进入准确发布页，手动覆盖安装后旧通知／缓存清理。debug APK 不作为固定签名升级的验收依据。
+3. 网络断开／恢复、省电和 12 小时后台观察。WorkManager 的周期不是准点承诺，见 [官方调度说明](https://developer.android.com/develop/background-work/background-tasks/persistent/getting-started/define-work)。
+4. 旧版 alpha19 手动升级到支持检查的版本；同 code 的构建重跑不产生新提醒。
+
+## alpha21 Token 用量趋势
+
+2026-10-22 本地 `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest` 成功：152 项 JVM 测试、0 失败，lint 无错误（43 项既有警告），App 与设备测试 APK 已生成；46 项 Python 工具回归通过。相对 alpha20 增加 43 项回归：9 项严格解析、8 项 HTTP／诊断、18 项仓库并发／缓存／取消／账号隔离、7 项趋势聚合和 1 项小时观察统计隔离。数据均为合成 fixture，未读取真实账号凭据或响应。
+
+API 31 ARM64 模拟器中，`TokenUsageDeviceTest` 最终 3 项通过（7.120 秒）：
+
+- 切换 7／30 天，保留服务端日期；真实零值、缺失日期和区间合计分别展示，30 日明细可滚动至最早日期。
+- 手动统计请求返回 403 时保留上次曲线及额度状态，不增加额度请求；退出后清空统计，连接另一个合成账号不显示旧值。
+- 深色示例可切换周期，不请求账号统计，也不把示例写入账号快照。
+
+同轮 `AppFlowTest` 6 项、`AppUpdatesDeviceTest` 的通知投递／清除和唯一任务／关闭 2 项通过；API 33+ 通知权限拒绝项在 API 31 条件跳过。已查看浅色 7 日图、深色 30 日图、逐日明细和缓存错误状态四张原生截图。证据保存在本机忽略目录 `artifacts/token-trend-validation/`，包括 `gradle-final.log`、`device-build-final.log`、`python-tests.log`、`device-tests.txt`、`token-device-tests-final.txt` 与 `screenshots/`。
+
+首轮失败记录保留：取消后的立即重试已发起第二次 HTTP 调用，但 `localhost` 被选为未监听的 IPv6 地址，产生 `ConnectException: Connection refused`；测试服务现明确绑定并使用 `127.0.0.1`，保留取消完成屏障、双请求和缓存更新断言，18 项仓库专项及全套 JVM 回归通过。首轮设备测试的日期选择器同时匹配到弹窗内外的日期，现限定到明细列表并断言可见，三项 token 测试全部重跑通过。两处均为测试修正，未放宽产品错误处理或开启 HTTP 自动重试。
+
+真实账号的统计可用性、订阅／工作区覆盖、服务端日日期的时区定义及统计延迟仍待验证。本地合成数据回归不替代真实接口验收或远端多版本 CI；输入／输出／缓存 token 与费用拆分不在当前接口范围内。
+
+## alpha21 显示方式同步小组件
+
+2026-10-22 修复全局“显示剩余额度”被已有小组件实例覆盖值遮蔽的问题。全局值与实例覆盖的清理在同一次 DataStore 编辑中完成；原有组件更新和 Flow 订阅负责渲染，两种组件的主题保留。独立配置仍可使用，下次全局切换再次统一。
+
+本地 152 项 JVM 回归、debug lint（0 错误、43 项既有警告）、App 与测试 APK 构建通过。API 31 的 `StorageDeviceTest` 两项偏好测试通过，覆盖独立配置、相反实例值的全局同步、主题保留、未配置实例继承、重新读取和再次统一。新增 `WidgetDisplayPreferenceTest` 实际点击 App 开关，在两个标准组件和一个紧凑组件中验证剩余 62%→已用 38%→剩余 62%，检查标签、主题与请求计数；不由测试额外调用刷新来完成切换。最终专项通过（5.465 秒），已查看 `used.png`／`remaining.png`，三组件的数字、进度条与口径一致。
+
+证据位于本机忽略目录 `artifacts/widget-display-validation/`：`gradle.log`、`device-build-capture.log`、`device-tests.txt`（两项偏好通过与首轮宿主失败）、`widget-test-capture.txt` 和两张最终截图。测试宿主与 App 使用独立任务，避免 ActivityScenario 清理 App 任务时同时销毁模拟桌面；返回宿主并确认窗口焦点，等待绘制帧后截图。早期空白／旧帧截图不作为视觉通过证据。本次未运行远端 CI 或 OEM Launcher 验收。

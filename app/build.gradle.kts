@@ -17,8 +17,8 @@ android {
         applicationId = "com.tsonglew.quotapal"
         minSdk = 29
         targetSdk = 36
-        versionCode = 19
-        versionName = "0.1.0-alpha19"
+        versionCode = 21
+        versionName = "0.1.0-alpha21"
         testInstrumentationRunner = "com.tsonglew.quotapal.QuotaTestRunner"
     }
     buildTypes {

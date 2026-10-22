@@ -27,6 +27,16 @@ class ObservationStoreTest {
         assertTrue(store().report(7200).contains("1970-01-01T02:00:00Z 0 0 0 0 1 7200 3600"))
     }
 
+    @Test fun tokenProfileTrafficDoesNotChangeQuotaOrAuthenticationObservationCounts() {
+        val s = store()
+        s.record(DiagnosticEvent.HTTP_START, longArrayOf(0), 3600)
+        val before = s.report(3600)
+        s.record(DiagnosticEvent.HTTP_START, longArrayOf(2), 3600)
+        s.record(DiagnosticEvent.HTTP_END, longArrayOf(2, 503), 3600)
+        s.record(DiagnosticEvent.HTTP_NETWORK_FAILURE, longArrayOf(2, 0), 3600)
+        assertEquals(before, s.report(3600))
+    }
+
     @Test fun boundsHistoryAndExpiresOldRowsWithoutNewEvents() {
         repeat(200) { store().record(DiagnosticEvent.HTTP_START, longArrayOf(0), (it + 1) * 3600L) }
         val report = store().report(200 * 3600L)
