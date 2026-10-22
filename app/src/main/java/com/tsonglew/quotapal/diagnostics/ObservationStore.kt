@@ -39,7 +39,21 @@ internal class ObservationStore(private val file: File) {
     fun report(now: Long): String {
         val hour = Math.floorDiv(now, 3600)
         val hours = read().filter { it.epoch in (hour - 167)..hour }.sortedBy { it.epoch }
-        return "Hourly observations schema=1 (UTC, last 168 hour buckets; absent hours have no recorded events)\n" +
+        val summaries = listOf(48, 168).joinToString("\n", postfix = "\n") { count ->
+            val window = hours.filter { it.epoch >= hour - count + 1 }
+            "hourBuckets=$count eventHourBuckets=${window.size}" +
+                " usageRequests=${window.sumOf { it.usage }} authRequests=${window.sumOf { it.auth }}" +
+                " httpNon2xx=${window.sumOf { it.nonSuccess }} networkFailures=${window.sumOf { it.networkFailure }}" +
+                " snapshotsSaved=${window.sumOf { it.saved }}" +
+                " maxCompletedSuccessGapSeconds=${window.filter { it.saved > 0 }.maxOfOrNull { it.maxGap } ?: 0}"
+        }
+        val lastSavedAt = hours.filter { it.saved > 0 }.maxOfOrNull { it.lastSavedAt }?.takeIf { it in 1..now }
+        return "Observation summaries schema=1 (UTC hour buckets, including the current partial hour)\n" +
+            "Counts do not establish observation duration, uptime or battery usage; absent hours have no recorded events.\n" +
+            "Completed gaps end in the selected window and may start before it; ongoing gaps are reported separately.\n" +
+            summaries +
+            "lastSavedAt=${lastSavedAt ?: "unknown"} secondsSinceLastSuccess=${lastSavedAt?.let { now - it } ?: "unknown"}\n\n" +
+            "Hourly observations schema=1 (UTC, last 168 hour buckets; absent hours have no recorded events)\n" +
             "hour usageRequests authRequests httpNon2xx networkFailures snapshotsSaved lastSavedAt maxSuccessGapSeconds\n" +
             hours.joinToString("\n", postfix = "\n") {
                 "${Instant.ofEpochSecond(it.epoch * 3600)} ${it.usage} ${it.auth} ${it.nonSuccess} ${it.networkFailure} ${it.saved} ${it.lastSavedAt} ${it.maxGap}"

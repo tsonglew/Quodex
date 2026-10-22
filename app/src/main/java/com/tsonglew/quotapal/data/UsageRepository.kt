@@ -3,6 +3,9 @@ package com.tsonglew.quotapal.data
 import com.tsonglew.quotapal.diagnostics.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -67,12 +70,64 @@ class UsageRepository(
     suspend fun connect(session: Session) = withContext(Dispatchers.IO) {
         val ticket = generation.incrementAndGet()
         lock.withLock {
+            suspend fun checkConnection() {
+                currentCoroutineContext().ensureActive()
+                if (ticket != generation.get()) throw CancellationException("Connection superseded")
+            }
+            checkConnection()
             val snapshot = api.usage(session)
-            if (ticket != generation.get()) return@withLock
-            vault.write(session)
-            dao.write(SnapshotRecord(accountId = session.accountId, json = AppJson.encodeToString(snapshot)))
-            settings.demo(false)
-            settings.syncResult(null, lastAttemptAt = now())
+            checkConnection()
+            // An unreadable encrypted session is precisely one reason to reconnect.
+            val previousSession = try { vault.read() } catch (failure: ApiFailure) {
+                if (failure.kind != FailureKind.STORAGE) throw failure
+                null
+            }
+            val previousSnapshot = dao.read()
+            val previousSettings = settings.read()
+            checkConnection()
+            var snapshotTouched = false
+            var settingsTouched = false
+            var credentialsTouched = false
+            try {
+                snapshotTouched = true
+                dao.write(SnapshotRecord(accountId = session.accountId, json = AppJson.encodeToString(snapshot)))
+                checkConnection()
+                settingsTouched = true
+                settings.demo(false)
+                settings.syncResult(null, lastAttemptAt = now())
+                checkConnection()
+                // Commit credentials last so a cancelled cache/preferences write cannot
+                // silently reconnect this account the next time the process starts.
+                credentialsTouched = true
+                vault.write(session)
+                checkConnection()
+            } catch (failure: Exception) {
+                withContext(NonCancellable) {
+                    var rollbackFailed = false
+                    suspend fun restore(block: suspend () -> Unit): Boolean = try {
+                        block(); true
+                    } catch (error: Exception) {
+                        rollbackFailed = true
+                        if (error !== failure) failure.addSuppressed(error)
+                        false
+                    }
+                    if (credentialsTouched && !restore {
+                            if (previousSession == null) vault.clear() else vault.write(previousSession)
+                        }) restore { vault.clear() }
+                    if (snapshotTouched) restore {
+                        if (previousSnapshot == null) dao.clear() else dao.write(previousSnapshot)
+                    }
+                    if (settingsTouched) {
+                        restore { settings.demo(previousSettings.demo) }
+                        restore { settings.syncResult(previousSettings.lastFailure, previousSettings.retryAt, previousSettings.lastAttemptAt) }
+                    }
+                    if (rollbackFailed) {
+                        // Do not advertise a valid connection after an incomplete rollback.
+                        mutableState.value = AppState(initialized = true, failure = FailureKind.STORAGE)
+                    }
+                }
+                throw failure
+            }
             diagnostics?.record(DiagnosticEvent.SNAPSHOT_SAVED)
             mutableState.value = AppState(true, true, snapshot)
         }

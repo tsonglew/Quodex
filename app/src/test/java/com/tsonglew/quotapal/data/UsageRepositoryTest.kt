@@ -1,6 +1,7 @@
 package com.tsonglew.quotapal.data
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -20,9 +21,134 @@ class UsageRepositoryTest {
     @Before fun start() {
         server.start()
         vault.session = Session("access", "refresh", "test-account", 9000)
-        repository = UsageRepository(CodexApi(authBase = server.url("/").toString().trimEnd('/'), usageUrl = server.url("/usage").toString(), now = { 1000 }), vault, dao, settings, now = { 1000 })
+        repository = newRepository()
     }
     @After fun stop() { server.shutdown() }
+    private fun newRepository() = UsageRepository(CodexApi(authBase = server.url("/").toString().trimEnd('/'), usageUrl = server.url("/usage").toString(), now = { 1000 }), vault, dao, settings, now = { 1000 })
+
+    private suspend fun seedPreviousConnection(): AppState {
+        dao.record = SnapshotRecord(accountId = "test-account", json = AppJson.encodeToString(demoSnapshot(500).copy(accountId = "test-account")))
+        settings.value = settings.value.copy(lastFailure = FailureKind.LIMITED, retryAt = 1200, lastAttemptAt = 950)
+        repository.initialize()
+        return repository.state.value
+    }
+
+    @Test fun cancelledFirstConnectionDoesNotReappearAfterRestart() = runBlocking {
+        vault.session = null
+        repository.initialize()
+        val writing = CompletableDeferred<Unit>()
+        dao.afterWrite = { writing.complete(Unit); awaitCancellation() }
+        server.enqueue(MockResponse().setBody(body))
+        val connection = launch { repository.connect(Session("new-access", "new-refresh", "test-account", 9000)) }
+        withTimeout(5000) { writing.await() }
+        repository.cancelPendingConnection()
+        connection.cancelAndJoin()
+        assertNull(vault.session)
+        assertNull(dao.record)
+        val restarted = newRepository().also { it.initialize() }
+        assertFalse(restarted.state.value.connected)
+        assertNull(restarted.state.value.snapshot)
+    }
+
+    @Test fun cancelledReconnectRestoresPreviousAccountCacheAndBackoff() = runBlocking {
+        val previousState = seedPreviousConnection()
+        val previousSession = vault.session
+        val previousSnapshot = dao.record
+        val previousSettings = settings.value
+        val writing = CompletableDeferred<Unit>()
+        settings.afterSyncResult = { writing.complete(Unit); awaitCancellation() }
+        server.enqueue(MockResponse().setBody(body.replace("test-account", "second-account")))
+        val connection = launch { repository.connect(Session("new-access", "new-refresh", "second-account", 9000)) }
+        withTimeout(5000) { writing.await() }
+        repository.cancelPendingConnection()
+        connection.cancelAndJoin()
+        assertEquals(previousSession, vault.session)
+        assertEquals(previousSnapshot, dao.record)
+        assertEquals(previousSettings, settings.value)
+        assertEquals(previousState, repository.state.value)
+        assertEquals(previousState, newRepository().also { it.initialize() }.state.value)
+    }
+
+    @Test fun partialSettingsWriteFailureRestoresPreviousConnection() = runBlocking {
+        val previousState = seedPreviousConnection()
+        val previousSession = vault.session
+        val previousSnapshot = dao.record
+        val previousSettings = settings.value
+        settings.afterSyncResult = { throw java.io.IOException("Failed after preferences changed") }
+        server.enqueue(MockResponse().setBody(body.replace("test-account", "second-account")))
+        val failure = runCatching { repository.connect(Session("new-access", "new-refresh", "second-account", 9000)) }.exceptionOrNull()
+        assertTrue(failure is java.io.IOException)
+        assertEquals(previousSession, vault.session)
+        assertEquals(previousSnapshot, dao.record)
+        assertEquals(previousSettings, settings.value)
+        assertEquals(previousState, newRepository().also { it.initialize() }.state.value)
+    }
+
+    @Test fun supersededConnectionRestoresCredentialsEvenAfterVaultWrite() = runBlocking {
+        val previousState = seedPreviousConnection()
+        val previousSession = vault.session
+        val previousSettings = settings.value
+        vault.afterWrite = { repository.cancelPendingConnection() }
+        server.enqueue(MockResponse().setBody(body.replace("test-account", "second-account")))
+        val failure = runCatching { repository.connect(Session("new-access", "new-refresh", "second-account", 9000)) }.exceptionOrNull()
+        assertTrue(failure is CancellationException)
+        assertEquals(previousSession, vault.session)
+        assertEquals(previousSettings, settings.value)
+        assertEquals(previousState, newRepository().also { it.initialize() }.state.value)
+    }
+
+    @Test fun logoutDuringConnectionCommitWinsAfterRollback() = runBlocking {
+        seedPreviousConnection()
+        val writing = CompletableDeferred<Unit>()
+        val finishWrite = CompletableDeferred<Unit>()
+        dao.afterWrite = { writing.complete(Unit); finishWrite.await() }
+        server.enqueue(MockResponse().setBody(body.replace("test-account", "second-account")))
+        val connection = async { runCatching { repository.connect(Session("new-access", "new-refresh", "second-account", 9000)) } }
+        withTimeout(5000) { writing.await() }
+        val logout = async { repository.logout() }
+        withTimeout(5000) { repository.state.first { !it.connected } }
+        finishWrite.complete(Unit)
+        assertTrue(connection.await().exceptionOrNull() is CancellationException)
+        logout.await()
+        assertNull(vault.session)
+        assertNull(dao.record)
+        assertEquals(PreferencesState(), settings.value)
+        assertFalse(newRepository().also { it.initialize() }.state.value.connected)
+    }
+
+    @Test fun failedCredentialRollbackClearsConnectionAndReportsStorageFailure() = runBlocking {
+        seedPreviousConnection()
+        var restoreAttempted = false
+        vault.afterWrite = {
+            vault.afterWrite = {
+                restoreAttempted = true
+                throw java.io.IOException("Previous credential restore failed")
+            }
+            throw java.io.IOException("New credential commit failed")
+        }
+        server.enqueue(MockResponse().setBody(body.replace("test-account", "second-account")))
+        val failure = runCatching { repository.connect(Session("new-access", "new-refresh", "second-account", 9000)) }.exceptionOrNull()
+        assertTrue(failure is java.io.IOException)
+        assertTrue(restoreAttempted)
+        assertNull(vault.session)
+        assertFalse(repository.state.value.connected)
+        assertNull(repository.state.value.snapshot)
+        assertEquals(FailureKind.STORAGE, repository.state.value.failure)
+        assertFalse(newRepository().also { it.initialize() }.state.value.connected)
+    }
+
+    @Test fun reconnectCanReplaceAnUnreadableEncryptedSession() = runBlocking {
+        vault.readFailure = ApiFailure(FailureKind.STORAGE)
+        repository.initialize()
+        server.enqueue(MockResponse().setBody(body))
+        val replacement = Session("new-access", "new-refresh", "test-account", 9000)
+        repository.connect(replacement)
+        vault.readFailure = null
+        assertEquals(replacement, vault.session)
+        assertTrue(repository.state.value.connected)
+        assertNull(repository.state.value.failure)
+        assertEquals(repository.state.value, newRepository().also { it.initialize() }.state.value)
+    }
     @Test fun unreadableDatabaseShowsStorageFailureKeepsSessionAndCanRecover() = runBlocking {
         val session = vault.session
         dao.readFailure = IllegalStateException("Database directory unavailable")
@@ -261,26 +387,39 @@ class UsageRepositoryTest {
     private class FakeVault : CredentialStore {
         var session: Session? = null
         var readFailure: Exception? = null
+        var afterWrite: (() -> Unit)? = null
         override fun read(): Session? { readFailure?.let { throw it }; return session }
-        override fun write(session: Session) { this.session = session }
+        override fun write(session: Session) {
+            this.session = session
+            val callback = afterWrite.also { afterWrite = null }
+            callback?.invoke()
+        }
         override fun clear() { session = null }
     }
     private class FakeDao : SnapshotDao {
         var record: SnapshotRecord? = null
         var readFailure: Exception? = null
+        var afterWrite: (suspend () -> Unit)? = null
         override suspend fun read(): SnapshotRecord? { readFailure?.let { throw it }; return record }
-        override suspend fun write(record: SnapshotRecord) { this.record = record }
+        override suspend fun write(record: SnapshotRecord) {
+            this.record = record
+            val callback = afterWrite.also { afterWrite = null }
+            callback?.invoke()
+        }
         override suspend fun clear() { record = null }
     }
     private class FakeSettings : SyncSettings {
         var value = PreferencesState()
         var writeFailureKind: FailureKind? = null
         var readFailure: Exception? = null
+        var afterSyncResult: (suspend () -> Unit)? = null
         override suspend fun read(): PreferencesState { readFailure?.let { throw it }; return value }
         override suspend fun demo(value: Boolean) { this.value = this.value.copy(demo = value) }
         override suspend fun syncResult(kind: FailureKind?, retryAt: Long, lastAttemptAt: Long?) {
             if (kind != null && kind == writeFailureKind) throw java.io.IOException("Preferences write unavailable")
             value = value.copy(lastFailure = kind, retryAt = retryAt, lastAttemptAt = lastAttemptAt ?: value.lastAttemptAt)
+            val callback = afterSyncResult.also { afterSyncResult = null }
+            callback?.invoke()
         }
     }
     companion object {
