@@ -1,6 +1,17 @@
 # QuotaPal 开发进度
 
-更新日期：2026-10-11（Asia/Shanghai）。用户已授权持续开发、按里程碑提交 PR 并合并，以及每次正式出包上传 GitHub Releases；PR #10–#20 已合并。当前版本 `0.1.0-alpha17`；自动构建预发布已实际成功，真实账号／OEM／长期验收仍单独跟踪。
+更新日期：2026-10-22（Asia/Shanghai）。当前开发基线为 `0.1.0-alpha19`／master `aeba22d`，包含 PR #24 的小米组件触摸修复；此前自动构建预发布已实际成功，真实账号／OEM／长期验收仍单独跟踪。
+
+## 2026-10-22 issue 对照改进
+
+已读取开放的 [接入验证 #1](https://github.com/tsonglew/QuotaPal/issues/1)、[账号与额度 #3](https://github.com/tsonglew/QuotaPal/issues/3)、[小组件与后台 #4](https://github.com/tsonglew/QuotaPal/issues/4)、[稳定性验证 #5](https://github.com/tsonglew/QuotaPal/issues/5) 和 [发布准备 #6](https://github.com/tsonglew/QuotaPal/issues/6)。这些 issue 无评论，正文仍为 10 月 9 日的阶段记录；已有实现与验收以本仓库后续证据为准。
+
+- A05／C03：修复连接过程中取消或存储写入失败后，新凭据可能残留、重启恢复错误连接的问题。缓存和同步设置先写入，凭据最后提交；取消、被后续操作替代或写入失败时，在同一仓库锁内恢复此前数据。补充首次连接、替换账号、退出竞争及存储故障回归。三个独立存储不构成跨进程崩溃的原子事务；本次不宣称解决任意断电或不可写存储下的恢复。
+- E08／E09：诊断增加 48／168 个 UTC 小时桶汇总和距最近成功刷新的时长，保留原小时明细与本地存储格式。小时桶含当前未结束小时，不能代表完整观察时长；耗电仍需结合设备系统记录，详见 [观察说明](SUPPORT.md#48-小时与-7-天观察)。
+
+本地验证：`./gradlew testDebugUnitTest lintDebug assembleDebug` 全部通过，83 项 JVM 测试零失败，其中本次新增 7 项连接回归和 5 项观察汇总回归；Markdown 本地链接与 `git diff --check` 通过。调试 APK 已生成。此记录为本地验证，云端／设备矩阵以对应 PR 的检查结果为准；真实授权生命周期、OEM 后台恢复、48 小时观察和 7 天自用仍待验收，不据此勾选 checklist。
+
+## 阶段状态
 
 | 阶段 | 当前状态 | 已有证据 | 下一步 |
 | --- | --- | --- | --- |
