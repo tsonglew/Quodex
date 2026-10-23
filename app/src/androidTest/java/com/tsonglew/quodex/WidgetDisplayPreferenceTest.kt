@@ -90,11 +90,13 @@ class WidgetDisplayPreferenceTest {
     }
 
     private fun awaitWidgets(host: ActivityScenario<WidgetTestHostActivity>, remaining: Boolean) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
         val expected = if (remaining) "62%" else "38%"
         val previous = if (remaining) "38%" else "62%"
         val label = if (remaining) "剩余" else "已用"
         var actual = emptyList<String>()
         var visible = false
+        var recoveredLauncherDialog = false
         val deadline = android.os.SystemClock.uptimeMillis() + 20_000
         while (android.os.SystemClock.uptimeMillis() < deadline) {
             host.onActivity { activity ->
@@ -103,9 +105,18 @@ class WidgetDisplayPreferenceTest {
                     .map { labels(it).joinToString(" | ") }
             }
             if (visible && actual.size == 3 && actual.all { expected in it && previous !in it && label in it }) return
+            // The emulator launcher can cover a correctly updated host with its own ANR.
+            // Keep the focus assertion and recover only the known external system dialog.
+            if (!visible && !recoveredLauncherDialog) {
+                recoveredLauncherDialog = dismissLauncherAnrOnEmulator(instrumentation)
+            }
             Thread.sleep(100)
         }
-        fail("All three real widgets must show $label $expected; actual=$actual")
+        instrumentation.uiAutomation.takeScreenshot()?.let {
+            saveDeviceScreenshot(instrumentation.targetContext, "widgets-global-update-timeout", it)
+        }
+        fail("All three real widgets must show $label $expected; focused=$visible; " +
+            "recoveredLauncherDialog=$recoveredLauncherDialog; actual=$actual")
     }
 
     private fun labels(view: View): List<String> = when (view) {
