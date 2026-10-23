@@ -26,7 +26,6 @@ APK SHA-256：
 6cccef0589f8c407099a312b09ac88f6ef09423d8bc6925d3a41620fa586b1ef
 ```
 
-本地交付位于 `artifacts/QuotaPal-0.1.0-alpha01-debug.apk`，校验文件在同目录。CI 的 `android-build` 产物包含同版 APK、单元测试及 lint 报告；`android-device-tests` 包含设备测试、截图及诊断，产物保留 14 天。APK 和完整报告未加入 Git，示例截图已随文档保存。
 
 ## 测试覆盖与实际限制
 

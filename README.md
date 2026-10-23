@@ -1,8 +1,8 @@
 # Quodex
 
-面向 Android 的 Codex 额度监控 App，参考 Nowdex 的额度速览与桌面小组件体验。Quodex 是独立第三方工具，与 OpenAI 无隶属关系。首版支持单 Codex 账号，先自用验证，再公开发布。
+面向 Android 的 Codex 额度监控 App，支持桌面小组件、重置时间和 token 使用趋势。Quodex 是独立第三方工具，与 OpenAI 无隶属关系。
 
-Quodex 使用新的 Android applicationId `com.tsonglew.quodex`。旧版 QuotaPal 不会原地升级为 Quodex；安装后需要重新连接账号，旧应用中的数据不会自动迁移。旧版更新检查地址也指向旧仓库，可能无法跟随 GitHub 的仓库改名跳转；请从新的 [Quodex Releases](https://github.com/tsonglew/Quodex/releases) 手动下载。两者可以暂时并存，确认新版本正常后再手动卸载旧版。
+[官网](https://tsonglew.github.io/quodex/) · [下载 APK](https://github.com/tsonglew/Quodex/releases)
 
 ![Quodex 浅色与深色界面，以及 2×1、标准和宽版桌面小组件预览](docs/assets/quodex-preview.png)
 

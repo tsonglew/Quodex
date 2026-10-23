@@ -19,7 +19,6 @@
 - 诊断独立 Kotlin／JUnit：10 项通过，涵盖容量轮转、跨实例保留、存储失败、7 天裁剪、时间回拨、清除、异常脱敏与系统异常处理保留。
 - 交付脚本：22 项通过，新增签名验证模式不调用 GitHub、验证模式仍拒绝指纹不符。
 - actionlint 1.7.12：通过（本机未安装 ShellCheck，使用 -shellcheck=''；CI 仍运行完整 ShellCheck）。`bash -n scripts/publish_release.sh`、`git diff --check` 通过。
-- release lint：通过，0 错误。首次 R8 构建在 300 秒命令预算内未结束；更长预算继续运行后 `assembleRelease` BUILD SUCCESSFUL（3m27s）。aapt2 检查 minified APK 的包名 com.tsonglew.quotapal、versionCode=15、versionName=0.1.0-alpha15、minSdk=29、targetSdk=36；无 debuggable 标记或 debug 测试宿主。
 - 本机 adb 设备列表为空。新增诊断预览／清除设备测试与现有组件测试的事件时序输出；设备执行结果待六版本 CI。
 
 ## 当前 CI 基线问题
@@ -73,7 +72,6 @@ PR #13 的精确提交 503d59d 在运行 [38031371128](https://github.com/tsongl
 
 已实际下载 [android-signed-apk](https://github.com/tsonglew/Quodex/actions/runs/38031990526/artifacts/11662492337)。独立校验结果如下。
 
-- APK：QuotaPal-0.1.0-alpha15.apk，包名 com.tsonglew.quotapal，versionCode=15，minSdk=29，targetSdk=36。
 - SHA-256：85bbcc69e94f39a7f5334f4ecdb0e74c142e16d312c7befa316b08e99c9aeb26；与 SHA256SUMS 和 provenance.json 一致。
 - apksigner 验证通过，实际证书 SHA-256 为 5e7980c122100ccf9799a5174cb0e5a1748b8c442c09c015e145003145d2b5d4，与 android-release 的公开证书变量及 provenance 一致；未读取或导出 keystore／密码。
 - zipalign -c -P 16 4 通过。provenance 的 source_sha 为上述 master a983dfd，mode=signing-check；此模式只生成签名资产，不调用 Release 发布接口。

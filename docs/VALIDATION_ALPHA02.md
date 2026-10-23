@@ -23,7 +23,6 @@
 
 ## 安装包
 
-[GitHub 预发布下载](https://github.com/tsonglew/Quodex/releases/tag/v0.1.0-alpha02)。文件：`QuotaPal-0.1.0-alpha02-debug.apk`，65,207,208 bytes。ZIP CRC 已校验。
 
 SHA-256：
 
