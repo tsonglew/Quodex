@@ -1,4 +1,12 @@
-# README 预览图素材与提示词
+# README 视觉素材来源
+
+## 当前展示（2026-10-23）
+
+README 已改用 [深海青品牌 SVG](brand/quodex-horizontal-color.svg)和 `docs/screenshots/deep-teal-api31/` 中的真实浅深色额度页截图。页面图片直接来自本地 API 31 模拟器，使用当前工作区 debug APK 和离线示例数据；截图原样复制，不经过合成、裁切或重绘。完整来源、APK 哈希及验证范围见 [原生截图索引](../SCREENSHOTS.md)，Logo 的深浅背景规则见 [品牌规范](../BRANDING.md)。
+
+本次没有生成或修改 `quodex-preview.png`。下方保留 2026-10-10 的原始制作记录，其 alpha03 蓝色界面属于历史展示，不代表当前深海青主题，也不证明当前版本已经发布。
+
+## 历史合成图来源与提示词
 
 生成日期：2026-10-10。使用 imagegen 技能与内置 `image_gen` 工具，基于原生截图合成展示图；未使用 CLI fallback。
 
