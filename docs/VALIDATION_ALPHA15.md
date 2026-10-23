@@ -24,7 +24,7 @@
 
 ## 当前 CI 基线问题
 
-只读核对确认 PR #9 已合并。主分支 [38013679974](https://github.com/tsonglew/QuotaPal/actions/runs/38013679974) 的 API 35／37.0 三组件刷新进度断言失败，统一 gate 失败，预览部署跳过。不能用此前某提交全绿覆盖此事实。
+只读核对确认 PR #9 已合并。主分支 [38013679974](https://github.com/tsonglew/Quodex/actions/runs/38013679974) 的 API 35／37.0 三组件刷新进度断言失败，统一 gate 失败，预览部署跳过。不能用此前某提交全绿覆盖此事实。
 
 当前分支保留原请求去重、实际触摸、三组件进度与成功快照断言，加入诊断时序输出，等待新 CI 实际运行定位。没有以跳过／放宽断言取得通过。G02／G03／G08 继续待验收。
 
@@ -33,9 +33,9 @@
 E03 的系统后台约束、E07／H04／I03 的 Samsung／小米 Launcher、E08 的 48 小时观察、E09 的七天自用及真实授权／续期保持未完成。签名环境配置不是实际签名、覆盖升级或公开发布成功的证据。
 
 
-PR [#10](https://github.com/tsonglew/QuotaPal/pull/10) 已创建并关联本任务。诊断实现提交为 2699a6582429801ee836bc0c410924b6e3f6fa28；该提交 build／delivery 通过，设备矩阵随后被新提交取消，不能视为通过。重复 push 运行被取消后，旧版 always() gate 将取消显示为失败。
+PR [#10](https://github.com/tsonglew/Quodex/pull/10) 已创建并关联本任务。诊断实现提交为 2699a6582429801ee836bc0c410924b6e3f6fa28；该提交 build／delivery 通过，设备矩阵随后被新提交取消，不能视为通过。重复 push 运行被取消后，旧版 always() gate 将取消显示为失败。
 
-修复提交 3e5aeb5953cd8539d9252a1c18c17fd01d883872 取消开发分支重复 push 触发，并令整个运行被取消时 gate 跳过；实际构建或测试失败仍使 gate 失败。actionlint 与 diff 检查通过。[新 CI 38018860257](https://github.com/tsonglew/QuotaPal/actions/runs/38018860257) 已启动，完整结果待核验。
+修复提交 3e5aeb5953cd8539d9252a1c18c17fd01d883872 取消开发分支重复 push 触发，并令整个运行被取消时 gate 跳过；实际构建或测试失败仍使 gate 失败。actionlint 与 diff 检查通过。[新 CI 38018860257](https://github.com/tsonglew/Quodex/actions/runs/38018860257) 已启动，完整结果待核验。
 
 已实际下载运行 38018860257 的 android-apk，使用 apk_artifact.py verify 校验成功：source_sha=3e5aeb5953cd8539d9252a1c18c17fd01d883872，build_sha=7789849b5456b280254a6d1e1953f937afefde6b，APK SHA-256=aebd3830dbf6cac157843d520d8bbe6dd6d96235ddf5292a12868507e3625d1c。aapt2 独立核对包名、versionCode=15、versionName=0.1.0-alpha15、minSdk=29、targetSdk=36；apksigner verify 通过。此为 debug 预览构建，不证明固定正式证书或成功 deployment。
 
@@ -43,7 +43,7 @@ PR [#10](https://github.com/tsonglew/QuotaPal/pull/10) 已创建并关联本任�
 
 运行 38018860257 最终 success：delivery、build、API 29／31／35／36／37.0／37.2 六组设备测试、Android CI gate 全部通过。API 29 实际下载 HTML 报告中 diagnosticsCanPreviewAndClearWithoutUploading=passed（5.457s），realRemoteViewsClickFetchesOnceForThreeWidgets=passed（5.043s）；保留原三组件进度与请求去重断言。此前主分支失败记录仍保留，本轮成功不表示已证明所有间歇性失败原因。
 
-预览工作流 [38019563477](https://github.com/tsonglew/QuotaPal/actions/runs/38019563477) success，deployment 6975361817 环境 android-preview/pr-10，sha/ref 均为 3e5aeb5953cd8539d9252a1c18c17fd01d883872，状态 success。[APK 下载入口](https://github.com/tsonglew/QuotaPal/actions/runs/38018860257/artifacts/11657277423) 对应已实际下载校验的产物。G03 完成；主分支完整回归、固定签名、覆盖升级和正式 Release 仍未完成。
+预览工作流 [38019563477](https://github.com/tsonglew/Quodex/actions/runs/38019563477) success，deployment 6975361817 环境 android-preview/pr-10，sha/ref 均为 3e5aeb5953cd8539d9252a1c18c17fd01d883872，状态 success。[APK 下载入口](https://github.com/tsonglew/Quodex/actions/runs/38018860257/artifacts/11657277423) 对应已实际下载校验的产物。G03 完成；主分支完整回归、固定签名、覆盖升级和正式 Release 仍未完成。
 
 ## 合并后主分支回归与触摸坐标修正
 
@@ -69,15 +69,15 @@ API 37.0 的输入轨迹显示第一次 DOWN 被处理而 UP 未被处理，随�
 
 ## master 自动签名产物与点击修复结果
 
-PR #13 的精确提交 503d59d 在运行 [38031371128](https://github.com/tsonglew/QuotaPal/actions/runs/38031371128) 完整六组 CI 成功后合并，master=a983dfd9198356340795bbdc2e30b6aa9ecca3ed。合并事件自动触发 [38031990526](https://github.com/tsonglew/QuotaPal/actions/runs/38031990526)，debug／release 构建、lint、JVM、六组设备测试与 minified 页面检查、统一 gate 和 Build fixed-signature APK 均成功，无手动触发、无公开 Release。
+PR #13 的精确提交 503d59d 在运行 [38031371128](https://github.com/tsonglew/Quodex/actions/runs/38031371128) 完整六组 CI 成功后合并，master=a983dfd9198356340795bbdc2e30b6aa9ecca3ed。合并事件自动触发 [38031990526](https://github.com/tsonglew/Quodex/actions/runs/38031990526)，debug／release 构建、lint、JVM、六组设备测试与 minified 页面检查、统一 gate 和 Build fixed-signature APK 均成功，无手动触发、无公开 Release。
 
-已实际下载 [android-signed-apk](https://github.com/tsonglew/QuotaPal/actions/runs/38031990526/artifacts/11662492337)。独立校验结果如下。
+已实际下载 [android-signed-apk](https://github.com/tsonglew/Quodex/actions/runs/38031990526/artifacts/11662492337)。独立校验结果如下。
 
 - APK：QuotaPal-0.1.0-alpha15.apk，包名 com.tsonglew.quotapal，versionCode=15，minSdk=29，targetSdk=36。
 - SHA-256：85bbcc69e94f39a7f5334f4ecdb0e74c142e16d312c7befa316b08e99c9aeb26；与 SHA256SUMS 和 provenance.json 一致。
 - apksigner 验证通过，实际证书 SHA-256 为 5e7980c122100ccf9799a5174cb0e5a1748b8c442c09c015e145003145d2b5d4，与 android-release 的公开证书变量及 provenance 一致；未读取或导出 keystore／密码。
 - zipalign -c -P 16 4 通过。provenance 的 source_sha 为上述 master a983dfd，mode=signing-check；此模式只生成签名资产，不调用 Release 发布接口。
 
-PR #12 的精确提交 1b9bcd363d0cac44ca8a35514c83bcc4de096ae9 在 [38031921806](https://github.com/tsonglew/QuotaPal/actions/runs/38031921806) 完整六组 CI 成功；每组在原套件后又通过五轮真实三组件点击检查，合计 30 轮追加。已下载 API 37.0 原始日志，attempt-1 至 attempt-5 均为 OK (1 test)／INSTRUMENTATION_CODE: -1。原进度、请求去重、成功快照与唯一周期任务断言保留。该修复合并为 master 12c557bff84fd78230a586362268c3cf43d87794，其自动运行 38032639377 仍单独等待结果；不把 PR 成功当成新 master 已完成验证。
+PR #12 的精确提交 1b9bcd363d0cac44ca8a35514c83bcc4de096ae9 在 [38031921806](https://github.com/tsonglew/Quodex/actions/runs/38031921806) 完整六组 CI 成功；每组在原套件后又通过五轮真实三组件点击检查，合计 30 轮追加。已下载 API 37.0 原始日志，attempt-1 至 attempt-5 均为 OK (1 test)／INSTRUMENTATION_CODE: -1。原进度、请求去重、成功快照与唯一周期任务断言保留。该修复合并为 master 12c557bff84fd78230a586362268c3cf43d87794，其自动运行 38032639377 仍单独等待结果；不把 PR 成功当成新 master 已完成验证。
 
 G02 的 PR／master gate 有实际成功证据。固定签名配置已证实可用，但正式签名覆盖升级／数据迁移（F02）、版本 tag 的公开 Release（G05／G08）、真实账号／OEM／48 小时和七天观察仍未完成。

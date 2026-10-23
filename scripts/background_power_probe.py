@@ -13,8 +13,8 @@ import tempfile
 import time
 from urllib.request import urlopen
 
-PACKAGE = 'com.tsonglew.quotapal'
-SYNTHETIC_ACCOUNT = 'quotapal-synthetic-upgrade-account'
+PACKAGE = 'com.tsonglew.quodex'
+SYNTHETIC_ACCOUNT = 'quodex-synthetic-upgrade-account'
 
 
 def require(condition, message):

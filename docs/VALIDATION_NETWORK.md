@@ -24,4 +24,4 @@ CI 37997152626 的 37.2 crash buffer 明确记录 SurfaceFlinger 的 RegionSampl
 
 下一轮将 Android 17 专用启动参数从已弃用的 swiftshader_indirect 改为 software。依据 [Android 官方图形加速说明](https://developer.android.com/studio/run/emulator-acceleration)，software 会选择适用的软件后端。这是待云端验证的配置修订，不宣称已解决系统镜像缺陷；完整 UI／组件渲染测试和截图继续执行。
 
-后续结论（2026-10-10）：上述图形配置对照已由 [运行 38007906590](https://github.com/tsonglew/QuotaPal/actions/runs/38007906590) 的六版本完整 CI 验证。最终修正为 AVD 根 target 明确主版本 android-37，保留默认 software 渲染与原 37.0／37.2 镜像；两组 actual SDK=37、页面大小 4096／16384，普通测试及独立探针均通过。历史失败不能继续当作当前支持结论，详见 [alpha14 验证](VALIDATION_ALPHA14.md)。
+后续结论（2026-10-10）：上述图形配置对照已由 [运行 38007906590](https://github.com/tsonglew/Quodex/actions/runs/38007906590) 的六版本完整 CI 验证。最终修正为 AVD 根 target 明确主版本 android-37，保留默认 software 渲染与原 37.0／37.2 镜像；两组 actual SDK=37、页面大小 4096／16384，普通测试及独立探针均通过。历史失败不能继续当作当前支持结论，详见 [alpha14 验证](VALIDATION_ALPHA14.md)。

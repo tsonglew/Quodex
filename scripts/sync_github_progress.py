@@ -22,20 +22,20 @@ for stage, status, evidence, next_step in rows:
     if not args.apply:
         continue
     issue = json.loads(subprocess.check_output([
-        "gh", "issue", "view", str(number), "--repo", "tsonglew/QuotaPal", "--json", "body"
+        "gh", "issue", "view", str(number), "--repo", "tsonglew/Quodex", "--json", "body"
     ]))
     body = re.sub(r"当前状态：[^。]+。", f"当前状态：{status.strip()}。", issue["body"], count=1)
     body = re.sub(r"- \[[ x]\] \*\*([A-F]\d\d)\*\*", lambda match:
                   f"- [{states.get(match[1], ' ')}] **{match[1]}**", body)
     note = (f"## 当前进度\n\n{updated}：{evidence.strip()}。下一步：{next_step.strip()}。\n\n"
-            "实现与验证见 https://github.com/tsonglew/QuotaPal/blob/master/docs/PROGRESS.md 。\n\n")
+            "实现与验证见 https://github.com/tsonglew/Quodex/blob/master/docs/PROGRESS.md 。\n\n")
     body = re.sub(r"## 当前进度\n.*?(?=完整计划)", note, body, flags=re.S)
     with tempfile.NamedTemporaryFile(mode="w", suffix=".md") as output:
         output.write(body)
         output.flush()
-        subprocess.run(["gh", "issue", "edit", str(number), "--repo", "tsonglew/QuotaPal",
+        subprocess.run(["gh", "issue", "edit", str(number), "--repo", "tsonglew/Quodex",
                         "--body-file", output.name], check=True, stdout=subprocess.DEVNULL)
-    endpoint = f"repos/tsonglew/QuotaPal/milestones/{number}"
+    endpoint = f"repos/tsonglew/Quodex/milestones/{number}"
     milestone = json.loads(subprocess.check_output(["gh", "api", endpoint]))
     description = re.sub(r"状态：[^。]+。", f"状态：{status.strip()}。", milestone["description"], count=1)
     description = description.replace("尚未确定开工日期，不设置截止日期。",
@@ -46,9 +46,9 @@ for stage, status, evidence, next_step in rows:
     description = description.replace("/blob/codex/android-mvp/docs/", "/blob/master/docs/")
     description = re.sub(r"\n\n## 当前进展\n.*", "", description, flags=re.S)
     description += (f"\n\n## 当前进展\n\n{updated}：{evidence.strip()}。下一步：{next_step.strip()}。\n\n"
-        f"[跟踪任务 #{number}](https://github.com/tsonglew/QuotaPal/issues/{number}) · "
-        "[实时进度](https://github.com/tsonglew/QuotaPal/blob/master/docs/PROGRESS.md) · "
-        "[验证记录](https://github.com/tsonglew/QuotaPal/blob/master/docs/TESTING.md)")
+        f"[跟踪任务 #{number}](https://github.com/tsonglew/Quodex/issues/{number}) · "
+        "[实时进度](https://github.com/tsonglew/Quodex/blob/master/docs/PROGRESS.md) · "
+        "[验证记录](https://github.com/tsonglew/Quodex/blob/master/docs/TESTING.md)")
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json") as output:
         json.dump({"description": description}, output, ensure_ascii=False)
         output.flush()

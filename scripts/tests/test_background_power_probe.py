@@ -30,7 +30,7 @@ class BackgroundPowerEvidenceTest(unittest.TestCase):
         self.assertIn(('dumpsys', 'battery', 'reset'), calls)
         self.assertIn(('dumpsys', 'deviceidle', 'disable', 'deep'), calls)
         self.assertIn(('settings', 'delete', 'global', 'low_power'), calls)
-        self.assertIn(('cmd', 'appops', 'set', 'com.tsonglew.quotapal', 'RUN_ANY_IN_BACKGROUND', 'allow'), calls)
+        self.assertIn(('cmd', 'appops', 'set', 'com.tsonglew.quodex', 'RUN_ANY_IN_BACKGROUND', 'allow'), calls)
 
     def test_fixture_hosts_cannot_include_external_or_missing_routes(self):
         hosts = '127.0.0.1 auth.openai.com chatgpt.com\n::1 auth.openai.com chatgpt.com\n'
@@ -60,14 +60,14 @@ class BackgroundPowerEvidenceTest(unittest.TestCase):
     def test_widget_ids_exclude_other_providers_and_hosts(self):
         dump = '''Widgets:
   [0] id=3
-    provider=com.tsonglew.quotapal/.widget.QuotaWidgetProvider
+    provider=com.tsonglew.quodex/.widget.QuotaWidgetProvider
   [1] id=4
     provider=com.android.other/.Widget
   [2] id=8
-    provider=com.tsonglew.quotapal/.widget.CompactWidgetProvider
+    provider=com.tsonglew.quodex/.widget.CompactWidgetProvider
 Hosts:
   [0] id=999
-    package=com.tsonglew.quotapal/ignored
+    package=com.tsonglew.quodex/ignored
 '''
         self.assertEqual([3, 8], widget_ids(dump))
 

@@ -2,7 +2,7 @@
 
 2026-10-10 用户新增需求，对应 M6、checklist G01–G08。首版公开渠道已由用户确定为 GitHub Releases APK。
 
-参考 [magpie 工作流](https://github.com/yetone/magpie/tree/599d784f597342e6601bdc1d49b495fdf84e546f/.github/workflows)：预览使用独立环境，构建与发布分离，发布按版本 tag 触发。QuotaPal 将这些边界用于 Android APK，不引入 macOS 公证或模型 API Key。
+参考 [magpie 工作流](https://github.com/yetone/magpie/tree/599d784f597342e6601bdc1d49b495fdf84e546f/.github/workflows)：预览使用独立环境，构建与发布分离，发布按版本 tag 触发。Quodex 将这些边界用于 Android APK，不引入 macOS 公证或模型 API Key。
 
 ## 流程
 
@@ -21,7 +21,7 @@
 
 环境为 `android-preview/pr-<number>` 或 `android-preview/master`。记录 `in_progress`，下载并校验 APK 后记录 `success`；下载或校验失败记为 `failure`。每条记录的 environment URL 指向对应运行的 `android-apk` 下载入口，log URL 指向部署运行。预览是可下载 APK，无需额外开通 Pages。
 
-`android-apk` 包含 `quotapal.apk`、`SHA256SUMS`、`metadata.json`；元数据包括版本号、源 SHA、实际构建 SHA 与 APK 哈希。PR 源 SHA 是分支 head；实际构建 SHA 可以是 GitHub 合并测试提交。预览保留 14 天，过期后重新运行 CI 获取新产物；旧部署记录不意味着下载永久可用。
+`android-apk` 包含 `quodex.apk`、`SHA256SUMS`、`metadata.json`；元数据包括版本号、源 SHA、实际构建 SHA 与 APK 哈希。PR 源 SHA 是分支 head；实际构建 SHA 可以是 GitHub 合并测试提交。预览保留 14 天，过期后重新运行 CI 获取新产物；旧部署记录不意味着下载永久可用。
 
 预览是 debug 签名，供评审测试。GitHub 下载 artifact 可能需要登录。不同 runner 的 debug 签名不保证一致，正式升级使用下述固定发布签名。
 
@@ -38,9 +38,9 @@
 | `ANDROID_KEY_ALIAS` | 签名 key alias |
 | `ANDROID_KEY_PASSWORD` | key 密码 |
 
-Secrets 保存以上四项；不要把密码放到 Environment variables。macOS 下可用 `base64 -i /path/to/quotapal-release.jks | pbcopy` 复制 keystore 的 Base64 内容到剪贴板，然后粘贴到 `ANDROID_KEYSTORE_BASE64`。`ANDROID_STORE_PASSWORD` 填 keystore 密码，`ANDROID_KEY_ALIAS` 填创建时的 alias（例如 quotapal），`ANDROID_KEY_PASSWORD` 填 key 密码；默认 PKCS12 创建方式通常使用同一个密码。
+Secrets 保存以上四项；不要把密码放到 Environment variables。macOS 下可用 `base64 -i /path/to/quodex-release.jks | pbcopy` 复制 keystore 的 Base64 内容到剪贴板，然后粘贴到 `ANDROID_KEYSTORE_BASE64`。`ANDROID_STORE_PASSWORD` 填 keystore 密码，`ANDROID_KEY_ALIAS` 填创建时的 alias（例如 quodex），`ANDROID_KEY_PASSWORD` 填 key 密码；默认 PKCS12 创建方式通常使用同一个密码。
 
-用 `keytool -list -v -keystore /path/to/quotapal-release.jks -alias quotapal` 查看证书（终端交互输入密码）。在 Environment variables 设置 `ANDROID_SIGNING_CERT_SHA256` 为输出 SHA256 后面的完整证书指纹（可带冒号）。指纹不匹配或任一凭据缺失时发布失败。密钥由维护者离线保管和备份，不提交到 Git、不上传到 artifact，不在日志输出密码。不要为每个版本生成新密钥。
+用 `keytool -list -v -keystore /path/to/quodex-release.jks -alias quodex` 查看证书（终端交互输入密码）。在 Environment variables 设置 `ANDROID_SIGNING_CERT_SHA256` 为输出 SHA256 后面的完整证书指纹（可带冒号）。指纹不匹配或任一凭据缺失时发布失败。密钥由维护者离线保管和备份，不提交到 Git、不上传到 artifact，不在日志输出密码。不要为每个版本生成新密钥。
 
 发布步骤只在所有测试通过后获取环境 secrets。编译任务不使用签名凭据，签名任务下载 unsigned release APK，以 `zipalign`、`apksigner` 完成对齐、签名和验证。临时 keystore 退出时删除。
 
@@ -48,7 +48,7 @@ master push 会自动生成固定签名 APK；需要手动复验时，在 Action
 
 先更新 `versionCode`（递增）和 `versionName`，经 PR 合并到 master，再创建 `v<versionName>` tag。示例：`versionName = "0.1.0-alpha04"` 对应 `v0.1.0-alpha04`。Release 的手动运行也必须选择已有版本 tag，不能在分支上运行。需要向用户提醒升级的 master 构建同样必须递增 `versionCode`；同 code 的构建存档、重跑或后补版本 tag 不构成新的升级，不触发更新提醒。`build-<runId>-<attempt>` 只标识发布记录，不能作为 Android 版本号比较。
 
-最终资产为 `QuotaPal-<version>.apk`、`SHA256SUMS`、`provenance.json`。带连字符的版本标为 prerelease，稳定版本为普通 Release。发布 URL 在 GitHub Deployments 的 `android-release` 中可见。稳定 tag 应在 M4–M5 的真机、长期使用及公开发布验收后创建。
+最终资产为 `Quodex-<version>.apk`、`SHA256SUMS`、`provenance.json`。带连字符的版本标为 prerelease，稳定版本为普通 Release。发布 URL 在 GitHub Deployments 的 `android-release` 中可见。稳定 tag 应在 M4–M5 的真机、长期使用及公开发布验收后创建。
 
 CI debug 签名与 release 签名不同，首次切换需要卸载 debug 包再安装并重新连接；后续 release 版本沿用同一密钥覆盖升级。此配置尚不代替实机升级测试。
 
@@ -62,9 +62,9 @@ CI debug 签名与 release 签名不同，首次切换需要卸载 debug 包再�
 
 ## 当前验证状态
 
-[PR #16 CI 38037325156](https://github.com/tsonglew/QuotaPal/actions/runs/38037325156)（源提交 a361ded7b96600c5393a48246a4cce1d42a21e35）的交付检查、构建、lint、JVM、API 29／31／35／36／37.0／37.2 全部设备矩阵及统一 gate 已通过，并合并为 master d356cd8。合并触发的 [自动出包运行 38037985183](https://github.com/tsonglew/QuotaPal/actions/runs/38037985183) 已通过 release lint／R8 构建、全部六组设备与 minified 页面流程、统一 gate 和固定签名。产物见 [android-signed-apk](https://github.com/tsonglew/QuotaPal/actions/runs/38037985183/artifacts/11664782203)。
+[PR #16 CI 38037325156](https://github.com/tsonglew/Quodex/actions/runs/38037325156)（源提交 a361ded7b96600c5393a48246a4cce1d42a21e35）的交付检查、构建、lint、JVM、API 29／31／35／36／37.0／37.2 全部设备矩阵及统一 gate 已通过，并合并为 master d356cd8。合并触发的 [自动出包运行 38037985183](https://github.com/tsonglew/Quodex/actions/runs/38037985183) 已通过 release lint／R8 构建、全部六组设备与 minified 页面流程、统一 gate 和固定签名。产物见 [android-signed-apk](https://github.com/tsonglew/Quodex/actions/runs/38037985183/artifacts/11664782203)。
 
-此前 master a983dfd 的 [自动出包运行 38031990526](https://github.com/tsonglew/QuotaPal/actions/runs/38031990526) 已完整成功；实际下载的 alpha15 APK 通过固定证书、来源、版本、哈希和 16 KB 对齐核验。G02／G03 已有通过证据；[正式 alpha15→alpha16 覆盖升级](VALIDATION_ALPHA16.md) 已通过、F02 完成；真实公开 Release 与其 deployment 仍由 G05／G08 验收。
+此前 master a983dfd 的 [自动出包运行 38031990526](https://github.com/tsonglew/Quodex/actions/runs/38031990526) 已完整成功；实际下载的 alpha15 APK 通过固定证书、来源、版本、哈希和 16 KB 对齐核验。G02／G03 已有通过证据；[正式 alpha15→alpha16 覆盖升级](VALIDATION_ALPHA16.md) 已通过、F02 完成；真实公开 Release 与其 deployment 仍由 G05／G08 验收。
 
 发布控制另有 5 项命令替身测试：上传完成后才公开 draft、证书不匹配、缺失凭据、错误版本均不调用 GitHub，已公开版本不覆盖。替身测试不证明实际证书签名或 GitHub API 发布成功。
 
@@ -103,12 +103,12 @@ Android 17 新候选启用官方 Vulkan composition（`-feature VulkanNativeSwap
 
 2026-10-10 用户选择 GitHub Releases 公开 APK。发布使用版本 tag、release notes、APK、SHA256SUMS 和 provenance.json；实验版本标记 prerelease。发布需仓库写权限，先建立 draft 并上传全部资产，再公开，见 [GitHub 官方发布说明](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)。预览 artifact 的 14 天保留期与正式 Release 资产分开说明。
 
-所有 APK 必须签名，后续更新需要维持签名兼容性，见 [Android 官方签名说明](https://developer.android.com/studio/publish/app-signing)。包名维持 com.tsonglew.quotapal，versionCode 递增，固定正式密钥与证书指纹校验使用现有 release job；用户已创建正式密钥并配置 GitHub environment，仍需离线保管。实际固定签名及自动出包已通过，alpha15→alpha16 正式覆盖升级的 F02 也已通过，真实 Release 仍待 G05／G08 验收。
+所有 APK 必须签名，后续更新需要维持签名兼容性，见 [Android 官方签名说明](https://developer.android.com/studio/publish/app-signing)。包名维持 com.tsonglew.quodex，versionCode 递增，固定正式密钥与证书指纹校验使用现有 release job；用户已创建正式密钥并配置 GitHub environment，仍需离线保管。实际固定签名及自动出包已通过，alpha15→alpha16 正式覆盖升级的 F02 也已通过，真实 Release 仍待 G05／G08 验收。
 
 对用户提供 Android 10+ 支持范围、独立第三方身份、实验接入限制、隐私说明、安装／更新步骤和反馈入口。GitHub 版可定期检查新版本并提醒，用户点击后从 Releases 下载、手动安装；不自动下载或后台安装，Android 的安装来源权限由系统确认。后台检查可能受系统调度、网络和通知权限影响，不保证发布后立即送达。切换 debug 与正式签名通常需要卸载重装并重新连接，安装前先导出需要保留的诊断报告。
 
 
-历史失败记录（已由后续修复和验证更新）：PR #9 已合并，主分支 70c4580 的 [运行 38013679974](https://github.com/tsonglew/QuotaPal/actions/runs/38013679974) 因 API 35／37.0 的三组件刷新进度断言失败而 gate 失败，预览被跳过。此前 38007906590 的全绿仅证明对应源提交，不代表最新主分支 gate 通过。当前分支增加诊断时序与页面回归，后续运行通过后再更新 G02／G03。android-release 环境已通过只读 API 确认存在；四项签名 secrets、证书变量和真实发布尚待验证。
+历史失败记录（已由后续修复和验证更新）：PR #9 已合并，主分支 70c4580 的 [运行 38013679974](https://github.com/tsonglew/Quodex/actions/runs/38013679974) 因 API 35／37.0 的三组件刷新进度断言失败而 gate 失败，预览被跳过。此前 38007906590 的全绿仅证明对应源提交，不代表最新主分支 gate 通过。当前分支增加诊断时序与页面回归，后续运行通过后再更新 G02／G03。android-release 环境已通过只读 API 确认存在；四项签名 secrets、证书变量和真实发布尚待验证。
 
 
 ### 固定签名验证（不公开发布）
@@ -126,8 +126,8 @@ Android 17 新候选启用官方 Vulkan composition（`-feature VulkanNativeSwap
 从 alpha20 的发布工具开始，版本 tag 和自动构建的 Release notes 都包含一个隐藏的机器可读块，供 App 从公开 Releases 列表检查升级，无需逐个下载来源文件：
 
 ```text
-<!-- quotapal-update
-{"schema":1,"version_code":20,"version_name":"0.1.0-alpha20","source_sha":"<40 位小写十六进制源提交>","signing_cert_sha256":"<64 位小写十六进制证书摘要>","apk_name":"QuotaPal-0.1.0-alpha20.apk"}
+<!-- quodex-update
+{"schema":1,"version_code":20,"version_name":"0.1.0-alpha20","source_sha":"<40 位小写十六进制源提交>","signing_cert_sha256":"<64 位小写十六进制证书摘要>","apk_name":"Quodex-0.1.0-alpha20.apk"}
 -->
 ```
 
@@ -139,7 +139,7 @@ App 检查非 draft 的发布及其 APK 资产，并按安装证书兼容性和�
 
 ### 自动 Releases 实际验收（2026-10-11）
 
-[PR #20](https://github.com/tsonglew/QuotaPal/pull/20) 的最终提交 c0990f1 完整六组 CI 通过，合并为 master 177258647bbd7e78e7b011ca65982ec07e4c53dd。[运行 38109285393](https://github.com/tsonglew/QuotaPal/actions/runs/38109285393) 全部成功，自动生成 [build-38109285393-1](https://github.com/tsonglew/QuotaPal/releases/tag/build-38109285393-1) 预发布，三个资产完整；发布环境状态 success，链接及 tag 源提交正确。
+[PR #20](https://github.com/tsonglew/Quodex/pull/20) 的最终提交 c0990f1 完整六组 CI 通过，合并为 master 177258647bbd7e78e7b011ca65982ec07e4c53dd。[运行 38109285393](https://github.com/tsonglew/Quodex/actions/runs/38109285393) 全部成功，自动生成 [build-38109285393-1](https://github.com/tsonglew/Quodex/releases/tag/build-38109285393-1) 预发布，三个资产完整；发布环境状态 success，链接及 tag 源提交正确。
 
 下载 alpha17 APK 后独立核验 versionCode=17、minSdk=29、targetSdk=36、非 debuggable、固定证书和 16 KB 对齐。SHA-256 为 `3639f0ff2e194772215b3192eda8e7687be212e36082db8487e40d65b1fb6af4`，与 GitHub 资产摘要一致。固定证书 SHA-256 为 `5e7980c122100ccf9799a5174cb0e5a1748b8c442c09c015e145003145d2b5d4`。结构化证据见 [自动发布记录](diagnostics/alpha17-automatic-release.json)。
 
@@ -147,4 +147,4 @@ G08 的实际预览与签名 Release 验收完成；这不表示真机、真实�
 
 ### 版本 tag 实际验收（2026-10-11）
 
-[v0.1.0-alpha17](https://github.com/tsonglew/QuotaPal/releases/tag/v0.1.0-alpha17) 指向 master 1772586，与实际 APK versionName／versionCode=17 一致。[运行 38117976113](https://github.com/tsonglew/QuotaPal/actions/runs/38117976113) 完整六组设备、gate、签名及公开预发布成功。三个附件已重新下载，哈希、远端摘要、固定证书、来源及 16 KB 对齐通过；APK 与同源自动构建发布的哈希完全一致。deployment 6992019277 为 success，环境链接指向该版本 Release。G05 完成，结构化证据见 [版本发布记录](diagnostics/alpha17-version-release.json)。
+[v0.1.0-alpha17](https://github.com/tsonglew/Quodex/releases/tag/v0.1.0-alpha17) 指向 master 1772586，与实际 APK versionName／versionCode=17 一致。[运行 38117976113](https://github.com/tsonglew/Quodex/actions/runs/38117976113) 完整六组设备、gate、签名及公开预发布成功。三个附件已重新下载，哈希、远端摘要、固定证书、来源及 16 KB 对齐通过；APK 与同源自动构建发布的哈希完全一致。deployment 6992019277 为 success，环境链接指向该版本 Release。G05 完成，结构化证据见 [版本发布记录](diagnostics/alpha17-version-release.json)。

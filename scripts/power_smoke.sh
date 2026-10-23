@@ -5,9 +5,9 @@ adb_binary=$(command -v adb)
 adb() { python3 scripts/bounded_command.py 90 "$adb_binary" "$@"; }
 output_dir=${POWER_OUTPUT_DIR:-screenshots/power}
 mkdir -p "$output_dir"
-package=com.tsonglew.quotapal
-runner=com.tsonglew.quotapal.test/com.tsonglew.quotapal.QuotaTestRunner
-test_class=com.tsonglew.quotapal.LifecycleDeviceTest
+package=com.tsonglew.quodex
+runner=com.tsonglew.quodex.test/com.tsonglew.quodex.QuotaTestRunner
+test_class=com.tsonglew.quodex.LifecycleDeviceTest
 original_wifi=$(adb -e shell settings get global wifi_on | tr -d '\r')
 original_data=$(adb -e shell settings get global mobile_data | tr -d '\r')
 original_deep=$(adb -e shell dumpsys deviceidle enabled deep | tr -d '\r')

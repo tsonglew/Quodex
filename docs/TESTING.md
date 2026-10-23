@@ -1,6 +1,6 @@
-# QuotaPal 验证记录与自用步骤
+# Quodex 验证记录与自用步骤
 
-自动化结果以 [Android CI](https://github.com/tsonglew/QuotaPal/actions/workflows/android.yml) 为准；阶段进度见 [PROGRESS.md](PROGRESS.md)，完整验收见 [DEVELOPMENT_CHECKLIST.md](DEVELOPMENT_CHECKLIST.md)。
+自动化结果以 [Android CI](https://github.com/tsonglew/Quodex/actions/workflows/android.yml) 为准；阶段进度见 [PROGRESS.md](PROGRESS.md)，完整验收见 [DEVELOPMENT_CHECKLIST.md](DEVELOPMENT_CHECKLIST.md)。
 
 ## alpha21 Android UI/UX 优化
 
@@ -94,7 +94,7 @@ alpha12 新增 `scripts/system_time_smoke.sh`：仅在自建测试模拟器执�
 
 `scripts/network_smoke.sh` 显式关闭自建模拟器的 Wi-Fi 与移动数据，要求 OS 从有效互联网变为无网络，再恢复原连接。检查真实 WorkManager 约束与调度：离线不执行请求、成功缓存保留，重连后只请求一次。用量响应由测试 runner 拦截，不把合成凭据发到外部。该探针普通套件默认跳过，CI 在系统时间探针后单独运行。仅“有 activeNetwork”不算恢复，必须满足 NET_CAPABILITY_VALIDATED；本地受代理限制的宿主须先配置其测试网络并在结束后恢复。
 
-TalkBack 专项仅在装有 Google TalkBack 的 API 37 测试模拟器显式执行：`adb -s emulator-5580 shell am instrument --no-hidden-api-checks -w -e class com.tsonglew.quotapal.TalkBackDeviceTest -e talkbackProbe true com.tsonglew.quotapal.test/com.tsonglew.quotapal.QuotaTestRunner`。会临时启用真实 TalkBack，分别检查默认字体下额度文本的焦点／探索，以及 200% 字体下标准／紧凑组件的双击刷新和共享请求，保存截图后恢复设置。探针反射调用平台测试 API `injectInputEventToInputFilter`，缺失或不可访问直接失败；默认字体探索还必须收到 `TYPE_TOUCH_EXPLORATION_GESTURE_START`。普通 `injectInputEvent` 会跳过无障碍输入过滤器，不能作为 TalkBack 手势证据；此前基于该入口的双击通过记录应按普通注入刷新理解，见 [证据校正](VALIDATION_XIAOMI_WIDGET_TOUCH.md)。普通套件按条件跳过该显式探针。
+TalkBack 专项仅在装有 Google TalkBack 的 API 37 测试模拟器显式执行：`adb -s emulator-5580 shell am instrument --no-hidden-api-checks -w -e class com.tsonglew.quodex.TalkBackDeviceTest -e talkbackProbe true com.tsonglew.quodex.test/com.tsonglew.quodex.QuotaTestRunner`。会临时启用真实 TalkBack，分别检查默认字体下额度文本的焦点／探索，以及 200% 字体下标准／紧凑组件的双击刷新和共享请求，保存截图后恢复设置。探针反射调用平台测试 API `injectInputEventToInputFilter`，缺失或不可访问直接失败；默认字体探索还必须收到 `TYPE_TOUCH_EXPLORATION_GESTURE_START`。普通 `injectInputEvent` 会跳过无障碍输入过滤器，不能作为 TalkBack 手势证据；此前基于该入口的双击通过记录应按普通注入刷新理解，见 [证据校正](VALIDATION_XIAOMI_WIDGET_TOUCH.md)。普通套件按条件跳过该显式探针。
 
 2026-10-20 的固定 v3 APK 在 API 37 两项专项均通过（60.637 秒），普通字体标准／slim 探索焦点包含 62%；200% 字体先真实探索刷新入口建立 TalkBack 焦点，再以明确手指类型、受系统双击时限约束的输入触发刷新点击事件，确认各一次请求、仓库额度和可访问摘要更新到 83%。同一 APK 的六项打开应用测试通过（63.617 秒），证据在 `artifacts/xiaomi-alpha18/emulator-widget-fix-v3/`，结束字体恢复 1.0、无障碍服务恢复关闭。此结果证明输入处理和可访问内容，未录制实际语音；`talkback-slim-updated (3).png` 捕获时仍绘制 62%，因此不把该帧作为已显示 83% 的视觉证据。
 
@@ -109,15 +109,15 @@ alpha14 的刷新存储故障及同进程限流保护由 JVM 故障注入覆盖�
 
 Android 17 专用 CI 使用 SDK 稳定模拟器并安装 Linux 运行依赖，保留 API 37.0／37.2 系统镜像与完整原生 runner。AVD 根 ini 明确使用整数主版本 target=android-37，系统镜像路径不变，使用默认 software 图形路径。曾测试的 37.1.11 固定及 Vulkan composition 强开已撤回；失败对照见 [alpha14 验证](VALIDATION_ALPHA14.md)。
 
-[运行 38007906590](https://github.com/tsonglew/QuotaPal/actions/runs/38007906590) 的构建、单元测试、lint、产物校验、六版本设备矩阵与统一 gate 全部通过。Android 17 普通／16KB 两组各 18 项实际普通测试及四个独立探针通过；启动后实际断言 guest SDK=37，16KB job 的 PAGE_SIZE 必须等于 16384。保留三组件真实触摸刷新、单请求与刷新中反馈断言，以及尺寸换算后 provider 实收尺寸检查。此证据不代替 OEM／长期运行／真实认证生命周期或正式签名发布验收。
+[运行 38007906590](https://github.com/tsonglew/Quodex/actions/runs/38007906590) 的构建、单元测试、lint、产物校验、六版本设备矩阵与统一 gate 全部通过。Android 17 普通／16KB 两组各 18 项实际普通测试及四个独立探针通过；启动后实际断言 guest SDK=37，16KB job 的 PAGE_SIZE 必须等于 16384。保留三组件真实触摸刷新、单请求与刷新中反馈断言，以及尺寸换算后 provider 实收尺寸检查。此证据不代替 OEM／长期运行／真实认证生命周期或正式签名发布验收。
 
 ## 模拟器桌面弹窗隔离
 
-master 12c557b 的 [38032639377](https://github.com/tsonglew/QuotaPal/actions/runs/38032639377) 在 API 36 的真实组件点击测试失败。报告中刷新按钮实际可见、具有点击容器且布局完成，但所有节点 windowFocus=false；[失败截图](screenshots/emulator-quickstep-anr-api36.png) 明确显示系统 Quickstep 无响应弹窗挡住测试，尚未注入点击。这与先前 RemoteViews 手势竞争不同，保留失败记录，不把本轮算作成功。
+master 12c557b 的 [38032639377](https://github.com/tsonglew/Quodex/actions/runs/38032639377) 在 API 36 的真实组件点击测试失败。报告中刷新按钮实际可见、具有点击容器且布局完成，但所有节点 windowFocus=false；[失败截图](screenshots/emulator-quickstep-anr-api36.png) 明确显示系统 Quickstep 无响应弹窗挡住测试，尚未注入点击。这与先前 RemoteViews 手势竞争不同，保留失败记录，不把本轮算作成功。
 
-master f5edf96 的 [38034462993](https://github.com/tsonglew/QuotaPal/actions/runs/38034462993) 又在 API 37.0 失败。[截图](screenshots/emulator-pixel-launcher-anr-api37.png) 明确显示 Pixel Launcher isn't responding，系统日志确认默认桌面 com.google.android.apps.nexuslauncher 输入超时；原 Quickstep 专用处理没有匹配此变体，窗口持续失去焦点，尚未注入点击。
+master f5edf96 的 [38034462993](https://github.com/tsonglew/Quodex/actions/runs/38034462993) 又在 API 37.0 失败。[截图](screenshots/emulator-pixel-launcher-anr-api37.png) 明确显示 Pixel Launcher isn't responding，系统日志确认默认桌面 com.google.android.apps.nexuslauncher 输入超时；原 Quickstep 专用处理没有匹配此变体，窗口持续失去焦点，尚未注入点击。
 
-测试候选只在模拟器 ro.kernel.qemu=1、系统包 android 的活动窗口、完整标题与系统默认 HOME 对应时，保存截图并关闭一次该弹窗：com.android.launcher3 对应 Quickstep isn't responding，com.google.android.apps.nexuslauncher 对应 Pixel Launcher isn't responding。桌面必须带系统包标记，随后继续原按钮可见性与真实点击断言。重复弹窗、未知弹窗及 QuotaPal 自身 ANR／崩溃不在处理范围，仍阻断测试。查询声明仅在 debug manifest，处理代码仅在 androidTest，不进入正式 APK。此处理需新的云端矩阵实际验证，不宣称已修复系统桌面的 ANR。
+测试候选只在模拟器 ro.kernel.qemu=1、系统包 android 的活动窗口、完整标题与系统默认 HOME 对应时，保存截图并关闭一次该弹窗：com.android.launcher3 对应 Quickstep isn't responding，com.google.android.apps.nexuslauncher 对应 Pixel Launcher isn't responding。桌面必须带系统包标记，随后继续原按钮可见性与真实点击断言。重复弹窗、未知弹窗及 Quodex 自身 ANR／崩溃不在处理范围，仍阻断测试。查询声明仅在 debug manifest，处理代码仅在 androidTest，不进入正式 APK。此处理需新的云端矩阵实际验证，不宣称已修复系统桌面的 ANR。
 
 ## 真实 WorkManager 退避探针
 
@@ -125,7 +125,7 @@ master f5edf96 的 [38034462993](https://github.com/tsonglew/QuotaPal/actions/ru
 
 普通套件默认跳过；CI API 29 在原省电恢复探针后单独执行并保存 `scheduled-retry-probe.txt`，仍需明确 OK (1 test) 与 instrumentation 成功状态。宿主执行有超时；结束强停测试应用，失败时清除可能残留的合成凭据。此项证明真实调度的有限重试，不代替保持网络时的 Doze／省电限制观察及长期验收。
 
-2026-10-10 本地 API 31 实际通过（112.842 秒）：两段请求间隔为 30,237／60,127 ms，第三次进入 FAILED，新用户请求成功。证据：[runner 原文](diagnostics/scheduled-retry-probe-api31.txt)、[实际时长](diagnostics/scheduled-retry-timing-api31.txt)。PR #18 的 [完整 CI](https://github.com/tsonglew/QuotaPal/actions/runs/38042885098) 已通过六组设备与 gate，API 29 独立探针 112.766 秒成功，实际退避为 30,098／60,098 ms（[runner](diagnostics/scheduled-retry-probe-api29.txt)、[时长](diagnostics/scheduled-retry-timing-api29.txt)）。E03 的省电场景仍待完成。
+2026-10-10 本地 API 31 实际通过（112.842 秒）：两段请求间隔为 30,237／60,127 ms，第三次进入 FAILED，新用户请求成功。证据：[runner 原文](diagnostics/scheduled-retry-probe-api31.txt)、[实际时长](diagnostics/scheduled-retry-timing-api31.txt)。PR #18 的 [完整 CI](https://github.com/tsonglew/Quodex/actions/runs/38042885098) 已通过六组设备与 gate，API 29 独立探针 112.766 秒成功，实际退避为 30,098／60,098 ms（[runner](diagnostics/scheduled-retry-probe-api29.txt)、[时长](diagnostics/scheduled-retry-timing-api29.txt)）。E03 的省电场景仍待完成。
 
 ## 保持联网的外部后台观察
 
@@ -148,13 +148,13 @@ master f5edf96 的 [38034462993](https://github.com/tsonglew/QuotaPal/actions/ru
 ```sh
 python3 scripts/background_power_probe.py \
   --adb .tools/android-sdk/platform-tools/adb \
-  --serial emulator-5556 --avd quotapal-release-upgrade-31 \
-  --mode restricted --output /tmp/quotapal-background-restricted
+  --serial emulator-5556 --avd quodex-release-upgrade-31 \
+  --mode restricted --output /tmp/quodex-background-restricted
 ```
 
 脚本拒绝已有 Doze／省电／后台限制、非 loopback 的协议域名、缺少 TLS reverse、真实账号缓存或非 15 分钟唯一周期；每个模式实际等待 16 分钟，保留网络，每 30 秒检查请求上限。Doze／后台受限要求零请求及缓存时间不变，系统省电允许正常周期请求但禁止请求激增；解除限制后要求自动得到更新的成功缓存并保留任务和组件。输出只保存所需数据库元数据，临时数据库副本自动删除。系统限制在 finally 恢复，APK／临时 CA／hosts 等实验环境仍须按上述流程单独清理。
 
-该脚本已通过五项网络／hosts／组件解析及恢复失败回归，全部 35 项脚本测试成功；实际并发实验拒绝检查及运行中模拟器的只读快照核对通过。基线与最终 crash buffer、退出原因和最近 ANR 原文单独保存，需要核对是否出现 QuotaPal 新增异常，不能把请求／缓存断言成功当作无崩溃证明。三个模式的完整运行尚未验收，不能据此勾选 E03。
+该脚本已通过五项网络／hosts／组件解析及恢复失败回归，全部 35 项脚本测试成功；实际并发实验拒绝检查及运行中模拟器的只读快照核对通过。基线与最终 crash buffer、退出原因和最近 ANR 原文单独保存，需要核对是否出现 Quodex 新增异常，不能把请求／缓存断言成功当作无崩溃证明。三个模式的完整运行尚未验收，不能据此勾选 E03。
 
 ### API 31 外部 Doze 实测
 

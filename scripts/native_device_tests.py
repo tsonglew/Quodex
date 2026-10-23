@@ -23,7 +23,7 @@ def main() -> None:
     path.parent.mkdir(exist_ok=True)
     with path.open('w') as output:
         result = subprocess.run(['adb', '-e', 'shell', 'am', 'instrument', '-r', '-w',
-                                 'com.tsonglew.quotapal.test/com.tsonglew.quotapal.QuotaTestRunner'],
+                                 'com.tsonglew.quodex.test/com.tsonglew.quodex.QuotaTestRunner'],
                                 stdout=output, stderr=subprocess.STDOUT, timeout=600)
     report = path.read_text()
     print(report)

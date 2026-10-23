@@ -1,8 +1,10 @@
-# QuotaPal 开发与验收 Checklist
+# Quodex 开发与验收 Checklist
+
+项目更名记录（2026-10-23）：当前产品与仓库名为 Quodex，Android applicationId 为 com.tsonglew.quodex。下方历史验证条目保留当时 QuotaPal 的包名、APK 文件名和测试证据。
 
 记录日期：2026-10-11。状态：开发进行中。进度与验证证据见 [开发进度](PROGRESS.md)。
 
-首版范围为 Android 平台的 Codex 单账号额度监控与桌面小组件，发布路线为先自用验证，再公开发布。完整产品范围、技术方案、阶段交付物与工期见 [开发计划](DEVELOPMENT_PLAN.md)，阶段跟踪见 [GitHub milestones](https://github.com/tsonglew/QuotaPal/milestones)。
+首版范围为 Android 平台的 Codex 单账号额度监控与桌面小组件，发布路线为先自用验证，再公开发布。完整产品范围、技术方案、阶段交付物与工期见 [开发计划](DEVELOPMENT_PLAN.md)，阶段跟踪见 [GitHub milestones](https://github.com/tsonglew/Quodex/milestones)。
 
 本清单共 66 项（2026-10-10 新增 8 项 CI/CD 与部署要求、4 项后台引导要求、3 项手动刷新要求）。检查项只有在实际执行并留下可验证结果后才能勾选；创建文档或 GitHub milestone 不代表完成开发或接入验证。
 
@@ -84,7 +86,7 @@
 - [ ] **E08** 做 48 小时后台观察，记录请求数、实际刷新间隔、失败与耗电。
 - [ ] **E09** 连续自用至少 7 天，记录登录稳定性、小组件显示和恢复问题。
 
-2026-10-10 alpha14 验证：[运行 38007906590](https://github.com/tsonglew/QuotaPal/actions/runs/38007906590)，源提交 f0e1fffc58452bd62545e623d08ca329c3c1b2dd，构建／单元测试／lint／产物校验、API 29／31／35／36／37.0／37.2 全部成功，统一 Android CI gate 成功。Android 17 两组各完整 18 项普通测试及四个独立探针通过，实际 guest SDK=37、PAGE_SIZE=4096／16384，E06 完成。后续组件触摸失败与修复保留在 [alpha15 验证记录](VALIDATION_ALPHA15.md)；此证据不代替 OEM 真机与长期观察。
+2026-10-10 alpha14 验证：[运行 38007906590](https://github.com/tsonglew/Quodex/actions/runs/38007906590)，源提交 f0e1fffc58452bd62545e623d08ca329c3c1b2dd，构建／单元测试／lint／产物校验、API 29／31／35／36／37.0／37.2 全部成功，统一 Android CI gate 成功。Android 17 两组各完整 18 项普通测试及四个独立探针通过，实际 guest SDK=37、PAGE_SIZE=4096／16384，E06 完成。后续组件触摸失败与修复保留在 [alpha15 验证记录](VALIDATION_ALPHA15.md)；此证据不代替 OEM 真机与长期观察。
 
 强制停止场景以重新打开 App 后能够恢复为验收要求，不要求强停期间继续更新。相关平台约束与来源见开发计划。
 
@@ -124,12 +126,12 @@
 - [x] **G04** APK 附带版本、源提交、实际构建提交和 SHA-256，拒绝校验失败的产物。
 - [x] **G05** 版本 tag 与 Android 版本一致、来自主分支，通过完整验证后使用固定签名发布。
 
-  2026-10-11：[v0.1.0-alpha17](https://github.com/tsonglew/QuotaPal/releases/tag/v0.1.0-alpha17) 来自 master 1772586，与 APK versionName／versionCode=17 一致。[版本发布运行 38117976113](https://github.com/tsonglew/QuotaPal/actions/runs/38117976113) 完整六组 CI、gate 和固定签名发布成功。三个附件已实际下载，远端摘要／SHA256SUMS／来源／固定证书／16 KB 对齐全部一致，deployment 6992019277 状态 success 且链接正确。见 [版本发布证据](diagnostics/alpha17-version-release.json)。这是实验性预发布，不代替真实账号、OEM 或长期验收。
+  2026-10-11：[v0.1.0-alpha17](https://github.com/tsonglew/Quodex/releases/tag/v0.1.0-alpha17) 来自 master 1772586，与 APK versionName／versionCode=17 一致。[版本发布运行 38117976113](https://github.com/tsonglew/Quodex/actions/runs/38117976113) 完整六组 CI、gate 和固定签名发布成功。三个附件已实际下载，远端摘要／SHA256SUMS／来源／固定证书／16 KB 对齐全部一致，deployment 6992019277 状态 success 且链接正确。见 [版本发布证据](diagnostics/alpha17-version-release.json)。这是实验性预发布，不代替真实账号、OEM 或长期验收。
 - [x] **G06** PR 构建无发布凭据；有写权限的预览 job 不执行 PR 代码；签名只在发布环境使用。
 - [x] **G07** 说明环境配置、签名保管、版本更新、失败恢复、重跑和预览过期规则。
 - [x] **G08** 实际运行预览 deployment 与签名 Release 流程，核对下载、签名、提交和部署状态。
 
-  2026-10-11：master 1772586 的 [自动发布运行](https://github.com/tsonglew/QuotaPal/actions/runs/38109285393) 完整六组 CI／gate／固定签名及 Releases 上传全部成功。[预发布](https://github.com/tsonglew/QuotaPal/releases/tag/build-38109285393-1) 的 APK 已下载验证版本 17、固定证书、来源、SHA-256 及 16 KB 对齐，远端资产摘要一致；android-release deployment 6990644275 状态 success 且链接指向该 Release。预览 deployment 6975361817 的历史 success 及实际下载证据见 G03；合并后正常 inactive。见 [证据](diagnostics/alpha17-automatic-release.json)。版本 tag 专项的完成证据另见 G05。
+  2026-10-11：master 1772586 的 [自动发布运行](https://github.com/tsonglew/Quodex/actions/runs/38109285393) 完整六组 CI／gate／固定签名及 Releases 上传全部成功。[预发布](https://github.com/tsonglew/Quodex/releases/tag/build-38109285393-1) 的 APK 已下载验证版本 17、固定证书、来源、SHA-256 及 16 KB 对齐，远端资产摘要一致；android-release deployment 6990644275 状态 success 且链接指向该 Release。预览 deployment 6975361817 的历史 success 及实际下载证据见 G03；合并后正常 inactive。见 [证据](diagnostics/alpha17-automatic-release.json)。版本 tag 专项的完成证据另见 G05。
 
 实现与验证详见 [CI/CD 与部署](CI_CD.md)。配置落盘、脚本测试和静态检查不代替 G08 的 GitHub 实际运行记录。
 

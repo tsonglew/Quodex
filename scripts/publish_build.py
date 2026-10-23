@@ -24,7 +24,7 @@ def publish(directory, source, run_id, attempt, repo, execute=subprocess.run):
         raise ValueError('Invalid version')
     if provenance['source_sha'] != source or provenance['mode'] != 'signing-check':
         raise ValueError('Unexpected signed source')
-    apk = directory / f'QuotaPal-{version_tag[1:]}.apk'
+    apk = directory / f'Quodex-{version_tag[1:]}.apk'
     if apk.is_symlink() or not apk.is_file():
         raise ValueError('Invalid APK')
     digest = hashlib.sha256(apk.read_bytes()).hexdigest()
@@ -37,10 +37,10 @@ def publish(directory, source, run_id, attempt, repo, execute=subprocess.run):
     if not isinstance(certificate, str) or not re.fullmatch(r'[0-9a-f]{64}', certificate):
         raise ValueError('Invalid signing certificate')
     release_notes = (directory / 'release-notes.md').read_text()
-    blocks = re.findall(r'<!-- quotapal-update\n(.*?)\n-->', release_notes, flags=re.DOTALL)
+    blocks = re.findall(r'<!-- quodex-update\n(.*?)\n-->', release_notes, flags=re.DOTALL)
     expected_update = dict(schema=1, version_code=version_code, version_name=version_tag[1:],
                            source_sha=source, signing_cert_sha256=certificate, apk_name=apk.name)
-    if len(blocks) != 1 or release_notes.count('<!-- quotapal-update') != 1:
+    if len(blocks) != 1 or release_notes.count('<!-- quodex-update') != 1:
         raise ValueError('Missing or duplicate update metadata')
     update = json.loads(blocks[0])
     if (update != expected_update or type(update.get('schema')) is not int
@@ -56,7 +56,7 @@ def publish(directory, source, run_id, attempt, repo, execute=subprocess.run):
     gh('api', f'repos/{repo}/git/refs', '--method', 'POST',
        '-f', f'ref=refs/tags/{tag}', '-f', f'sha={source}')
     gh('release', 'create', tag, '--repo', repo, '--verify-tag', '--draft', '--prerelease',
-       '--title', f'QuotaPal {version_tag[1:]} · build {run_id}.{attempt}', '--notes-file', str(notes))
+       '--title', f'Quodex {version_tag[1:]} · build {run_id}.{attempt}', '--notes-file', str(notes))
     gh('release', 'upload', tag, '--repo', repo, str(apk),
        str(directory / 'SHA256SUMS'), str(directory / 'provenance.json'))
     gh('release', 'edit', tag, '--repo', repo, '--draft=false', '--prerelease', '--latest=false')

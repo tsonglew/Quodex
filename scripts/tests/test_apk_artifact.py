@@ -17,7 +17,7 @@ class ApkArtifactTest(unittest.TestCase):
         self.apk = self.root / 'built.apk'
         self.apk.write_bytes(b'PK\x03\x04test-apk')
         self.output = self.root / 'output-metadata.json'
-        self.output.write_text(json.dumps(dict(applicationId='com.tsonglew.quotapal', elements=[dict(versionName='0.1.0-alpha04', versionCode=4)])))
+        self.output.write_text(json.dumps(dict(applicationId='com.tsonglew.quodex', elements=[dict(versionName='0.1.0-alpha04', versionCode=4)])))
         self.directory = self.root / 'artifact'
         module.package(self.apk, self.output, self.directory, 'a' * 40, 'b' * 40)
 
@@ -27,7 +27,7 @@ class ApkArtifactTest(unittest.TestCase):
         self.assertEqual('0.1.0-alpha04', metadata['version_name'])
 
     def test_tampered_apk_is_rejected(self):
-        (self.directory / 'quotapal.apk').write_bytes(b'PKtampered')
+        (self.directory / 'quodex.apk').write_bytes(b'PKtampered')
         with self.assertRaisesRegex(ValueError, 'checksum'):
             module.verify(self.directory, 'a' * 40)
 
@@ -36,8 +36,8 @@ class ApkArtifactTest(unittest.TestCase):
             module.verify(self.directory, 'c' * 40)
 
     def test_symlink_cannot_be_used_as_apk(self):
-        (self.directory / 'quotapal.apk').unlink()
-        (self.directory / 'quotapal.apk').symlink_to(self.apk)
+        (self.directory / 'quodex.apk').unlink()
+        (self.directory / 'quodex.apk').symlink_to(self.apk)
         with self.assertRaisesRegex(ValueError, 'APK'):
             module.verify(self.directory, 'a' * 40)
 

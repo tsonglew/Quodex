@@ -42,6 +42,6 @@ CI 38002272484 全部终态：API 29／31／35／36 成功，37.0／37.2 在补�
 
 ## 六版本 CI 验收
 
-2026-10-10，源提交 f0e1fffc58452bd62545e623d08ca329c3c1b2dd 的 [运行 38007906590](https://github.com/tsonglew/QuotaPal/actions/runs/38007906590) 全部终态成功：build、delivery、29／31／35／36／37.0／37.2 六组设备矩阵、Android CI gate。37.0／37.2 各 18 项实际普通测试及四个独立探针通过，实际 guest SDK=37、PAGE_SIZE=4096／16384；三组件真实触摸刷新及缩放尺寸断言保留。E06 已勾选完成。
+2026-10-10，源提交 f0e1fffc58452bd62545e623d08ca329c3c1b2dd 的 [运行 38007906590](https://github.com/tsonglew/Quodex/actions/runs/38007906590) 全部终态成功：build、delivery、29／31／35／36／37.0／37.2 六组设备矩阵、Android CI gate。37.0／37.2 各 18 项实际普通测试及四个独立探针通过，实际 guest SDK=37、PAGE_SIZE=4096／16384；三组件真实触摸刷新及缩放尺寸断言保留。E06 已勾选完成。
 
 里程碑 PR 创建再次调用 GitHub 集成，实际返回 403 Resource not accessible by integration，尚无新 PR 或合并；没有绕过权限直接推送 master。G02 的 PR／主分支、G03 的实际源提交 deployment、G05／G08 的正式固定签名和发布仍未验收；真实账号完整生命周期、OEM、48 小时／7 天观察仍保留。

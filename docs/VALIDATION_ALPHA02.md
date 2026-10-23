@@ -2,7 +2,7 @@
 
 版本：`0.1.0-alpha02`，versionCode 2，Android 10+。验证日期：2026-10-09。
 
-实现提交：`1d0582a8589b61724cdeef8c2ecada5ab17b2844`。[CI 37946436238](https://github.com/tsonglew/QuotaPal/actions/runs/37946436238) 全部成功。
+实现提交：`1d0582a8589b61724cdeef8c2ecada5ab17b2844`。[CI 37946436238](https://github.com/tsonglew/Quodex/actions/runs/37946436238) 全部成功。
 
 | 检查 | 结果 |
 | --- | --- |
@@ -23,7 +23,7 @@
 
 ## 安装包
 
-[GitHub 预发布下载](https://github.com/tsonglew/QuotaPal/releases/tag/v0.1.0-alpha02)。文件：`QuotaPal-0.1.0-alpha02-debug.apk`，65,207,208 bytes。ZIP CRC 已校验。
+[GitHub 预发布下载](https://github.com/tsonglew/Quodex/releases/tag/v0.1.0-alpha02)。文件：`QuotaPal-0.1.0-alpha02-debug.apk`，65,207,208 bytes。ZIP CRC 已校验。
 
 SHA-256：
 

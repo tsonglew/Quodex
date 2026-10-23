@@ -11,15 +11,15 @@ plugins {
 }
 
 android {
-    namespace = "com.tsonglew.quotapal"
+    namespace = "com.tsonglew.quodex"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.tsonglew.quotapal"
+        applicationId = "com.tsonglew.quodex"
         minSdk = 29
         targetSdk = 36
         versionCode = 21
         versionName = "0.1.0-alpha21"
-        testInstrumentationRunner = "com.tsonglew.quotapal.QuotaTestRunner"
+        testInstrumentationRunner = "com.tsonglew.quodex.QuotaTestRunner"
     }
     buildTypes {
         release {

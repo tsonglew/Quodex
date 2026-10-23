@@ -1,4 +1,4 @@
-# QuotaPal 开发进度
+# Quodex 开发进度
 
 更新日期：2026-10-22（Asia/Shanghai）。当前开发版本为 `0.1.0-alpha21`，基于 master `0a9892a`（已合并 PR #25）；本轮增加 token 用量趋势，并包含此前实现的应用版本检查与本机通知。此前自动构建预发布已实际成功，真实账号／OEM／长期验收仍单独跟踪。
 
@@ -16,7 +16,7 @@ alpha21 本地验证：152 项 JVM 测试、46 项 Python 工具测试全部通�
 
 ## 2026-10-22 issue 对照改进
 
-已读取开放的 [接入验证 #1](https://github.com/tsonglew/QuotaPal/issues/1)、[账号与额度 #3](https://github.com/tsonglew/QuotaPal/issues/3)、[小组件与后台 #4](https://github.com/tsonglew/QuotaPal/issues/4)、[稳定性验证 #5](https://github.com/tsonglew/QuotaPal/issues/5) 和 [发布准备 #6](https://github.com/tsonglew/QuotaPal/issues/6)。这些 issue 无评论，正文仍为 10 月 9 日的阶段记录；已有实现与验收以本仓库后续证据为准。
+已读取开放的 [接入验证 #1](https://github.com/tsonglew/Quodex/issues/1)、[账号与额度 #3](https://github.com/tsonglew/Quodex/issues/3)、[小组件与后台 #4](https://github.com/tsonglew/Quodex/issues/4)、[稳定性验证 #5](https://github.com/tsonglew/Quodex/issues/5) 和 [发布准备 #6](https://github.com/tsonglew/Quodex/issues/6)。这些 issue 无评论，正文仍为 10 月 9 日的阶段记录；已有实现与验收以本仓库后续证据为准。
 
 - A05／C03：修复连接过程中取消或存储写入失败后，新凭据可能残留、重启恢复错误连接的问题。缓存和同步设置先写入，凭据最后提交；取消、被后续操作替代或写入失败时，在同一仓库锁内恢复此前数据。补充首次连接、替换账号、退出竞争及存储故障回归。三个独立存储不构成跨进程崩溃的原子事务；本次不宣称解决任意断电或不可写存储下的恢复。
 - E08／E09：诊断增加 48／168 个 UTC 小时桶汇总和距最近成功刷新的时长，保留原小时明细与本地存储格式。小时桶含当前未结束小时，不能代表完整观察时长；耗电仍需结合设备系统记录，详见 [观察说明](SUPPORT.md#48-小时与-7-天观察)。
@@ -49,7 +49,7 @@ alpha21 本地验证：152 项 JVM 测试、46 项 Python 工具测试全部通�
 
 - 2026-10-10：补充真实 WorkManager 退避探针，本地 API 31 验证连续 503 的两段实际等待为 30,237／60,127 ms，第三次进入终止失败、缓存保留，新用户请求成功（112.842 秒）。不修改时钟、限流字段或重试计数；准备接入 API 29 CI，E03 保留网络连通时的省电约束观察。
 
-- 2026-10-10：PR #16 最终 a361ded7 的 [CI 38037325156](https://github.com/tsonglew/QuotaPal/actions/runs/38037325156) 六组设备、构建、交付检查及统一 gate 全部通过，合并为 master d356cd8。诊断弹窗显式使用主调度器，五轮预览／清除保留全部断言；Pixel Launcher 严格恢复分支另有实际 ANR 对照证据。master 自动出包 38037985183 全部通过，实际 APK 已下载核验证书／来源／哈希／版本／对齐；API 31 正式 alpha15→alpha16 覆盖升级、缓存与设置恢复、两组件、唯一任务及 401 续期和重启后凭据复用全部通过，F02 完成。证据见 [alpha16](VALIDATION_ALPHA16.md)，实验室已清理。
+- 2026-10-10：PR #16 最终 a361ded7 的 [CI 38037325156](https://github.com/tsonglew/Quodex/actions/runs/38037325156) 六组设备、构建、交付检查及统一 gate 全部通过，合并为 master d356cd8。诊断弹窗显式使用主调度器，五轮预览／清除保留全部断言；Pixel Launcher 严格恢复分支另有实际 ANR 对照证据。master 自动出包 38037985183 全部通过，实际 APK 已下载核验证书／来源／哈希／版本／对齐；API 31 正式 alpha15→alpha16 覆盖升级、缓存与设置恢复、两组件、唯一任务及 401 续期和重启后凭据复用全部通过，F02 完成。证据见 [alpha16](VALIDATION_ALPHA16.md)，实验室已清理。
 
 - 2026-10-10：master 自动固定签名已在运行 38031990526 实际成功，产物下载后独立核验通过。后续 master f5edf96 的 38034462993 因 API 37.0 的 Pixel Launcher ANR 遮挡失败，签名正确跳过；截图／系统日志保留。alpha16 初始 PR #16 六组完整 CI 成功，但针对新确认桌面变体的严格恢复改动仍需重新验证。升级实验室 25 项脚本回归通过，实际 API 31 两项组件刷新回归通过；正式 alpha15→alpha16 覆盖恢复尚未执行，F02 保留。
 
@@ -59,32 +59,32 @@ alpha21 本地验证：152 项 JVM 测试、46 项 Python 工具测试全部通�
 - 2026-10-10：继续 M3–M4 验证。修复系统时间回拨后未来的最近尝试／成功快照时间会持续阻止刷新的问题；增加回拨恢复与服务端 Retry-After 不被绕过两项回归。CI 扩展 API 29、31、35、36，分别保存设备证据。构建与矩阵尚待验证，不提前勾选 E05／E06；真实授权、OEM 和长期观察仍待验收。
 - 2026-10-10：修复与 checklist 已以 `a9541eb` 推送到 `codex/stability-matrix`。GitHub 集成创建 PR 返回 403（Resource not accessible by integration）；CLI 未登录，浏览器 GitHub 访问被权限策略拒绝，故尚无新 PR 或合并。进度同步脚本改为读取文档日期并引用主分支，dry-run 成功；未执行 GitHub 写入。首次本地构建因缺 SDK 失败，补齐 SDK 后重新运行，结果待记录。
 
-- 2026-10-09：实现独立 2×1 桌面组件入口与 App 添加按钮，保留主要额度／状态、刷新入口和完整更新时间，适配单行及较矮横屏布局。两种组件共用更新与后台调度，实例配置独立。版本升级为 `0.1.0-alpha03`。[验证 37953081016](https://github.com/tsonglew/QuotaPal/actions/runs/37953081016) 全部通过：36 项单元测试、lint、构建、9 项 Android 35 测试。新增组件检查 4 种尺寸、已用／剩余、5 种额度状态、退出和混合实例；修复测试宿主同时启动两个 Activity 时的生命周期问题。详情见 [alpha03 验证记录](VALIDATION_ALPHA03.md)。
+- 2026-10-09：实现独立 2×1 桌面组件入口与 App 添加按钮，保留主要额度／状态、刷新入口和完整更新时间，适配单行及较矮横屏布局。两种组件共用更新与后台调度，实例配置独立。版本升级为 `0.1.0-alpha03`。[验证 37953081016](https://github.com/tsonglew/Quodex/actions/runs/37953081016) 全部通过：36 项单元测试、lint、构建、9 项 Android 35 测试。新增组件检查 4 种尺寸、已用／剩余、5 种额度状态、退出和混合实例；修复测试宿主同时启动两个 Activity 时的生命周期问题。详情见 [alpha03 验证记录](VALIDATION_ALPHA03.md)。
 
-- 2026-10-09：根据自用反馈修复无短周期／无周期额度的空白状态，加入“未提供短周期额度”“当前可用”“当前使用受限”和缺失用量说明；主界面、预览及原生组件共用状态判断。版本升级为 `0.1.0-alpha02`。[验证 37946436238](https://github.com/tsonglew/QuotaPal/actions/runs/37946436238) 全部通过：36 项单元测试、lint、App／测试 APK 构建、8 项 Android 35 测试。设备回归修复了紧凑组件新增提示后底部时间裁切的问题，三种尺寸的 5 种状态均验证通过。变更见 [PR #8](https://github.com/tsonglew/QuotaPal/pull/8)，完整证据见 [alpha02 验证记录](VALIDATION_ALPHA02.md)。
+- 2026-10-09：根据自用反馈修复无短周期／无周期额度的空白状态，加入“未提供短周期额度”“当前可用”“当前使用受限”和缺失用量说明；主界面、预览及原生组件共用状态判断。版本升级为 `0.1.0-alpha02`。[验证 37946436238](https://github.com/tsonglew/Quodex/actions/runs/37946436238) 全部通过：36 项单元测试、lint、App／测试 APK 构建、8 项 Android 35 测试。设备回归修复了紧凑组件新增提示后底部时间裁切的问题，三种尺寸的 5 种状态均验证通过。变更见 [PR #8](https://github.com/tsonglew/Quodex/pull/8)，完整证据见 [alpha02 验证记录](VALIDATION_ALPHA02.md)。
 
 - 2026-10-09：启动 M0、M1；核对官方设备授权流程与额度读取路径；检查 Nowdex 的蓝色分段进度条、大号百分比、浅深色圆角卡片和更新时间布局。
 
 - 2026-10-09：真实额度探测返回 HTTP 200，未保存身份、凭据或实际额度值。
-- 2026-10-09：建立 [M0](https://github.com/tsonglew/QuotaPal/issues/1)、[M1](https://github.com/tsonglew/QuotaPal/issues/2)、[M2](https://github.com/tsonglew/QuotaPal/issues/3)、[M3](https://github.com/tsonglew/QuotaPal/issues/4)、[M4](https://github.com/tsonglew/QuotaPal/issues/5)、[M5](https://github.com/tsonglew/QuotaPal/issues/6) 跟踪任务；完成协议适配、原生页面、组件、后台同步第一轮实现，进入构建验证。
-- 2026-10-09：创建 [开发 PR #7](https://github.com/tsonglew/QuotaPal/pull/7)。[首轮代码构建](https://github.com/tsonglew/QuotaPal/actions/runs/37931567792) 编译、单元测试和 APK 生成通过；lint 拦截 Glance 内部 API 使用，已改公开接口。同时改为订阅共享状态，新增组件原生渲染和 Android Keystore 验证。
-- 2026-10-09：[构建验证](https://github.com/tsonglew/QuotaPal/actions/runs/37932751546) 通过编译、单元测试、lint 和 App／测试 APK 生成，进入 Android 35 模拟器阶段。C01–C05 基于实现检查及自动测试勾选；C08 为明确不支持远程撤销、界面区分本地清理。真实登录和设备验收仍保留未完成。
-- 2026-10-09：[设备验证](https://github.com/tsonglew/QuotaPal/actions/runs/37933925112) 中 27 项单元测试、lint 和 3 项 Android 页面／存储测试通过；组件测试发现 Glance 单容器最多 10 个子元素，已用嵌套容器修复分段条与窗口截断。C06 基于原生加密往返、密文篡改拒绝、删除和备份关闭测试勾选。
-- 2026-10-09：[后续组件回归](https://github.com/tsonglew/QuotaPal/actions/runs/37934786626) 确认容器截断日志消失；发现测试宿主未预留系统组件内边距，已校正。截图改用 MediaStore 保存，避开 AGP 测试后自动卸载清理；随后运行 [回归 37935801206](https://github.com/tsonglew/QuotaPal/actions/runs/37935801206)。另补齐并发刷新合并结果和设备码开关引导。
-- 2026-10-09：[回归 37935801206](https://github.com/tsonglew/QuotaPal/actions/runs/37935801206) 全部通过；视觉检查发现组件底部更新时间被裁切，随后调整间距和最小尺寸，增加完整可见性断言，改用 PixelCopy 捕获真实圆角效果。
-- 2026-10-09：[最终实现验证](https://github.com/tsonglew/QuotaPal/actions/runs/37936883382) 全部通过：27 项单元测试、lint、APK 与测试包构建、4 项 Android 35 原生测试。复查 7 张截图，确认三种组件布局的数字、分段条和更新时间完整。M1 任务及 milestone 已完成；其余阶段保留真实授权、平台／Launcher 与长期观察的待验收项。
+- 2026-10-09：建立 [M0](https://github.com/tsonglew/Quodex/issues/1)、[M1](https://github.com/tsonglew/Quodex/issues/2)、[M2](https://github.com/tsonglew/Quodex/issues/3)、[M3](https://github.com/tsonglew/Quodex/issues/4)、[M4](https://github.com/tsonglew/Quodex/issues/5)、[M5](https://github.com/tsonglew/Quodex/issues/6) 跟踪任务；完成协议适配、原生页面、组件、后台同步第一轮实现，进入构建验证。
+- 2026-10-09：创建 [开发 PR #7](https://github.com/tsonglew/Quodex/pull/7)。[首轮代码构建](https://github.com/tsonglew/Quodex/actions/runs/37931567792) 编译、单元测试和 APK 生成通过；lint 拦截 Glance 内部 API 使用，已改公开接口。同时改为订阅共享状态，新增组件原生渲染和 Android Keystore 验证。
+- 2026-10-09：[构建验证](https://github.com/tsonglew/Quodex/actions/runs/37932751546) 通过编译、单元测试、lint 和 App／测试 APK 生成，进入 Android 35 模拟器阶段。C01–C05 基于实现检查及自动测试勾选；C08 为明确不支持远程撤销、界面区分本地清理。真实登录和设备验收仍保留未完成。
+- 2026-10-09：[设备验证](https://github.com/tsonglew/Quodex/actions/runs/37933925112) 中 27 项单元测试、lint 和 3 项 Android 页面／存储测试通过；组件测试发现 Glance 单容器最多 10 个子元素，已用嵌套容器修复分段条与窗口截断。C06 基于原生加密往返、密文篡改拒绝、删除和备份关闭测试勾选。
+- 2026-10-09：[后续组件回归](https://github.com/tsonglew/Quodex/actions/runs/37934786626) 确认容器截断日志消失；发现测试宿主未预留系统组件内边距，已校正。截图改用 MediaStore 保存，避开 AGP 测试后自动卸载清理；随后运行 [回归 37935801206](https://github.com/tsonglew/Quodex/actions/runs/37935801206)。另补齐并发刷新合并结果和设备码开关引导。
+- 2026-10-09：[回归 37935801206](https://github.com/tsonglew/Quodex/actions/runs/37935801206) 全部通过；视觉检查发现组件底部更新时间被裁切，随后调整间距和最小尺寸，增加完整可见性断言，改用 PixelCopy 捕获真实圆角效果。
+- 2026-10-09：[最终实现验证](https://github.com/tsonglew/Quodex/actions/runs/37936883382) 全部通过：27 项单元测试、lint、APK 与测试包构建、4 项 Android 35 原生测试。复查 7 张截图，确认三种组件布局的数字、分段条和更新时间完整。M1 任务及 milestone 已完成；其余阶段保留真实授权、平台／Launcher 与长期观察的待验收项。
 
-- 2026-10-10：新增 M6 CI/CD 与 GitHub Deployments 配置，参考 magpie 固定提交。运行 [37978463336](https://github.com/tsonglew/QuotaPal/actions/runs/37978463336) 的交付检查、40 项 JVM 测试、lint、APK、API 29／31／35／36 设备矩阵及统一 CI gate 全部通过。本地标准 AOSP 35 额外通过 10 项设备测试；release lint／R8 构建通过，实际 zipalign／apksigner 临时密钥演练通过。尚未用正式密钥发布或登记实际 deployment；GitHub 写权限仍阻止创建 PR。详见 [alpha04 验证记录](VALIDATION_ALPHA04.md)。
+- 2026-10-10：新增 M6 CI/CD 与 GitHub Deployments 配置，参考 magpie 固定提交。运行 [37978463336](https://github.com/tsonglew/Quodex/actions/runs/37978463336) 的交付检查、40 项 JVM 测试、lint、APK、API 29／31／35／36 设备矩阵及统一 CI gate 全部通过。本地标准 AOSP 35 额外通过 10 项设备测试；release lint／R8 构建通过，实际 zipalign／apksigner 临时密钥演练通过。尚未用正式密钥发布或登记实际 deployment；GitHub 写权限仍阻止创建 PR。详见 [alpha04 验证记录](VALIDATION_ALPHA04.md)。
 
 - 2026-10-10：用户反馈清理后台后不再自动更新。新增分品牌后台引导，版本推进 `0.1.0-alpha05`：自动识别与手动切换、应用信息／电池优化入口、返回后重读系统状态、强制停止后重开提示。未将其认定为已修复后台限制；H04 保留小米 Android 17 及其他 OEM 实测。调研见 [后台更新引导](BACKGROUND_GUIDE.md)。40 项 JVM 测试、lint、App／测试 APK 构建及新增页面回归通过；11 项交付工具测试通过。Android 35 全部 11 项设备测试通过，小米引导原生截图已检查，H01–H03 完成，H04 待真机验收。详见 [alpha05 验证记录](VALIDATION_ALPHA05.md)。
 
 - 2026-10-10：用户报告小组件手动刷新不生效。定位到按钮只排入普通 WorkManager 任务，无立即获取；改为有时限的直接强制刷新，超时／临时失败再续办，Android 12+ 续办使用 expedited，新的续办不被旧任务退避挡住。修复中断请求的最近尝试时间恢复，避免续办误用旧缓存当成功；加入回归测试，版本推进 alpha06。45 项 JVM 测试、lint、App／测试 APK 构建通过；设备共 12 项覆盖通过（首轮 9 项通过，截图布局等待修正后 3 项组件回归通过；最后针对缺失额度布局与刷新回调的 2 项再次通过）。I01–I02 完成，I03 保留真机验证；详见 [alpha06 验证记录](VALIDATION_ALPHA06.md)。
 
-- 2026-10-10：[alpha06 CI 37981492470](https://github.com/tsonglew/QuotaPal/actions/runs/37981492470) 完成：45 项 JVM、lint、构建、API 29／31／35／36 设备矩阵、交付脚本检查及统一 gate 全部通过。alpha07 新增离线隐私说明，两处入口共用一份打包原文；设置和连接前的查看／关闭已通过 Android 35 测试，截图已检查，F04 完成。公开发布仍等待 M4–M5 的其余验收。
+- 2026-10-10：[alpha06 CI 37981492470](https://github.com/tsonglew/Quodex/actions/runs/37981492470) 完成：45 项 JVM、lint、构建、API 29／31／35／36 设备矩阵、交付脚本检查及统一 gate 全部通过。alpha07 新增离线隐私说明，两处入口共用一份打包原文；设置和连接前的查看／关闭已通过 Android 35 测试，截图已检查，F04 完成。公开发布仍等待 M4–M5 的其余验收。
 
 - 2026-10-10：alpha07 的 release lint、R8 构建通过，实际 manifest 无 debuggable 与 debug 测试宿主，禁止备份和明文网络；生产代码无凭据／HTTP 日志。使用一次性密钥在 Android 35 标准模拟器安装真实 minified release，启动、示例、组件页、深色设置、隐私说明与退出全部通过。F03 完成；加入发布 CI 四版本 minified 页面检查和不发布的手动验证选项。正式签名、实际发布与升级仍待验收。详见 [alpha07 验证记录](VALIDATION_ALPHA07.md)。
 
-- 2026-10-10：[alpha07 CI 37982843666](https://github.com/tsonglew/QuotaPal/actions/runs/37982843666) 的交付检查、构建、API 29／31／35／36 设备测试与 gate 全部通过。alpha08 修复网络请求期间共享快照初始化阻塞组件渲染，并在请求未结束时唤醒 Glance 显示刷新状态；47 项 JVM、lint 与 debug 构建通过。标准 AOSP 35 验证两种 App 添加确认、标准入口取消、桌面显示和点击打开 App；系统选择器拖入已进入配置页并验证取消。新增 API 37.0 与 37.2 CI 配置、16 KB 对齐检查，实际运行结果待记录。
+- 2026-10-10：[alpha07 CI 37982843666](https://github.com/tsonglew/Quodex/actions/runs/37982843666) 的交付检查、构建、API 29／31／35／36 设备测试与 gate 全部通过。alpha08 修复网络请求期间共享快照初始化阻塞组件渲染，并在请求未结束时唤醒 Glance 显示刷新状态；47 项 JVM、lint 与 debug 构建通过。标准 AOSP 35 验证两种 App 添加确认、标准入口取消、桌面显示和点击打开 App；系统选择器拖入已进入配置页并验证取消。新增 API 37.0 与 37.2 CI 配置、16 KB 对齐检查，实际运行结果待记录。
 
 - 2026-10-10：Android 17／API 37 本地首次运行确认系统版本及 4 KB 页面，应用安装成功。旧 Espresso 的 InputManager 反射方法已被平台移除，升级 AndroidX Test 依赖；补充 AppFlow 每项开始前清理示例状态，避免中断后残留影响结果。未将首次失败计为应用兼容性通过。
 
@@ -106,7 +106,7 @@ alpha21 本地验证：152 项 JVM 测试、46 项 Python 工具测试全部通�
 
 - 2026-10-10：新增外部两阶段生命周期 harness，API 37 强停后重启进程验证真实 Keystore／Room 缓存、组件 ID／设置及周期任务恢复，无额度重取，E04 完成。设备重启与 alpha08→alpha09 覆盖安装进行中，D08 保留。
 
-- 2026-10-10：API 37 真实重启及 alpha08→alpha09 跨版本覆盖安装恢复回归通过，保留原缓存时间与组件 ID／设置、恢复唯一周期同步且不重取额度，D08 完成。CI 37991519575 启动日志明确找不到 quotapal-ci AVD；显式统一工具路径并本地验证 ini 与设备列表，云端待重跑。
+- 2026-10-10：API 37 真实重启及 alpha08→alpha09 跨版本覆盖安装恢复回归通过，保留原缓存时间与组件 ID／设置、恢复唯一周期同步且不重取额度，D08 完成。CI 37991519575 启动日志明确找不到 quodex-ci AVD；显式统一工具路径并本地验证 ini 与设备列表，云端待重跑。
 
 - 2026-10-10：新 CI 完成，35／36 通过；29／31 暴露紧凑组件大字体空间不足，进一步收紧排版；37 AVD 路径已显式统一。保留失败证据并待新矩阵。生命周期宿主改动的五项渲染回归通过（110.148 秒）。PR 写入权限复查仍 403。
 
@@ -190,7 +190,7 @@ alpha21 本地验证：152 项 JVM 测试、46 项 Python 工具测试全部通�
 
 ## 六版本 CI 验收
 
-2026-10-10，源提交 f0e1fffc58452bd62545e623d08ca329c3c1b2dd 的 [运行 38007906590](https://github.com/tsonglew/QuotaPal/actions/runs/38007906590) 全部终态成功：build、delivery、29／31／35／36／37.0／37.2 六组设备矩阵、Android CI gate。37.0／37.2 各 18 项实际普通测试及四个独立探针通过，实际 guest SDK=37、PAGE_SIZE=4096／16384；三组件真实触摸刷新及缩放尺寸断言保留。E06 已勾选完成。
+2026-10-10，源提交 f0e1fffc58452bd62545e623d08ca329c3c1b2dd 的 [运行 38007906590](https://github.com/tsonglew/Quodex/actions/runs/38007906590) 全部终态成功：build、delivery、29／31／35／36／37.0／37.2 六组设备矩阵、Android CI gate。37.0／37.2 各 18 项实际普通测试及四个独立探针通过，实际 guest SDK=37、PAGE_SIZE=4096／16384；三组件真实触摸刷新及缩放尺寸断言保留。E06 已勾选完成。
 
 里程碑 PR 创建再次调用 GitHub 集成，实际返回 403 Resource not accessible by integration，尚无新 PR 或合并；没有绕过权限直接推送 master。G02 的 PR／主分支、G03 的实际源提交 deployment、G05／G08 的正式固定签名和发布仍未验收；真实账号完整生命周期、OEM、48 小时／7 天观察仍保留。
 

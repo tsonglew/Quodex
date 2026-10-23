@@ -99,13 +99,13 @@ jobs:
           assert re.fullmatch(r'[0-9a-f]{40}', source)
           assert metadata['schema'] == 1 and metadata['source_sha'] == source
           assert re.fullmatch(r'[0-9a-f]{40}', metadata['build_sha'])
-          assert metadata['application_id'] == 'com.tsonglew.quotapal'
-          apk = root / 'quotapal.apk'
+          assert metadata['application_id'] == 'com.tsonglew.quodex'
+          apk = root / 'quodex.apk'
           assert apk.is_file() and not apk.is_symlink()
           assert apk.read_bytes().startswith(b'PK')
           digest = hashlib.sha256(apk.read_bytes()).hexdigest()
           assert digest == metadata['sha256']
-          assert (root / 'SHA256SUMS').read_text() == f'{digest}  quotapal.apk\n'
+          assert (root / 'SHA256SUMS').read_text() == f'{digest}  quodex.apk\n'
           PY
       - name: Record deployment result
         if: always() && steps.deployment.outputs.id != ''

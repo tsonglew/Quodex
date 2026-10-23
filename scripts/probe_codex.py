@@ -14,7 +14,7 @@ tokens = auth.get('tokens') or {}
 if not tokens.get('access_token'):
     raise SystemExit('No ChatGPT access token available; authenticate using Codex first.')
 headers = {'Authorization': 'Bearer ' + tokens['access_token'], 'Accept': 'application/json',
-           'User-Agent': 'QuotaPal/0.1 protocol-validation'}
+           'User-Agent': 'Quodex/0.1 protocol-validation'}
 if tokens.get('account_id'):
     headers['ChatGPT-Account-Id'] = tokens['account_id']
 request = urllib.request.Request('https://chatgpt.com/backend-api/wham/usage', headers=headers)

@@ -2,8 +2,8 @@
 # Owned CI emulators only. Synthetic requests stay inside the test runner.
 set -euo pipefail
 mkdir -p screenshots
-adb -e shell am instrument -r -w -e class com.tsonglew.quotapal.NetworkConstraintDeviceTest \
-  -e networkProbe true com.tsonglew.quotapal.test/com.tsonglew.quotapal.QuotaTestRunner \
+adb -e shell am instrument -r -w -e class com.tsonglew.quodex.NetworkConstraintDeviceTest \
+  -e networkProbe true com.tsonglew.quodex.test/com.tsonglew.quodex.QuotaTestRunner \
   > screenshots/network-probe.txt
 cat screenshots/network-probe.txt
 grep -q '^OK (1 test)' screenshots/network-probe.txt

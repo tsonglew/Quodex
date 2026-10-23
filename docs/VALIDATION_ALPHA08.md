@@ -29,7 +29,7 @@ Android 17 上新增真实 AppWidgetHost 回归通过（9.883 秒）：280×150 
 
 ## 云端启动失败与修复
 
-[37986219241](https://github.com/tsonglew/QuotaPal/actions/runs/37986219241) 的交付、构建及 API 29／31／35／36 设备 job 成功。API 37.0 在 boot_completed=1 后 input/settings 服务不可用；37.2 发送按键时 Broken pipe，均未开始应用测试，统一 gate 失败。保留失败证据。
+[37986219241](https://github.com/tsonglew/Quodex/actions/runs/37986219241) 的交付、构建及 API 29／31／35／36 设备 job 成功。API 37.0 在 boot_completed=1 后 input/settings 服务不可用；37.2 发送按键时 Broken pipe，均未开始应用测试，统一 gate 失败。保留失败证据。
 
 新增 Android 17 启动脚本：相同官方镜像与 4 GB RAM，等待核心服务注册、包查询、settings 与无操作按键连续三轮成功后执行完整原测试，保存启动及 logcat 日志。14 项交付脚本测试（含这两种实际启动失败回归）、actionlint、ShellCheck 通过；就绪探测在本地 Android 17 成功。云端新启动流程及 16 KB 仍待运行。所有普通 CI job 改为检出事件 SHA，避免分支移动使不同 job 测试不同提交。
 
