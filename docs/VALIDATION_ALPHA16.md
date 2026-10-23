@@ -15,7 +15,6 @@
 | versionCode | 15 | 16 |
 | APK SHA-256 | 85bbcc69e94f39a7f5334f4ecdb0e74c142e16d312c7befa316b08e99c9aeb26 | 77d04ec3ef52ef5dce25c7a8849248a8c30d4951bd67649f859a0fb50631a28b |
 
-下载后独立执行 apksigner、zipalign 和 aapt2，核对 provenance、SHA256SUMS 及 APK 实际字节。两个包均为 `com.tsonglew.quotapal`，minSdk 29／targetSdk 36、非 debuggable、16 KB 对齐；共同签名证书 SHA-256 为 `5e7980c122100ccf9799a5174cb0e5a1748b8c442c09c015e145003145d2b5d4`，与 android-release 的公开指纹变量一致。[目标 APK 核验结果](diagnostics/alpha16-upgrade/apk-verification.json)。未读取本机签名 keystore 或密码。
 
 ## 实际覆盖升级
 

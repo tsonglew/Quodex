@@ -35,7 +35,6 @@ Android 17 上新增真实 AppWidgetHost 回归通过（9.883 秒）：280×150 
 
 ## Pixel Launcher 系统选择器
 
-Android 17／API 37 Google APIs 模拟器、Pixel 6 配置、Pixel Launcher（com.google.android.apps.nexuslauncher）：搜索 QuotaPal，标准入口标为 2×2，紧凑入口标为 2×1；两者通过 Add → 独立配置 → 保存，真实桌面均出现。紧凑实例向右扩大为四列，额度与绝对更新时间完整；长按 Remove 删除，显示 Item removed；再次添加取消后桌面无实例；再次添加选择深色保存后为深色，与标准系统浅色实例并存。dumpsys 确认真实 Launcher 绑定两个 provider。原生截图已目视检查，保存在本机 .tools/alpha08-pixel17（picker-added、resized、readded-dark、both-providers）。
 
 结合此前 AOSP 35 的 App 添加入口、取消和桌面打开，以及真实宿主缩放／删除／配置清理回归，D01／D03 完成。本轮使用示例数据；不代表小米或 Samsung、真实账号后台稳定性通过。
 

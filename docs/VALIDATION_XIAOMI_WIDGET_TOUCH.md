@@ -12,7 +12,6 @@ Xiaomi 17 Ultra，Android 17／API 37；系统 `OS4.0.0.22.XPACNXM`，OS 名称 
 
 Android 12 及以上的 12 个 Glance Button XML（base 1 个、v33 11 个）仅将根改为透明、可点击的 TextView，并显式居中及暴露无障碍语义。保留原 ID、宽高、weight、layout gravity、layoutDirection、Glance 标记及 ripple。这样沿用 Glance 的动作与 ID 分配，避免试验中嵌入 RemoteViews 的目标映射异常。`verifyGlanceButtonLayouts` 检查 debug/release 实际依赖均为同一 Glance 1.1.1 AAR，覆盖集合完整，且原布局元数据未改变；升级依赖必须重新审查。
 
-打开区域提供额度、状态、更新时间等完整摘要，避免触摸探索只读出“打开 QuotaPal”。当前外层 4–12 dp 留白不在打开区域内；文字、主体、页脚时间与独立刷新区为验收对象。API 29/30 继续使用 Glance 的模拟按钮分支。
 
 ## 当前候选验证
 
@@ -29,7 +28,6 @@ Android 12 及以上的 12 个 Glance Button XML（base 1 个、v33 11 个）仅
 
 v5 固定 APK 位于本地忽略目录 `artifacts/xiaomi-alpha18/emulator-widget-fix-v5/apks/`：app SHA-256 `7f89a559994ca0a00144db838bf6918822e89e4108a916b3923fe4aa60c79c63`；androidTest SHA-256 `7d469770ed2fc45d6aee07e631a954e7c00eab31434c823ac02cca3276a5082d`。普通设备测试检查真实触摸、MainActivity、实际 TextView 更新、单 HTTP 请求、刷新进度和刷新不打开应用；API31+ 另检查精确 TextView 类、有效且唯一的动作 ID、互不重叠的动作范围。跨版本以相应提交的 CI 为准。
 
-API37 普通回归保存在 `api37-regression-retry/`，TalkBack 专项保存在 `api37-talkback/`（均位于上述 v5 目录）。专项运行前确认 `emulator-5580` 为 qemu、API37、`quotapal-widget-api37`，并核对已安装 app／androidTest APK 哈希与固定文件一致；使用 `--no-hidden-api-checks -e talkbackProbe true` 调用真实 `injectInputEventToInputFilter`，没有普通输入 fallback。测试后字体 `1.0`、无障碍服务 `null`、accessibility enabled `0`、touch exploration `0`、TalkBack 通知权限未授予，均与测试前一致；系统服务状态也确认触摸探索关闭且无绑定服务。命令、哈希、设置前后值、恢复比对、有效截图基线和结果日志均已保存，crash buffer 为空。
 
 小米最终 preview 的 helper 结果与人工前后日志保存在本地忽略目录 `artifacts/xiaomi-alpha18/launcher-background-probe/production-leaf-*`。人工验证的两次打开分别为北京时间 09:15:59、09:16:02，刷新为 09:16:08、09:16:11；读取日志时前台仍是 MIUI 桌面。该阶段未改变正式包、真实账号或系统偏好，也未以示例跳过请求当作真实联网成功。
 
@@ -51,11 +49,9 @@ API37 普通回归保存在 `api37-regression-retry/`，TalkBack 专项保存在
 
 ## 保留的失败与证据校正
 
-- v5 API37 首轮 08:57:25.854 出现 SystemUI `KeyguardService` ANR（等待 20,524 ms），早于 QuotaPal 测试进程启动约 4.9 秒、首个测试宿主创建约 26.5 秒；当前窗口 XML 也确认 `System UI isn't responding`。4 项在触摸前的目标可见／稳定条件失败，1 项通过，第 6 项启动后主动中止，整轮 `complete=false`，不作为小组件点击失败或通过证据。保存原日志后，仅关闭已确认的系统 ANR 弹窗、恢复字体，再用同一 v5 APK 重跑 16/16 通过；没有扩大自动 ANR 豁免。首轮开机时截图目录不可读导致基线误记为空，随后拉取的 613 张混有旧文件，不能计为本轮新增截图；重跑使用有效基线，新增 31 张。
 - v2 API37 首轮被 SystemUI ANR 打断；下一轮 14/15 的失败发生在字体配置传播前置条件。夹具先启动前台 Activity 并严格等待系统字体配置生效后，固定 v2 APK 整轮 15/15（223.390 秒）通过。该结果不覆盖最终 TextView 资源修改。
 - v3 API29 首轮 14/15：200% slim 在触摸前显示“已用 38%”，另两个组件显示“剩余 62%”。新建测试组件未初始化自己的偏好，可能读取旧 ID 设置。夹具改为明确设置并仅清理自己创建的 ID；未清应用数据、未修改生产删除路径或删除专项。v4 15/15（108.5 秒）通过，v5 新增页脚项后 16/16 通过。
 - [AOSP UiAutomation 源码](https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/app/UiAutomation.java) 区分普通输入注入与 `injectInputEventToInputFilter`；普通注入跳过 accessibility input filter。因此 alpha10–alpha13 及早期“TalkBack 双击通过”只能视为普通注入刷新，不能证明 TalkBack 识别了手势。
-- 更正输入入口后的 v2 探针实际收到触摸探索开始事件，额度中心却只聚焦“打开 QuotaPal”，确认摘要回归。补充完整摘要后，v3 TalkBack 两项 2/2（60.637 秒）通过：默认字体 standard/slim 探索能读出 62%；200% 字体两组件探索刷新、双击产生点击事件、状态与无障碍树变为 83% 且各一次请求。没有普通注入 fallback。测试后字体 1.0、服务 null、touch exploration 0 已恢复。
 - v3 slim 的一张更新截图仍捕获旧一帧 62%，不作为 83% 视觉证明。专项使用请求、存储和无障碍树断言；普通刷新回归另等实际 TextView 更新。v3 新摘要下打开应用 6/6（63.617 秒）通过，亦不代替最终 v5 验收。
 
 历史证据按 v2／v3／v4／v5 分目录保留，不覆盖失败日志。完整 preview 的点击与外观已验收；CI、正式签名覆盖升级和真实账号刷新仍待完成。

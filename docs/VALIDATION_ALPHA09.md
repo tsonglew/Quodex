@@ -20,7 +20,6 @@ CI 37987702971：交付、构建和 API 29／31／35／36 成功；37.0／37.2 �
 
 Android 17 真实模拟器重启两阶段通过（2.620／19.114 秒）；从 git f4f4857 单独构建 alpha08、保留数据安装后 seed，再覆盖安装 alpha09，两阶段通过（0.666／8.652 秒）。升级断言确认 versionCode 从 8 增到 9；缓存时间、账号、独立组件设置、平台组件 ID 和唯一周期同步均恢复，未重取额度。D08 完成；不据此证明正式固定签名、OEM 或真实授权续期。
 
-新 CI 37991519575 的 Android 17 两组均失败。37.0 启动日志明确为 Unknown AVD name / 找不到 quotapal-ci.ini，清理已按时结束。显式统一 ANDROID_USER_HOME／ANDROID_EMULATOR_HOME／ANDROID_AVD_HOME，指定创建路径，启动前检查 ini 和 emulator -list-avds；本地相同目录规则创建 API 37 ARM64 AVD，ini 存在且 emulator 列出 quotapal-ci。云端 x86_64 仍待运行。路径规则依据 [Android 环境变量文档](https://developer.android.com/tools/variables)。
 
 CI 37991519575 最终：delivery／build 与 API 35／36 成功；API 29 的 200% 字体 130×50 时间裁切、API 31 的 130×70 示例标签省略；API 37 两组启动失败，统一 CI gate 正确失败。保留这些失败，不把先前 API 37 本地通过扩展为全部平台通过。紧凑字号进一步收紧，标准大字体额度与标题降低占用，仍保留全部文字裁切／省略断言，旧系统云端回归待运行。
 

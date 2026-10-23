@@ -63,7 +63,6 @@ alpha21 本地验证：152 项 JVM 测试、46 项 Python 工具测试全部通�
 
 - 2026-10-09：根据自用反馈修复无短周期／无周期额度的空白状态，加入“未提供短周期额度”“当前可用”“当前使用受限”和缺失用量说明；主界面、预览及原生组件共用状态判断。版本升级为 `0.1.0-alpha02`。[验证 37946436238](https://github.com/tsonglew/Quodex/actions/runs/37946436238) 全部通过：36 项单元测试、lint、App／测试 APK 构建、8 项 Android 35 测试。设备回归修复了紧凑组件新增提示后底部时间裁切的问题，三种尺寸的 5 种状态均验证通过。变更见 [PR #8](https://github.com/tsonglew/Quodex/pull/8)，完整证据见 [alpha02 验证记录](VALIDATION_ALPHA02.md)。
 
-- 2026-10-09：启动 M0、M1；核对官方设备授权流程与额度读取路径；检查 Nowdex 的蓝色分段进度条、大号百分比、浅深色圆角卡片和更新时间布局。
 
 - 2026-10-09：真实额度探测返回 HTTP 200，未保存身份、凭据或实际额度值。
 - 2026-10-09：建立 [M0](https://github.com/tsonglew/Quodex/issues/1)、[M1](https://github.com/tsonglew/Quodex/issues/2)、[M2](https://github.com/tsonglew/Quodex/issues/3)、[M3](https://github.com/tsonglew/Quodex/issues/4)、[M4](https://github.com/tsonglew/Quodex/issues/5)、[M5](https://github.com/tsonglew/Quodex/issues/6) 跟踪任务；完成协议适配、原生页面、组件、后台同步第一轮实现，进入构建验证。

@@ -2,7 +2,6 @@
 
 来自 [已通过的 Android 35 设备测试](https://github.com/tsonglew/Quodex/actions/runs/37936883382)，并经视觉检查。所有额度均为示例数据。App 由 Compose 测试捕获，组件由真实 AppWidgetHost 渲染后使用 PixelCopy 捕获。
 
-下方是 QuotaPal 时期的历史验收截图，保留原始画面与来源；当前品牌名称为 Quodex。最新品牌预览见 README。
 
 ## 额度页
 

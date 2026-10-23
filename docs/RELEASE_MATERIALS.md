@@ -42,7 +42,6 @@ GitHub Release 说明使用现有图标与示例截图链接；图像来源与�
 1. 从 [Quodex Releases](https://github.com/tsonglew/Quodex/releases) 选择版本，实验版本带 Pre-release 标记；只有附件中实际存在的 APK 才可下载，本文不表示已有正式签名版本。
 2. 下载 Quodex-版本.apk、SHA256SUMS 和 provenance.json；在电脑上可运行 `shasum -a 256 文件名.apk`，核对对应 SHA-256。哈希用于检查下载完整性，签名指纹与源提交记录在 provenance.json。
 3. 用手机打开 APK，按 Android 提示允许当前下载／文件应用安装来自此来源的应用，再确认安装。安装后打开 Quodex；不需要 root。
-4. Quodex 使用新的 Android applicationId `com.tsonglew.quodex`。旧版 QuotaPal 不会原地升级；安装 Quodex 后需要重新连接账号，旧数据不会自动迁移。旧版更新检查使用旧仓库 API 地址，无法跟随 GitHub 的仓库改名跳转，请从新的 Quodex Releases 页面手动下载。两者可以暂时并存，确认新版本正常后再手动卸载旧版。之后同包名、兼容正式签名且 versionCode 更高的 Quodex 版本可覆盖安装并保留数据。不要随意安装旧版本；签名不兼容或降级时由系统拒绝。CI debug 版切换正式签名通常需先卸载，再安装并重新连接。
-5. 当前无自动安装功能。更新前查看版本说明中的已知限制；发布异常可先保留现用版本并在 Issues 反馈，不移动或替换已公开版本 tag。
+4. 当前无自动安装功能。更新前查看版本说明中的已知限制；发布异常可先保留现用版本并在 Issues 反馈，不移动或替换已公开版本 tag。
 
 排查问题时，从设置 → 问题排查预览诊断报告，确认后再主动分享。报告含最近 200 条事件及 7 天统计；详细字段和 48 小时／7 天观察步骤见 [支持说明](SUPPORT.md)。

@@ -16,7 +16,6 @@
 
 ## 本地开发包交付
 
-在干净提交 ac3b6df6455856352fc546203ce844e16375f27a 再次执行 assembleDebug 后，使用现有产物工具打包并独立 verify 成功。本地包 `.tools/delivery-alpha14/quotapal.apk` 的 applicationId=com.tsonglew.quotapal、versionCode=14、versionName=0.1.0-alpha14，aapt2 实际清单一致。APK SHA-256：`eabca36b9c5c6fbfb06e52674cef3039b4ad7c856e36f1f3b21a74fbd8516a31`；metadata.json 与 SHA256SUMS 同目录。
 
 apksigner 实际验证 v2 签名成功；本地 Android Debug 证书 SHA-256 为 `a83328765a27dbb4713f363f5869edbfea78603cf1dc78563d41e6dcafe63290`。这是供自用验收的开发产物，不是固定发布签名或已通过完整云端 gate 的 Release，也不计为 G08 deployment 验收。
 
