@@ -19,7 +19,7 @@ class ReleaseContractTest(unittest.TestCase):
         (self.root / 'unsigned').mkdir()
         (self.root / 'unsigned/app-release-unsigned.apk').write_bytes(b'PKtest-apk')
         (self.root / 'unsigned/output-metadata.json').write_text(json.dumps(dict(
-            applicationId='com.tsonglew.quotapal', elements=[dict(versionName='0.1.0-alpha04', versionCode=4)])))
+            applicationId='com.tsonglew.quodex', elements=[dict(versionName='0.1.0-alpha04', versionCode=4)])))
         self.tools = self.root / 'sdk/build-tools/35.0.0'
         self.tools.mkdir(parents=True)
         self.bin = self.root / 'bin'
@@ -53,7 +53,7 @@ if sys.argv[1:3]==['release','view']:
 
     def update_metadata(self):
         notes = (self.root / 'artifacts/release/release-notes.md').read_text()
-        blocks = re.findall(r'<!-- quotapal-update\n(.*?)\n-->', notes, flags=re.DOTALL)
+        blocks = re.findall(r'<!-- quodex-update\n(.*?)\n-->', notes, flags=re.DOTALL)
         self.assertEqual(1, len(blocks))
         return json.loads(blocks[0])
 
@@ -67,7 +67,7 @@ if sys.argv[1:3]==['release','view']:
         self.assertIn('--draft=false', calls[-1])
         self.assertTrue((self.root / 'artifacts/release/provenance.json').exists())
         self.assertEqual(dict(schema=1, version_code=4, version_name='0.1.0-alpha04', source_sha='b'*40,
-                              signing_cert_sha256='a'*64, apk_name='QuotaPal-0.1.0-alpha04.apk'),
+                              signing_cert_sha256='a'*64, apk_name='Quodex-0.1.0-alpha04.apk'),
                          self.update_metadata())
 
     def test_signing_check_produces_assets_without_github_mutation(self):
@@ -87,7 +87,7 @@ if sys.argv[1:3]==['release','view']:
         for code in (0, -1, True, '4', 4.5, 2100000001):
             with self.subTest(code=code):
                 (self.root / 'unsigned/output-metadata.json').write_text(json.dumps(dict(
-                    applicationId='com.tsonglew.quotapal',
+                    applicationId='com.tsonglew.quodex',
                     elements=[dict(versionName='0.1.0-alpha04', versionCode=code)])))
                 result = self.run_release()
                 self.assertNotEqual(0, result.returncode)

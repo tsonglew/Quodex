@@ -2,8 +2,8 @@
 # Owned CI emulators only. The probe restores wall clock, timezone and auto settings.
 set -euo pipefail
 mkdir -p screenshots
-adb -e shell am instrument -r -w -e class com.tsonglew.quotapal.SystemTimeDeviceTest \
-  -e systemTimeProbe true com.tsonglew.quotapal.test/com.tsonglew.quotapal.QuotaTestRunner \
+adb -e shell am instrument -r -w -e class com.tsonglew.quodex.SystemTimeDeviceTest \
+  -e systemTimeProbe true com.tsonglew.quodex.test/com.tsonglew.quodex.QuotaTestRunner \
   > screenshots/system-time-probe.txt
 cat screenshots/system-time-probe.txt
 grep -q '^OK (1 test)' screenshots/system-time-probe.txt

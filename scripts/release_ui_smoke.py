@@ -13,8 +13,8 @@ def shell(*args):
 
 
 def nodes():
-    shell('uiautomator', 'dump', '/sdcard/quotapal-release-window.xml')
-    return ET.fromstring(shell('cat', '/sdcard/quotapal-release-window.xml')).iter('node')
+    shell('uiautomator', 'dump', '/sdcard/quodex-release-window.xml')
+    return ET.fromstring(shell('cat', '/sdcard/quodex-release-window.xml')).iter('node')
 
 
 def find(text):
@@ -40,7 +40,7 @@ def click(text, scroll=False):
     shell('input', 'tap', str((x1 + x2) // 2), str((y1 + y2) // 2))
 
 
-shell('am', 'start', '-W', '-n', 'com.tsonglew.quotapal/.MainActivity')
+shell('am', 'start', '-W', '-n', 'com.tsonglew.quodex/.MainActivity')
 click('先看看示例')
 wait('示例数据')
 click('小组件')

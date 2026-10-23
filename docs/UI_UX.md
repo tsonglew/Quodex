@@ -1,6 +1,6 @@
 # Android UI/UX 优化依据
 
-2026-10-22 核对 Android Developers 官方指南，并结合 QuotaPal 的原生 Compose 页面落实以下改动。保留现有三入口和额度／Token 数据口径。
+2026-10-22 核对 Android Developers 官方指南，并结合 Quodex 的原生 Compose 页面落实以下改动。保留现有三入口和额度／Token 数据口径。
 
 | 官方建议 | 原页面的问题 | 本次实现 |
 | --- | --- | --- |

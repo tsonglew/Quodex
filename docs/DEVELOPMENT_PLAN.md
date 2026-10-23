@@ -1,8 +1,8 @@
-# QuotaPal Android 开发计划
+# Quodex Android 开发计划
 
 更新日期：2026-10-10（Asia/Shanghai）。状态：开发进行中，实时记录见 [开发进度](PROGRESS.md)。
 
-QuotaPal 首版面向 Android，参考 Nowdex 的额度速览体验，先支持 Codex 单账号和桌面小组件。发布顺序为先自用 APK、验证稳定性，再公开发布。用户应能在桌面判断还有多少额度、何时重置，以及数据最后更新于何时。
+Quodex 首版面向 Android，参考 Nowdex 的额度速览体验，先支持 Codex 单账号和桌面小组件。发布顺序为先自用 APK、验证稳定性，再公开发布。用户应能在桌面判断还有多少额度、何时重置，以及数据最后更新于何时。
 
 本计划、[开发与验收 checklist](DEVELOPMENT_CHECKLIST.md) 和 GitHub milestones 共同记录后续工作。实现与验证状态以 checklist 和开发进度中的证据为准。
 
@@ -20,7 +20,7 @@ M0 的通过条件是可复现的接入结论、脱敏真实数据样本及限�
 
 ## 对标与产品范围
 
-Nowdex 的核心体验包括额度、重置时间和小组件，同时提供多服务、多账号、同步及用量分析。其 Codex 说明指出，会话窗口仅在账号返回相应数据时显示。QuotaPal 首版先对齐核心体验，不预设所有账号都有两个额度窗口。[Nowdex 官网](https://nowdex.app/)
+Nowdex 的核心体验包括额度、重置时间和小组件，同时提供多服务、多账号、同步及用量分析。其 Codex 说明指出，会话窗口仅在账号返回相应数据时显示。Quodex 首版先对齐核心体验，不预设所有账号都有两个额度窗口。[Nowdex 官网](https://nowdex.app/)
 
 | 能力 | 自用 MVP | 公开首版或后续 |
 | --- | --- | --- |
@@ -133,12 +133,12 @@ GitHub milestones 已创建并关联如下；实际阶段状态见开发进度�
 
 | 阶段 | GitHub milestone | 对应 checklist |
 | --- | --- | --- |
-| M0 | [接入验证 #1](https://github.com/tsonglew/QuotaPal/milestone/1) | A01–A09 |
-| M1 | [规格冻结 #2](https://github.com/tsonglew/QuotaPal/milestone/2) | B01–B08 |
-| M2 | [账号与额度 #3](https://github.com/tsonglew/QuotaPal/milestone/3) | C01–C08 |
-| M3 | [小组件与后台 #4](https://github.com/tsonglew/QuotaPal/milestone/4) | D01–D09、E01–E04 的实现与初验 |
-| M4 | [稳定性验证 #5](https://github.com/tsonglew/QuotaPal/milestone/5) | E01–E09、D01–D09 的完整回归、最终验收目标 |
-| M5 | [公开发布准备 #6](https://github.com/tsonglew/QuotaPal/milestone/6) | F01–F08 |
+| M0 | [接入验证 #1](https://github.com/tsonglew/Quodex/milestone/1) | A01–A09 |
+| M1 | [规格冻结 #2](https://github.com/tsonglew/Quodex/milestone/2) | B01–B08 |
+| M2 | [账号与额度 #3](https://github.com/tsonglew/Quodex/milestone/3) | C01–C08 |
+| M3 | [小组件与后台 #4](https://github.com/tsonglew/Quodex/milestone/4) | D01–D09、E01–E04 的实现与初验 |
+| M4 | [稳定性验证 #5](https://github.com/tsonglew/Quodex/milestone/5) | E01–E09、D01–D09 的完整回归、最终验收目标 |
+| M5 | [公开发布准备 #6](https://github.com/tsonglew/Quodex/milestone/6) | F01–F08 |
 
 ## 验证与交付要求
 

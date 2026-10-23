@@ -17,15 +17,15 @@ def verify(directory, source_sha):
         raise ValueError('Invalid source SHA')
     if not re.fullmatch(r'[0-9a-f]{40}', metadata.get('build_sha', '')):
         raise ValueError('Invalid build SHA')
-    if metadata.get('application_id') != 'com.tsonglew.quotapal':
+    if metadata.get('application_id') != 'com.tsonglew.quodex':
         raise ValueError('Unexpected application ID')
-    apk = directory / 'quotapal.apk'
+    apk = directory / 'quodex.apk'
     if apk.is_symlink() or not apk.is_file() or not apk.read_bytes().startswith(b'PK'):
         raise ValueError('Missing or invalid APK')
     digest = hashlib.sha256(apk.read_bytes()).hexdigest()
     if metadata.get('sha256') != digest:
         raise ValueError('APK checksum mismatch')
-    if (directory / 'SHA256SUMS').read_text() != f'{digest}  quotapal.apk\n':
+    if (directory / 'SHA256SUMS').read_text() != f'{digest}  quodex.apk\n':
         raise ValueError('Checksum manifest mismatch')
     return metadata
 
@@ -39,13 +39,13 @@ def package(apk, output_metadata, destination, source_sha, build_sha):
         raise ValueError('Expected one universal APK')
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(apk, destination / 'quotapal.apk')
-    digest = hashlib.sha256((destination / 'quotapal.apk').read_bytes()).hexdigest()
+    shutil.copyfile(apk, destination / 'quodex.apk')
+    digest = hashlib.sha256((destination / 'quodex.apk').read_bytes()).hexdigest()
     metadata = dict(schema=1, source_sha=source_sha, build_sha=build_sha,
                     application_id=built['applicationId'], version_name=elements[0]['versionName'],
                     version_code=elements[0]['versionCode'], sha256=digest)
     (destination / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
-    (destination / 'SHA256SUMS').write_text(f'{digest}  quotapal.apk\n')
+    (destination / 'SHA256SUMS').write_text(f'{digest}  quodex.apk\n')
     verify(destination, source_sha)
 
 

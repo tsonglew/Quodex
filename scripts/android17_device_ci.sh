@@ -31,27 +31,27 @@ done
 export PATH="$ANDROID_HOME/platform-tools:$PATH"
 adb version
 emulator_binary="$ANDROID_HOME/emulator/emulator"
-avd_root=$(mktemp -d "${RUNNER_TEMP:-/tmp}/quotapal-avd.XXXXXX")
+avd_root=$(mktemp -d "${RUNNER_TEMP:-/tmp}/quodex-avd.XXXXXX")
 export ANDROID_USER_HOME="$avd_root"
 export ANDROID_EMULATOR_HOME="$avd_root"
 export ANDROID_AVD_HOME="$avd_root/avd"
 mkdir -p "$ANDROID_AVD_HOME"
-printf 'no\n' | avdmanager create avd --force -n quotapal-ci \
+printf 'no\n' | avdmanager create avd --force -n quodex-ci \
   --package "system-images;android-${DEVICE_API};${DEVICE_TARGET};x86_64" --device pixel_6 \
-  --path "$ANDROID_AVD_HOME/quotapal-ci.avd"
-test -s "$ANDROID_AVD_HOME/quotapal-ci.ini"
+  --path "$ANDROID_AVD_HOME/quodex-ci.avd"
+test -s "$ANDROID_AVD_HOME/quodex-ci.ini"
 # Emulator target parsing expects an integer major API. Decimal SDK package
 # revisions can otherwise fall back to API 3 and disable required memory paths.
 case "$DEVICE_API" in 37.0|37.2) ;; *) echo "Unexpected Android 17 image: $DEVICE_API" >&2; exit 1 ;; esac
-cp "$ANDROID_AVD_HOME/quotapal-ci.ini" screenshots/avd-root-original.ini
-sed -i 's/^target=.*/target=android-37/' "$ANDROID_AVD_HOME/quotapal-ci.ini"
-grep -q '^target=android-37$' "$ANDROID_AVD_HOME/quotapal-ci.ini"
-cp "$ANDROID_AVD_HOME/quotapal-ci.ini" screenshots/avd-root-normalized.ini
+cp "$ANDROID_AVD_HOME/quodex-ci.ini" screenshots/avd-root-original.ini
+sed -i 's/^target=.*/target=android-37/' "$ANDROID_AVD_HOME/quodex-ci.ini"
+grep -q '^target=android-37$' "$ANDROID_AVD_HOME/quodex-ci.ini"
+cp "$ANDROID_AVD_HOME/quodex-ci.ini" screenshots/avd-root-normalized.ini
 # Only host AVD metadata changes; image.sysdir still selects the exact matrix image.
-grep '^image.sysdir.1=' "$ANDROID_AVD_HOME/quotapal-ci.avd/config.ini" | tee screenshots/avd-image-path.txt
-printf '\ndisk.dataPartition.size=4G\n' >> "$ANDROID_AVD_HOME/quotapal-ci.avd/config.ini"
+grep '^image.sysdir.1=' "$ANDROID_AVD_HOME/quodex-ci.avd/config.ini" | tee screenshots/avd-image-path.txt
+printf '\ndisk.dataPartition.size=4G\n' >> "$ANDROID_AVD_HOME/quodex-ci.avd/config.ini"
 "$emulator_binary" -list-avds
-"$emulator_binary" -avd quotapal-ci -no-window -no-audio -no-boot-anim \
+"$emulator_binary" -avd quodex-ci -no-window -no-audio -no-boot-anim \
   -no-snapshot -partition-size 4096 -memory 4096 -cores 2 -gpu software \
   -verbose > screenshots/emulator-startup.txt 2>&1 &
 emulator_pid=$!

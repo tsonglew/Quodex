@@ -22,7 +22,7 @@ if [[ "$test_result" -eq 0 ]]; then
   fi
 fi
 mkdir -p screenshots
-adb pull /sdcard/Pictures/QuotaPalTest/. ./screenshots/ || true
+adb pull /sdcard/Pictures/QuodexTest/. ./screenshots/ || true
 adb shell dumpsys appwidget > screenshots/widget-host-diagnostics.txt
 adb logcat -d -s AndroidRuntime GlanceAppWidget AppWidgetServiceImpl QuotaDeviceEnvironment > screenshots/device-diagnostics.txt
 if [[ "$test_result" -eq 0 && -n "${RELEASE_APK:-}" ]]; then

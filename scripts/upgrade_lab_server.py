@@ -24,7 +24,7 @@ def certificates(directory):
     # Fresh keys for this lab, entirely unrelated to the APK release keystore.
     ca_config = directory / 'ca.cnf'
     ca_config.write_text('[req]\ndistinguished_name=dn\nx509_extensions=ca\nprompt=no\n'
-                         '[dn]\nCN=QuotaPal disposable upgrade lab\n[ca]\n'
+                         '[dn]\nCN=Quodex disposable upgrade lab\n[ca]\n'
                          'basicConstraints=critical,CA:true,pathlen:0\n'
                          'keyUsage=critical,keyCertSign,cRLSign\n')
     leaf_config = directory / 'server.cnf'
@@ -48,7 +48,7 @@ def certificates(directory):
 
 
 class Fixture:
-    account = 'quotapal-synthetic-upgrade-account'
+    account = 'quodex-synthetic-upgrade-account'
 
     def __init__(self):
         self.lock = threading.Lock()

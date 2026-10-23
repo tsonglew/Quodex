@@ -4,14 +4,14 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
-        android:name=".QuotaPalApplication"
+        android:name=".QuodexApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"
-        android:icon="@drawable/ic_quotapal"
-        android:label="QuotaPal"
+        android:icon="@drawable/ic_quodex"
+        android:label="Quodex"
         android:supportsRtl="true"
-        android:theme="@style/Theme.QuotaPal"
+        android:theme="@style/Theme.Quodex"
         android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>

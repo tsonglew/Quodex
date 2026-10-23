@@ -1,6 +1,6 @@
-# QuotaPal 首版界面规格
+# Quodex 首版界面规格
 
-更新日期：2026-10-22。最初参考 [Nowdex 官网 Codex 小组件](https://nowdex.app/#widgets) 的浅色与深色实例；本轮依据 Android 官方可访问性和自适应指南调整，详见 [UI/UX 依据](UI_UX.md)。品牌使用 QuotaPal 自己的字标与图标，不复制竞品素材。
+更新日期：2026-10-22。最初参考 [Nowdex 官网 Codex 小组件](https://nowdex.app/#widgets) 的浅色与深色实例；本轮依据 Android 官方可访问性和自适应指南调整，详见 [UI/UX 依据](UI_UX.md)。品牌使用 Quodex 自己的字标与图标，不复制竞品素材。
 
 ## 视觉规则
 

@@ -4,9 +4,9 @@
 
 ## 自动产物
 
-[master 运行 38037985183](https://github.com/tsonglew/QuotaPal/actions/runs/38037985183) 由合并 PR #16 自动触发；交付脚本、71 项 JVM、debug／release lint、R8、API 29／31／35／36／37.0／37.2 全部设备与 minified 页面检查、统一 gate 及固定签名全部成功。
+[master 运行 38037985183](https://github.com/tsonglew/Quodex/actions/runs/38037985183) 由合并 PR #16 自动触发；交付脚本、71 项 JVM、debug／release lint、R8、API 29／31／35／36／37.0／37.2 全部设备与 minified 页面检查、统一 gate 及固定签名全部成功。
 
-[下载 android-signed-apk](https://github.com/tsonglew/QuotaPal/actions/runs/38037985183/artifacts/11664782203)，保留 14 天。此次没有创建公开 GitHub Release 或版本 tag。
+[下载 android-signed-apk](https://github.com/tsonglew/Quodex/actions/runs/38037985183/artifacts/11664782203)，保留 14 天。此次没有创建公开 GitHub Release 或版本 tag。
 
 | 校验 | alpha15 基线 | alpha16 目标 |
 | --- | --- | --- |
@@ -49,14 +49,14 @@
 
 ## 修复与回归过程
 
-初始候选 31b7ebc 的 [CI 38035733101](https://github.com/tsonglew/QuotaPal/actions/runs/38035733101) 完整六组及 gate 成功。并行运行的 master f5edf96 在 API 37.0 被 Pixel Launcher 无响应弹窗遮挡，真实失败截图及系统日志见 [测试指南](TESTING.md#模拟器桌面弹窗隔离)。随后增加该已确认桌面变体的严格处理，并以最终提交重新运行 CI。
+初始候选 31b7ebc 的 [CI 38035733101](https://github.com/tsonglew/Quodex/actions/runs/38035733101) 完整六组及 gate 成功。并行运行的 master f5edf96 在 API 37.0 被 Pixel Launcher 无响应弹窗遮挡，真实失败截图及系统日志见 [测试指南](TESTING.md#模拟器桌面弹窗隔离)。随后增加该已确认桌面变体的严格处理，并以最终提交重新运行 CI。
 
 本机更新后的 debug／androidTest 编译成功，专用 API 31 模拟器上 WidgetRefreshActionDeviceTest 两项实际通过（4.838 秒），保留三组件进度、唯一请求及最终额度断言；本轮没有出现桌面弹窗，不能据此声称已实际执行弹窗关闭分支。本机独立 release 构建达到 600 秒预算后退出 124，不算通过；最终 minified 构建已由上方 master 云端成功结果补齐。
 
 追加受控桌面故障对照：只在已核对名称的专用 API 31 AVD 暂停系统 Pixel Launcher，再注入输入造成实际 ANR，随后 finally 恢复该进程。输入命令达到 20 秒限时，并非普通成功返回；后续 UI XML 和系统日志实际确认出现完整匹配的弹窗。运行原三组件真实点击测试，处理分支日志明确记录关闭 com.google.android.apps.nexuslauncher，保留[关闭前截图](screenshots/emulator-pixel-launcher-recovery-api31.png)，原断言通过（5.908 秒）。这证明已执行恢复分支，不证明桌面自身 ANR 被修复。
 
-433a66c 的 [CI 38036477159](https://github.com/tsonglew/QuotaPal/actions/runs/38036477159) 最终五组成功、API 35 失败、gate 正确失败。失败来自诊断报告预览的 Dialog 创建：[完整栈](diagnostics/alpha16-compose-test-thread.txt) 包含 DefaultDispatcher、TestMonotonicFrameClock、ApplyingContinuationInterceptor，尚未在生产运行器复现。[AndroidX 测试源码](https://android.googlesource.com/platform/frameworks/support/+/202b4bda8adfeb303ac30e359e8436a3752fe2b0/compose/ui/ui-test/src/commonMain/kotlin/androidx/compose/ui/test/ApplyingContinuationInterceptor.kt) 说明此拦截器在恢复 continuation 后发送快照通知；据堆栈推断，测试的不受线程约束的恢复路径触发了后台重组。候选将预览／清除协程显式约束到 Android 主调度器，文件读取仍在 IO，增加五轮实际预览／清除及额度请求数不变断言；最终六组 CI 已重新验证。
+433a66c 的 [CI 38036477159](https://github.com/tsonglew/Quodex/actions/runs/38036477159) 最终五组成功、API 35 失败、gate 正确失败。失败来自诊断报告预览的 Dialog 创建：[完整栈](diagnostics/alpha16-compose-test-thread.txt) 包含 DefaultDispatcher、TestMonotonicFrameClock、ApplyingContinuationInterceptor，尚未在生产运行器复现。[AndroidX 测试源码](https://android.googlesource.com/platform/frameworks/support/+/202b4bda8adfeb303ac30e359e8436a3752fe2b0/compose/ui/ui-test/src/commonMain/kotlin/androidx/compose/ui/test/ApplyingContinuationInterceptor.kt) 说明此拦截器在恢复 continuation 后发送快照通知；据堆栈推断，测试的不受线程约束的恢复路径触发了后台重组。候选将预览／清除协程显式约束到 Android 主调度器，文件读取仍在 IO，增加五轮实际预览／清除及额度请求数不变断言；最终六组 CI 已重新验证。
 
 主线程约束修订后，debug／androidTest 重新构建成功，专用 API 31 AppFlowTest 四项全部通过（18.166 秒），包含五轮预览／清除、共十次报告弹窗，以及额度请求数不变断言。实际签名升级前已卸载该 debug 测试数据，重新安装正式 alpha15 并经其自身连接入口建立基线；没有将 debug 数据或测试签名当作升级基线。
 
-最终候选 a361ded7 的 [CI 38037325156](https://github.com/tsonglew/QuotaPal/actions/runs/38037325156) 六组设备、构建、交付检查及统一 gate 全部通过；PR #16 已合并，master 自动出包运行 38037985183 的实际 release 构建和固定签名验收也已通过。
+最终候选 a361ded7 的 [CI 38037325156](https://github.com/tsonglew/Quodex/actions/runs/38037325156) 六组设备、构建、交付检查及统一 gate 全部通过；PR #16 已合并，master 自动出包运行 38037985183 的实际 release 构建和固定签名验收也已通过。

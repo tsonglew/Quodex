@@ -40,12 +40,12 @@
 
 | 项目 | 当前证据与限制 |
 | --- | --- |
-| Android 10／12／15／16 | alpha16 [六版本 CI](https://github.com/tsonglew/QuotaPal/actions/runs/38037325156) 全部通过，含组件、生命周期、改时和网络探针；不代替 OEM 与长期观察。 |
+| Android 10／12／15／16 | alpha16 [六版本 CI](https://github.com/tsonglew/Quodex/actions/runs/38037325156) 全部通过，含组件、生命周期、改时和网络探针；不代替 OEM 与长期观察。 |
 | Android 17 | AVD 主版本元数据修正后，云端 x86_64 37.0／37.2 完整设备测试与探针通过，实际页面大小分别为 4096／16384；本地 ARM64／TalkBack 有独立证据。此结果不代替真机兼容性。 |
 | 小米 17 Ultra／Android 17 | 首次真实连接成功；杀后台后的自动更新、组件手动刷新修复及菜单路径尚待用户真机复核。 |
 | Samsung 与其他厂商桌面 | 已实现分品牌引导；没有对应完整真机验收，不能承诺所有固件菜单相同。 |
 | 长期运行 | 48 小时后台观察、连续七天自用未完成，后台稳定性和耗电仍待验证。 |
-| 发布与升级 | [alpha16 自动签名运行](https://github.com/tsonglew/QuotaPal/actions/runs/38037985183) 已通过完整 CI，下载后证书／哈希／版本／来源及对齐校验成功。[正式 alpha15→alpha16 覆盖升级](VALIDATION_ALPHA16.md) 已在 API 31 合成账号上验证缓存、设置、组件及凭据恢复；真实账号／OEM 仍待验收；alpha17 [自动构建预发布](https://github.com/tsonglew/QuotaPal/releases/tag/build-38109285393-1) 已完成六组 CI 与签名／哈希／来源核验，开发 APK 不应当作稳定发布版。 |
+| 发布与升级 | [alpha16 自动签名运行](https://github.com/tsonglew/Quodex/actions/runs/38037985183) 已通过完整 CI，下载后证书／哈希／版本／来源及对齐校验成功。[正式 alpha15→alpha16 覆盖升级](VALIDATION_ALPHA16.md) 已在 API 31 合成账号上验证缓存、设置、组件及凭据恢复；真实账号／OEM 仍待验收；alpha17 [自动构建预发布](https://github.com/tsonglew/Quodex/releases/tag/build-38109285393-1) 已完成六组 CI 与签名／哈希／来源核验，开发 APK 不应当作稳定发布版。 |
 
 发现刷新问题时记录 App 版本、系统／品牌、最后成功时间、是否清理或强停、网络与电池设置即可；不要发送 token、授权码、账号缓存或未脱敏的原始响应。排查入口见 [使用帮助](RELEASE_MATERIALS.md)。
 

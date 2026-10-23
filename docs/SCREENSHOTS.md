@@ -1,6 +1,8 @@
 # Android 原生截图
 
-来自 [已通过的 Android 35 设备测试](https://github.com/tsonglew/QuotaPal/actions/runs/37936883382)，并经视觉检查。所有额度均为示例数据。App 由 Compose 测试捕获，组件由真实 AppWidgetHost 渲染后使用 PixelCopy 捕获。
+来自 [已通过的 Android 35 设备测试](https://github.com/tsonglew/Quodex/actions/runs/37936883382)，并经视觉检查。所有额度均为示例数据。App 由 Compose 测试捕获，组件由真实 AppWidgetHost 渲染后使用 PixelCopy 捕获。
+
+下方是 QuotaPal 时期的历史验收截图，保留原始画面与来源；当前品牌名称为 Quodex。最新品牌预览见 README。
 
 ## 额度页
 
@@ -30,7 +32,7 @@
 
 ## alpha02 可选额度状态
 
-来自 [已通过的 alpha02 Android 35 测试](https://github.com/tsonglew/QuotaPal/actions/runs/37946436238)。均为合成示例数据；页面图片为对应 Compose 信息区域，组件图片来自实际原生宿主。
+来自 [已通过的 alpha02 Android 35 测试](https://github.com/tsonglew/Quodex/actions/runs/37946436238)。均为合成示例数据；页面图片为对应 Compose 信息区域，组件图片来自实际原生宿主。
 
 | 仅周额度 | 无周期窗口且可用 | 未知用量 |
 | --- | --- | --- |
@@ -42,7 +44,7 @@
 
 ## alpha03 独立 2×1 组件
 
-来自 [已通过的 alpha03 Android 35 测试](https://github.com/tsonglew/QuotaPal/actions/runs/37953081016)，经视觉检查。图片由真实 AppWidgetHost 渲染并原样捕获，使用合成示例数据。系统入口为“Codex 额度 · 2×1”，实际格子占用由 Launcher 决定。
+来自 [已通过的 alpha03 Android 35 测试](https://github.com/tsonglew/Quodex/actions/runs/37953081016)，经视觉检查。图片由真实 AppWidgetHost 渲染并原样捕获，使用合成示例数据。系统入口为“Codex 额度 · 2×1”，实际格子占用由 Launcher 决定。
 
 | 130×70 dp 浅色 | 140×70 dp 深色 |
 | --- | --- |

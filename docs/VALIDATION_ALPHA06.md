@@ -19,4 +19,4 @@
 
 ## GitHub 验证
 
-提交 `db3d853c471aafb54b8b8000a4d5983560bde707` 的 [CI 37981492470](https://github.com/tsonglew/QuotaPal/actions/runs/37981492470) 全部成功：交付检查、构建、单元测试、lint、API 29／31／35／36 设备测试与统一 CI gate。此结果不包含真机验收或正式签名发布。
+提交 `db3d853c471aafb54b8b8000a4d5983560bde707` 的 [CI 37981492470](https://github.com/tsonglew/Quodex/actions/runs/37981492470) 全部成功：交付检查、构建、单元测试、lint、API 29／31／35／36 设备测试与统一 CI gate。此结果不包含真机验收或正式签名发布。

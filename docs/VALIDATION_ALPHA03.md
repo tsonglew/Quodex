@@ -2,7 +2,7 @@
 
 版本：`0.1.0-alpha03`，versionCode 3，Android 10+。验证日期：2026-10-09。
 
-实现与测试宿主提交：`5553ae71d54f3db0ccb11ad9af8f57a127d9c9ba`。[CI 37953081016](https://github.com/tsonglew/QuotaPal/actions/runs/37953081016) 全部成功。
+实现与测试宿主提交：`5553ae71d54f3db0ccb11ad9af8f57a127d9c9ba`。[CI 37953081016](https://github.com/tsonglew/Quodex/actions/runs/37953081016) 全部成功。
 
 新增独立“Codex 额度 · 2×1”系统入口与 App 内“添加 2×1 紧凑组件”按钮。单行组件显示主要 Codex 窗口或账号状态、已用／剩余标记、成功更新时间和刷新入口，70dp 高时显示分段条。原有标准组件继续保留。
 
@@ -24,7 +24,7 @@
 
 ## 安装包
 
-[GitHub 预发布下载](https://github.com/tsonglew/QuotaPal/releases/tag/v0.1.0-alpha03)。文件：`QuotaPal-0.1.0-alpha03-debug.apk`，65,241,216 bytes。ZIP CRC、版本字符串与新组件类已校验。
+[GitHub 预发布下载](https://github.com/tsonglew/Quodex/releases/tag/v0.1.0-alpha03)。文件：`QuotaPal-0.1.0-alpha03-debug.apk`，65,241,216 bytes。ZIP CRC、版本字符串与新组件类已校验。
 
 SHA-256：
 

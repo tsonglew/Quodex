@@ -4,7 +4,7 @@
 
 ## 已验证
 
-- [GitHub CI 37978463336](https://github.com/tsonglew/QuotaPal/actions/runs/37978463336)，提交 `d12b6f65c96819a55880f9b9bdc5dc0502552463`：交付配置检查、40 项 JVM 测试、lint、debug APK、API 29／31／35／36 设备测试及 `Android CI gate` 全部通过。
+- [GitHub CI 37978463336](https://github.com/tsonglew/Quodex/actions/runs/37978463336)，提交 `d12b6f65c96819a55880f9b9bdc5dc0502552463`：交付配置检查、40 项 JVM 测试、lint、debug APK、API 29／31／35／36 设备测试及 `Android CI gate` 全部通过。
 - 本地 Android 35 标准 AOSP：直接运行 instrumentation，10 项测试全部通过，包括 WorkManager 唯一周期任务、页面、加密存储及组件原生渲染。保存 53 张截图，抽查紧凑和标准深色组件，数字与更新时间完整可见。
 - 本地 `lintRelease assembleRelease` 成功，R8 混淆开启。实际 manifest 为 versionCode 4、禁止备份、禁止明文网络，未开启 debuggable。
 - 实际 release APK 使用一次性测试密钥执行 zipalign、apksigner 签名与证书指纹验证成功。GitHub 发布命令使用替身，未创建线上 Release；测试密钥不用于正式发布。

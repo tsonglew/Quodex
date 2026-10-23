@@ -9,7 +9,7 @@
 | 项目 | 结果与来源 |
 | --- | --- |
 | 实现提交 | `cde15c19e8254778e142c6ca4d7d8ff25b7933a6` |
-| CI | [37936883382，全部成功](https://github.com/tsonglew/QuotaPal/actions/runs/37936883382) |
+| CI | [37936883382，全部成功](https://github.com/tsonglew/Quodex/actions/runs/37936883382) |
 | 构建 | App 与设备测试包编译成功，debug APK 生成成功 |
 | 单元测试 | 27 项通过，0 失败 |
 | lint | 通过，0 错误；依赖新版本及旧平台忽略属性等提示保留在报告中 |
@@ -40,4 +40,4 @@ APK SHA-256：
 
 按 [TESTING.md](TESTING.md) 执行真实设备连接与组件操作，记录机型、系统和 Launcher。设备码登录需先在 ChatGPT 安全设置或工作区权限中开启。48 小时后台观察与连续 7 天自用必须实际完成后再勾选。
 
-M1 已关闭；M0、M2、M3、M4、M5 的未完成条件继续由 [GitHub milestones](https://github.com/tsonglew/QuotaPal/milestones) 和 [checklist](DEVELOPMENT_CHECKLIST.md) 跟踪。
+M1 已关闭；M0、M2、M3、M4、M5 的未完成条件继续由 [GitHub milestones](https://github.com/tsonglew/Quodex/milestones) 和 [checklist](DEVELOPMENT_CHECKLIST.md) 跟踪。

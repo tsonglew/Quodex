@@ -22,4 +22,4 @@
 | debug | `ffa1b571f09c4fd63038ba52ca77f3240e3ab0e8a7610e98360b070e1c4d1f2b` |
 | unsigned release | `885bbb5e08debd3f8b9478c06356971f33fd97de29de044a7752d4794552c6ad` |
 
-本轮 release 检查在 Android 35 本地实际执行；新增四版本 release CI 配置尚待 GitHub 运行，不能与已通过的 [alpha06 四版本 debug 设备矩阵](https://github.com/tsonglew/QuotaPal/actions/runs/37981492470) 混同。没有正式签名发布、覆盖升级、真实授权续期或 OEM／长期观察证据。
+本轮 release 检查在 Android 35 本地实际执行；新增四版本 release CI 配置尚待 GitHub 运行，不能与已通过的 [alpha06 四版本 debug 设备矩阵](https://github.com/tsonglew/Quodex/actions/runs/37981492470) 混同。没有正式签名发布、覆盖升级、真实授权续期或 OEM／长期观察证据。

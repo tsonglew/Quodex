@@ -16,7 +16,7 @@ class PublishBuildTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.apk = self.root / 'QuotaPal-0.1.0-alpha17.apk'
+        self.apk = self.root / 'Quodex-0.1.0-alpha17.apk'
         self.apk.write_bytes(b'test-signed-apk')
         digest = hashlib.sha256(self.apk.read_bytes()).hexdigest()
         self.provenance = dict(tag='v0.1.0-alpha17', source_sha='a'*40, mode='signing-check', sha256=digest,
@@ -30,7 +30,7 @@ class PublishBuildTest(unittest.TestCase):
 
     def write_notes(self):
         (self.root / 'release-notes.md').write_text(
-            'Test release notes\n\n<!-- quotapal-update\n' + json.dumps(self.update) + '\n-->\n')
+            'Test release notes\n\n<!-- quodex-update\n' + json.dumps(self.update) + '\n-->\n')
 
     def execute(self, command, **kwargs):
         self.calls.append(command)
