@@ -7,15 +7,19 @@
 
 面向 Android 的 Codex 额度监控 App，支持桌面小组件、重置时间和 Token 使用趋势。Quodex 是独立第三方工具，与 OpenAI 无隶属关系。
 
-[官网](https://tsonglew.github.io/quodex/) · [公开 APK 与预发布](https://github.com/tsonglew/Quodex/releases) · [支持范围](docs/SUPPORT.md)
+[官网](https://tsonglew.github.io/quodex/) · [观看动效](https://tsonglew.github.io/quodex/#motion) · [公开 APK 与预发布](https://github.com/tsonglew/Quodex/releases) · [支持范围](docs/SUPPORT.md)
 
 | 浅色 | 深色 |
 | --- | --- |
 | <img src="docs/screenshots/deep-teal-api31/quota-light-api31.png" width="300" alt="深海青主题浅色额度总览，使用示例数据" /> | <img src="docs/screenshots/deep-teal-api31/quota-dark-api31.png" width="300" alt="深海青主题深色额度总览，使用示例数据" /> |
 
-2026-10-23 在 API 31 模拟器直接截取的当前工作区界面，均为示例数据。新流线 Q 标志、深海青主题和亮青深色模式已同步到 App 与组件。[查看 Token 图表、设置及真实组件截图](docs/SCREENSHOTS.md) · [品牌与素材规范](docs/BRANDING.md)。
+2026-10-23 在 API 31 模拟器直接截取的发布前界面，均为示例数据。流线 Q 标志、深海青主题和亮青深色模式已随 alpha22 发布。[查看 Token 图表、设置及真实组件截图](docs/SCREENSHOTS.md) · [品牌与素材规范](docs/BRANDING.md)。
 
-当前版本为 `0.1.0-alpha22`，加入深海青界面、流线 Q 图标、额度概览与组件布局预览，以及页面淡入、按钮扫光和趋势图过渡。动画遵循系统动画缩放设置，额度数字始终显示实际值。
+当前公开预发布为 [0.1.0-alpha22 · build-40285639293-1](https://github.com/tsonglew/Quodex/releases/tag/build-40285639293-1)，加入深海青界面、流线 Q 图标、额度概览与组件布局预览，以及页面淡入、按钮扫光和趋势图过渡。动画遵循系统动画缩放设置，额度数字始终显示实际值。
+
+<a href="https://tsonglew.github.io/quodex/#motion"><img src="docs/assets/motion/poster.jpg" width="300" alt="Quodex 原生动效预览海报，点击前往官网播放" /></a>
+
+[在官网播放动效](https://tsonglew.github.io/quodex/#motion) · [查看动效说明与录屏来源](docs/MOTION.md)。视频演示页面淡入、额度条填充与 Token 柱条错峰展开，来自 API 31 模拟器上的发布前 debug 构建，采用与 alpha22 相同的最终动效实现和示例数据。
 
 安装包、校验和与来源提交见 [GitHub Releases](https://github.com/tsonglew/Quodex/releases)。每次主分支发布须通过完整 CI 和固定签名验证，实际可安装版本以对应发布记录和 APK 附件为准。
 
@@ -51,6 +55,7 @@ alpha17 新增诊断报告的系统后台受限标记，帮助排查后台刷新
 - [接口兼容与故障维护策略](docs/COMPATIBILITY_POLICY.md)
 - [品牌、Logo 与配色](docs/BRANDING.md)
 - [界面规格](docs/UI_SPEC.md)
+- [动效说明与录屏](docs/MOTION.md)
 - [测试与自用验收](docs/TESTING.md)
 - [历史修复 PR](https://github.com/tsonglew/Quodex/pull/8)
 - [alpha03 验证记录与 2×1 安装包](docs/VALIDATION_ALPHA03.md)
