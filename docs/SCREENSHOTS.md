@@ -1,6 +1,21 @@
 # Android 原生截图
 
-## 当前工作区：深海青主题（2026-10-23）
+## 当前工作区：小组件与设置页统一（2026-10-23）
+
+两页沿用新版额度首页的圆角面板、字号和留白，保留现有 Logo 与深海青配色。小组件页分为标准、紧凑两张预览卡，各有系统添加入口；设置页优先展示外观和显示方式，将刷新及更新的详细说明按需展开。
+
+以下原图来自 `0.1.0-alpha21-unified-ui-v2` 本地 debug APK，在 Android 12 / API 31 的临时 Pixel 6 模拟器中捕获。全部为明确标注的离线示例数据，没有登录真实账号，也没有合成或裁切。
+
+| 页面 | 浅色 | 深色 |
+| --- | --- | --- |
+| 小组件 | <img src="screenshots/unified-ui-api31/widgets-light.png" width="280" alt="新版小组件页浅色" /> | <img src="screenshots/unified-ui-api31/widgets-dark.png" width="280" alt="新版小组件页深色" /> |
+| 设置 | <img src="screenshots/unified-ui-api31/settings-light.png" width="280" alt="新版设置页浅色" /> | <img src="screenshots/unified-ui-api31/settings-dark.png" width="280" alt="新版设置页深色" /> |
+
+本地验证：155 项 JVM 测试、46 项交付脚本测试通过，lint 为 0 错误、54 项现有警告。API 31 设备回归 22 项通过，1 项宽屏测试因手机尺寸跳过；调整换行间距后再次通过 320dp、200% 系统字体专项。两种添加按钮均实测打开系统组件面板，刷新说明弹窗可正常打开和关闭。
+
+APK SHA-256：`103210317eb8b455dcb1bb4d44ad93ab24eb3ee6b624b0be4ded147ef52d634f`。这是本地界面体验包；[CI 修复 PR #30](https://github.com/tsonglew/Quodex/pull/30) 只包含测试对模拟器 Launcher 弹窗的恢复处理，不包含这些界面改动。原始日志与 APK 清单位于本地 `artifacts/pages-v2/`。
+
+## 深海青主题初版（2026-10-23）
 
 以下图片来自 `0.1.0-alpha21` 工作区的本地 debug 构建，在 Android 12 / API 31、Pixel 6、420 dpi 的只读临时模拟器中直接取得。全部使用离线示例数据，未登录真实账号。图片原样复制到 `screenshots/deep-teal-api31/`，没有合成、裁切或重绘；网页中的宽度仅用于展示缩放。
 

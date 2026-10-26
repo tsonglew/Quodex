@@ -26,6 +26,7 @@ import androidx.glance.semantics.contentDescription
 import com.tsonglew.quodex.data.*
 import com.tsonglew.quodex.quotaApp
 import com.tsonglew.quodex.sync.SyncScheduler
+import com.tsonglew.quodex.ui.quodexColorScheme
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
 
@@ -59,18 +60,20 @@ open class QuotaWidget : GlanceAppWidget() {
         }
         val systemDark = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES
         val dark = theme == "dark" || theme == "system" && systemDark
-        val background = ColorProvider(if (dark) Color(0xFF111215) else Color(0xFFF9FAFC))
-        val foreground = ColorProvider(if (dark) Color(0xFFF2F3F5) else Color(0xFF17191D))
-        val muted = ColorProvider(if (dark) Color(0xFFA4AAB5) else Color(0xFF747C88))
-        val track = ColorProvider(if (dark) Color(0xFF282C33) else Color(0xFFE6E9EF))
+        val colors = quodexColorScheme(dark)
+        val background = ColorProvider(colors.background)
+        val foreground = ColorProvider(colors.onSurface)
+        val muted = ColorProvider(colors.onSurfaceVariant)
+        val track = ColorProvider(colors.surfaceVariant)
+        val accent = ColorProvider(colors.primary)
         val largeFont = context.resources.configuration.fontScale > 1.3f
         val summary = widgetSummary(state, remaining, size, largeFont)
         if (largeFont) {
-            LargeFontContent(state, remaining, background, foreground, muted, track, summary)
+            LargeFontContent(state, remaining, background, foreground, muted, track, accent, summary)
             return
         }
         if (size.height < 100.dp) {
-            CompactContent(state, remaining, background, foreground, muted, track, summary)
+            CompactContent(state, remaining, background, foreground, muted, track, accent, summary)
             return
         }
         val notice = state.snapshot?.quotaNotice()
@@ -101,12 +104,12 @@ open class QuotaWidget : GlanceAppWidget() {
                             Row(GlanceModifier.fillMaxWidth()) {
                                 windows.forEachIndexed { index, window ->
                                     if (index > 0) Spacer(GlanceModifier.width(18.dp))
-                                    Column(GlanceModifier.defaultWeight()) { Window(window, remaining, foreground, muted, track, notice?.widgetLabel) }
+                                    Column(GlanceModifier.defaultWeight()) { Window(window, remaining, foreground, muted, track, accent, notice?.widgetLabel) }
                                 }
                             }
                         } else windows.forEachIndexed { index, window ->
                             if (index > 0) Spacer(GlanceModifier.height(12.dp))
-                            Window(window, remaining, foreground, muted, track, notice?.widgetLabel)
+                            Window(window, remaining, foreground, muted, track, accent, notice?.widgetLabel)
                         }
                         Spacer(GlanceModifier.defaultWeight())
                         Text(if (state.demo) "示例数据 · ${absoluteTime(state.snapshot.fetchedAt)}" else
@@ -146,7 +149,7 @@ open class QuotaWidget : GlanceAppWidget() {
 
     @Composable
     private fun LargeFontContent(state: AppState, remaining: Boolean, background: ColorProvider,
-        foreground: ColorProvider, muted: ColorProvider, track: ColorProvider, summary: String) {
+        foreground: ColorProvider, muted: ColorProvider, track: ColorProvider, accent: ColorProvider, summary: String) {
         val size = LocalSize.current
         val compact = size.height < 100.dp
         val snapshot = state.snapshot
@@ -200,13 +203,13 @@ open class QuotaWidget : GlanceAppWidget() {
                                     style = TextStyle(color = foreground, fontSize = 12.sp), maxLines = 2)
                             }
                         } else if (size.width < 280.dp && windows.size > 1) {
-                            windows.forEach { LargeWindow(it, state, remaining, foreground, muted, track) }
+                            windows.forEach { LargeWindow(it, state, remaining, foreground, muted, track, accent) }
                         } else {
                             Row(GlanceModifier.fillMaxWidth()) {
                                 windows.forEachIndexed { index, window ->
                                     if (index > 0) Spacer(GlanceModifier.width(12.dp))
                                     Column(GlanceModifier.defaultWeight()) {
-                                        LargeWindow(window, state, remaining, foreground, muted, track)
+                                        LargeWindow(window, state, remaining, foreground, muted, track, accent)
                                     }
                                 }
                             }
@@ -228,7 +231,7 @@ open class QuotaWidget : GlanceAppWidget() {
 
     @Composable
     private fun LargeWindow(window: QuotaWindow, state: AppState, remaining: Boolean, foreground: ColorProvider,
-        muted: ColorProvider, track: ColorProvider) {
+        muted: ColorProvider, track: ColorProvider, accent: ColorProvider) {
         val restricted = state.snapshot?.allowed == false || state.snapshot?.limitReached == true
         Column {
             Row(GlanceModifier.fillMaxWidth()) {
@@ -245,7 +248,7 @@ open class QuotaWidget : GlanceAppWidget() {
                         fontSize = if (window.usedPercent != null && !restricted) 16.sp else 10.sp),
                     modifier = GlanceModifier.defaultWeight(), maxLines = 1)
             }
-            if (window.usedPercent != null && !restricted) Segments(window, remaining, track, 3.dp)
+            if (window.usedPercent != null && !restricted) Segments(window, remaining, track, accent, 3.dp)
             Text(resetLabel(window), style = TextStyle(color = muted, fontSize = 7.sp), maxLines = 1)
         }
     }
@@ -300,7 +303,7 @@ open class QuotaWidget : GlanceAppWidget() {
 
     @Composable
     private fun CompactContent(state: AppState, remaining: Boolean, background: ColorProvider, foreground: ColorProvider,
-        muted: ColorProvider, track: ColorProvider, summary: String) {
+        muted: ColorProvider, track: ColorProvider, accent: ColorProvider, summary: String) {
         val short = LocalSize.current.height < 70.dp
         val snapshot = state.snapshot
         val notice = snapshot?.quotaNotice()
@@ -336,7 +339,7 @@ open class QuotaWidget : GlanceAppWidget() {
                     }
                     if (metered && !short) {
                         Spacer(GlanceModifier.height(3.dp))
-                        Segments(requireNotNull(window), remaining, track, 5.dp)
+                        Segments(requireNotNull(window), remaining, track, accent, 5.dp)
                     }
                     Spacer(GlanceModifier.defaultWeight())
                 }
@@ -354,7 +357,7 @@ open class QuotaWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun Window(window: QuotaWindow, remaining: Boolean, foreground: ColorProvider, muted: ColorProvider, track: ColorProvider, note: String?) {
+    private fun Window(window: QuotaWindow, remaining: Boolean, foreground: ColorProvider, muted: ColorProvider, track: ColorProvider, accent: ColorProvider, note: String?) {
         Column {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(window.name, style = TextStyle(color = foreground, fontSize = 11.sp), modifier = GlanceModifier.defaultWeight(), maxLines = 2)
@@ -363,7 +366,7 @@ open class QuotaWidget : GlanceAppWidget() {
             }
             Spacer(GlanceModifier.height(4.dp))
             if (window.usedPercent != null) {
-                Segments(window, remaining, track, 10.dp)
+                Segments(window, remaining, track, accent, 10.dp)
             } else Text("用量数据未返回", style = TextStyle(color = muted, fontSize = 10.sp))
             Spacer(GlanceModifier.height(4.dp))
             Text("${note ?: if (remaining) "剩余" else "已用"} · ${resetLabel(window)}", style = TextStyle(color = muted, fontSize = 9.sp), maxLines = 2)
@@ -371,7 +374,7 @@ open class QuotaWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun Segments(window: QuotaWindow, remaining: Boolean, track: ColorProvider, height: androidx.compose.ui.unit.Dp) {
+    private fun Segments(window: QuotaWindow, remaining: Boolean, track: ColorProvider, accent: ColorProvider, height: androidx.compose.ui.unit.Dp) {
         Row(GlanceModifier.fillMaxWidth()) {
             // Glance containers support at most ten direct children.
             repeat(4) { group ->
@@ -380,7 +383,7 @@ open class QuotaWidget : GlanceAppWidget() {
                         val index = group * 7 + offset
                         Box(GlanceModifier.defaultWeight().height(height).padding(horizontal = 1.dp)) {
                             Box(GlanceModifier.fillMaxSize().background(
-                                if (window.displayedPercent(remaining)?.let { index < it / 100 * 28 } == true) ColorProvider(Color(0xFF4796EF)) else track)) {}
+                                if (window.displayedPercent(remaining)?.let { index < it / 100 * 28 } == true) accent else track)) {}
                         }
                     }
                 }
@@ -406,7 +409,7 @@ class RefreshWidgetAction : ActionCallback {
 }
 
 open class QuotaWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget = QuotaWidget()
+    override val glanceAppWidget: GlanceAppWidget = QuotaWidget()
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
         context.quotaApp.scope.launch { context.quotaApp.reconcileSync() }

@@ -49,3 +49,22 @@ fun demoTokenUsage(): TokenUsageSnapshot {
         statsAsOf = end.toString(),
     )
 }
+
+
+/** Decimal units, rounded only for presentation; aggregation always keeps exact integers. */
+fun formatTokenCount(tokens: BigInteger, compact: Boolean): String {
+    if (!compact || tokens.abs() < BigInteger.valueOf(1000)) return exactTokenCount(tokens)
+    val units = listOf("K", "M", "B", "T")
+    var index = 0
+    var divisor = BigInteger.valueOf(1000)
+    while (index < units.lastIndex && tokens.abs() >= divisor * BigInteger.valueOf(1000)) {
+        divisor *= BigInteger.valueOf(1000)
+        index++
+    }
+    var value = tokens.toBigDecimal().divide(divisor.toBigDecimal(), 1, java.math.RoundingMode.HALF_UP)
+    if (value.abs() >= java.math.BigDecimal(1000) && index < units.lastIndex) {
+        index++
+        value = value.divide(java.math.BigDecimal(1000), 1, java.math.RoundingMode.HALF_UP)
+    }
+    return value.stripTrailingZeros().toPlainString() + units[index]
+}

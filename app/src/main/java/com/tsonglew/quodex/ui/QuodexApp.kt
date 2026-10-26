@@ -1,11 +1,9 @@
 package com.tsonglew.quodex.ui
 
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,7 +17,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -28,6 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -39,10 +37,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tsonglew.quodex.LoginState
 import com.tsonglew.quodex.MainViewModel
+import com.tsonglew.quodex.R
 import com.tsonglew.quodex.quotaApp
 import com.tsonglew.quodex.data.*
-import com.tsonglew.quodex.widget.QuotaWidgetReceiver
-import com.tsonglew.quodex.widget.SlimQuotaWidgetReceiver
 import java.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -100,6 +97,10 @@ fun QuodexApp(model: MainViewModel) {
                 if (!useRail) NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
                     destinations.forEach { (id, label, icon) ->
                         NavigationBarItem(selected = tab == id, onClick = { tab = id }, icon = { Icon(icon, null) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer),
                             label = { Text(label) }, modifier = Modifier.testTag("tab-$id"))
                     }
                 }
@@ -109,13 +110,18 @@ fun QuodexApp(model: MainViewModel) {
                         windowInsets = WindowInsets(0)) {
                         destinations.forEach { (id, label, icon) ->
                             NavigationRailItem(selected = tab == id, onClick = { tab = id }, icon = { Icon(icon, null) },
+                                colors = NavigationRailItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer),
                                 label = { Text(label) }, modifier = Modifier.testTag("tab-$id"))
                         }
                     }
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
                         // Keep each destination's render nodes separate as well as its saved state.
                         key(tab) { pageStates.SaveableStateProvider(tab) {
-                            Column(Modifier.widthIn(max = 640.dp).fillMaxSize().testTag("page-$tab")
+                            Column(Modifier.widthIn(max = 640.dp).fillMaxSize()
+                                .revealOnEnter(if (tab == "quota") state.snapshot != null else Unit).testTag("page-$tab")
                                 .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
                                 Spacer(Modifier.height(16.dp))
                                 if (tab != "settings") updates.saved.available?.let { AvailableUpdateNotice(it) }
@@ -142,11 +148,11 @@ fun QuodexApp(model: MainViewModel) {
 
 @Composable
 fun BrandMark(size: Int = 40) {
-    Box(Modifier.clearAndSetSemantics { }.size(size.dp).clip(RoundedCornerShape((size / 3).dp)).background(Color(0xFF17191D)), contentAlignment = Alignment.Center) {
-        val logoSize = with(LocalDensity.current) { (size * 0.65).dp.toSp() }
-        Text("Q", color = Color.White, fontFamily = FontFamily.Monospace, fontSize = logoSize,
-            lineHeight = logoSize, fontWeight = FontWeight.Medium)
-    }
+    Image(
+        painter = painterResource(R.drawable.ic_quodex),
+        contentDescription = null,
+        modifier = Modifier.clearAndSetSemantics { }.size(size.dp),
+    )
 }
 
 @Composable
@@ -171,9 +177,8 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
                 Text("连接现有账号，查看订阅额度。凭据加密保存在此设备，额度直接从 OpenAI 获取。", lineHeight = 24.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 state.failure?.let { Text(it.userMessage(), color = MaterialTheme.colorScheme.error) }
-                Button(onClick = model::startLogin, modifier = Modifier.fillMaxWidth().testTag("connect-button"), contentPadding = PaddingValues(16.dp)) {
-                    Text(if (state.connected) "重新连接 Codex" else "连接 Codex")
-                }
+                ConnectButton(if (state.connected) "重新连接 Codex" else "连接 Codex", model::startLogin,
+                    modifier = Modifier.fillMaxWidth().testTag("connect-button"))
                 TextButton(onClick = model::demo, modifier = Modifier.fillMaxWidth().testTag("demo-button")) { Text("先看看示例") }
             }
         }
@@ -184,52 +189,12 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
         return
     }
     Column(Modifier.testTag("dashboard")) {
-        PageTitle("额度概览", if (state.demo) "预览额度、小组件与用量趋势。" else "查看可用额度、重置时间与 Token 用量。")
-        if (state.demo) {
-            Notice("示例数据", "当前仅用于预览，不代表你的真实额度。", Icons.Outlined.Visibility)
-            Spacer(Modifier.height(16.dp))
-        }
-        Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface) {
-            Column(Modifier.fillMaxWidth().padding(24.dp)) {
-                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Code, null, modifier = Modifier.size(24.dp))
-                        Spacer(Modifier.width(10.dp)); Text("Codex", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                    state.snapshot.plan?.let {
-                        Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(7.dp)) {
-                            Text(it.uppercase(), Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                        }
-                    }
-                }
-                Spacer(Modifier.height(20.dp))
-                QuotaStatusNotice(state.snapshot)
-                state.snapshot.windows.forEachIndexed { index, window ->
-                    if (index > 0) { Spacer(Modifier.height(24.dp)); HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant); Spacer(Modifier.height(24.dp)) }
-                    QuotaWindowCard(window, prefs.showRemaining, now = now)
-                }
-                Spacer(Modifier.height(24.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("${if (state.demo) "示例更新于" else "更新于"} ${absoluteTime(state.snapshot.fetchedAt, true)}", fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (state.snapshot.resetCredits != null) Text("${state.snapshot.resetCredits} 次重置可用", fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        val stale = now - state.snapshot.fetchedAt > prefs.refreshMinutes * 120
-        if (state.failure != null || stale) {
-            Notice(state.failure?.userMessage() ?: "数据较旧", "仍显示最后成功获取的额度。", Icons.Outlined.Info)
-            if (state.failure in listOf(FailureKind.AUTH, FailureKind.STORAGE)) TextButton(onClick = model::startLogin) { Text("重新连接") }
-        } else Text(if (state.demo) "连接账号后，这里会显示真实额度。" else "后台目标间隔 ${prefs.refreshMinutes} 分钟 · 系统可能延迟更新",
-            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 20.sp)
-        Spacer(Modifier.height(20.dp))
-        TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage)
+        QuotaOverview(state, prefs, now, onReconnect = model::startLogin)
+        Spacer(Modifier.height(22.dp))
+        TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage, prefs.compactTokens, model::compactTokens)
         if (state.demo) {
             Spacer(Modifier.height(18.dp))
-            Button(onClick = model::startLogin, modifier = Modifier.fillMaxWidth()) { Text("连接我的 Codex") }
+            ConnectButton("连接我的 Codex", model::startLogin, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -319,99 +284,6 @@ private fun Notice(title: String, subtitle: String, icon: ImageVector) {
 }
 
 @Composable
-private fun WidgetPage(state: AppState, prefs: PreferencesState) {
-    val context = LocalContext.current
-    var help by remember { mutableStateOf(false) }
-    PageTitle("桌面小组件", "选择布局添加到桌面，长按小组件可调整大小与显示方式。")
-    val preview = state.snapshot ?: remember { demoSnapshot(Instant.now().epochSecond) }
-    if (state.snapshot == null || state.demo) Text("布局预览 · 示例数据", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Spacer(Modifier.height(12.dp))
-    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface) {
-        Column(Modifier.fillMaxWidth().padding(22.dp)) {
-            Row { Text("Codex", fontWeight = FontWeight.SemiBold); Spacer(Modifier.weight(1f)); Text("${absoluteTime(preview.fetchedAt)}", fontSize = 12.sp) }
-            Spacer(Modifier.height(20.dp))
-            QuotaStatusNotice(preview)
-            preview.windows.take(2).forEachIndexed { i, window ->
-                if (i > 0) Spacer(Modifier.height(18.dp))
-                QuotaWindowCard(window, prefs.showRemaining, compact = true)
-            }
-        }
-    }
-    Spacer(Modifier.height(16.dp))
-    DetailRow(Icons.Outlined.AspectRatio, "新增 2×1 横条", "只占一行，显示主要额度或账号状态；标准组件保留更多信息")
-    DetailRow(Icons.Outlined.Refresh, "主动刷新", "更新时间始终可见，多个组件共享数据")
-    Spacer(Modifier.height(12.dp))
-    OutlinedButton(onClick = {
-        val manager = AppWidgetManager.getInstance(context)
-        if (manager.isRequestPinAppWidgetSupported) manager.requestPinAppWidget(ComponentName(context, SlimQuotaWidgetReceiver::class.java), null, null)
-        else help = true
-    }, modifier = Modifier.fillMaxWidth().testTag("add-slim-widget-button"), contentPadding = PaddingValues(16.dp)) {
-        Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("添加 2×1 紧凑组件")
-    }
-    Spacer(Modifier.height(8.dp))
-    Button(onClick = {
-        val manager = AppWidgetManager.getInstance(context)
-        if (manager.isRequestPinAppWidgetSupported) manager.requestPinAppWidget(ComponentName(context, QuotaWidgetReceiver::class.java), null, null)
-        else help = true
-    }, modifier = Modifier.fillMaxWidth().testTag("add-widget-button"), contentPadding = PaddingValues(16.dp)) {
-        Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("添加标准组件")
-    }
-    if (help) Text("长按桌面空白处 → 小组件 → Quodex，即可添加。", Modifier.padding(top = 12.dp), fontSize = 13.sp)
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainViewModel) {
-    var confirmLogout by remember { mutableStateOf(false) }
-    PageTitle("设置", "管理显示方式、后台更新与账号连接。")
-    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
-        Column(Modifier.fillMaxWidth().padding(20.dp)) {
-            Text("显示方式", fontWeight = FontWeight.Medium)
-            PreferenceToggle("显示剩余额度", prefs.showRemaining, model::showRemaining,
-                modifier = Modifier.testTag("show-remaining-toggle"), supportingText = "同步更新所有桌面小组件。")
-            Spacer(Modifier.height(8.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Spacer(Modifier.height(16.dp)); Text("外观", fontSize = 14.sp)
-            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("system" to "跟随系统", "light" to "浅色", "dark" to "深色").forEach { (id, label) ->
-                    FilterChip(prefs.theme == id, onClick = { model.theme(id) }, label = { Text(label, fontSize = 14.sp) }, modifier = Modifier.testTag("theme-$id"))
-                }
-            }
-            Spacer(Modifier.height(12.dp)); Text("后台目标间隔", fontSize = 14.sp)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(15L, 30L, 60L).forEach { minutes -> FilterChip(prefs.refreshMinutes == minutes, onClick = { model.refreshMinutes(minutes) }, label = { Text("$minutes 分钟", fontSize = 14.sp) }) }
-            }
-            Text("后台刷新受系统省电与网络影响，可能延迟。持续失败时每轮最多尝试 3 次，之后等待下一周期或手动刷新。", fontSize = 12.sp, lineHeight = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-    Spacer(Modifier.height(18.dp))
-    BackgroundGuide()
-    Spacer(Modifier.height(18.dp))
-    val updates by model.updates.collectAsStateWithLifecycle()
-    AppUpdatesCard(updates, model::checkForUpdates, model::automaticUpdates, model::updateNotificationPermissionChanged)
-    Spacer(Modifier.height(18.dp))
-    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
-        Column(Modifier.fillMaxWidth().padding(20.dp)) {
-            Text("Codex 连接", fontWeight = FontWeight.Medium)
-            Spacer(Modifier.height(10.dp)); Text(if (state.demo) "示例模式" else if (state.connected) "已连接 · 凭据在本机加密保存" else "尚未连接", fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            state.failure?.let { Spacer(Modifier.height(8.dp)); Text(it.userMessage(), fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
-            TextButton(onClick = model::startLogin) { Text(if (state.connected) "重新连接" else "连接账号") }
-            if (state.connected || state.demo) TextButton(onClick = { confirmLogout = true }, modifier = Modifier.testTag("logout-button")) { Text(if (state.demo) "退出示例模式" else "退出并清除本机数据", color = MaterialTheme.colorScheme.error) }
-        }
-    }
-    DiagnosticEntry()
-    PrivacyNoticeEntry()
-    Spacer(Modifier.height(24.dp))
-    Text("Quodex ${com.tsonglew.quodex.BuildConfig.VERSION_NAME}\n独立第三方工具 · 连接能力处于实验阶段\n应用仅读取额度与用量统计；登录凭据的权限可能覆盖更多能力。", fontSize = 12.sp,
-        lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    if (confirmLogout) AlertDialog(onDismissRequest = { confirmLogout = false }, title = { Text("清除本机连接？") },
-        text = { Text("本机凭据、额度缓存与额度后台任务将被清除，桌面小组件恢复为未连接。显示与应用更新偏好会保留。远程授权不会在此操作中撤销。") },
-        confirmButton = { TextButton(onClick = { confirmLogout = false; model.logout() }, modifier = Modifier.testTag("confirm-logout")) { Text("清除") } },
-        dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("取消") } })
-}
-
-@Composable
 private fun LoginDialog(login: LoginState, cancel: () -> Unit, retry: () -> Unit) {
     val context = LocalContext.current
     AlertDialog(onDismissRequest = cancel, title = { Text("连接 Codex") }, text = {
@@ -440,13 +312,16 @@ private fun LoginDialog(login: LoginState, cancel: () -> Unit, retry: () -> Unit
 }
 
 @Composable
-private fun DiagnosticEntry() {
+internal fun DiagnosticEntry(compact: Boolean = false) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var report by remember { mutableStateOf<String?>(null) }
     var failed by remember { mutableStateOf(false) }
-    Text("问题排查", fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 18.dp))
-    Text("本机保留最近 200 条事件和 7 天按小时统计，不自动上传。复现问题后可预览并分享给维护者。", fontSize = 12.sp)
+    Text("问题排查", fontSize = if (compact) 14.sp else 16.sp, fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(top = if (compact) 0.dp else 18.dp))
+    Text("本机保留最近 200 条事件和 7 天按小时统计，不自动上传。复现问题后可预览并分享给维护者。",
+        fontSize = 12.sp, lineHeight = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 8.dp))
     TextButton(onClick = {
         // Dialog state must return to Android's main dispatcher, including
         // when a Compose test supplies an unconfined effect interceptor.

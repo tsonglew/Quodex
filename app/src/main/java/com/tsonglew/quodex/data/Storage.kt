@@ -77,6 +77,7 @@ data class PreferencesState(
     val lastFailure: FailureKind? = null,
     val retryAt: Long = 0,
     val lastAttemptAt: Long = 0,
+    val compactTokens: Boolean = false,
 )
 
 interface SyncSettings {
@@ -87,6 +88,8 @@ interface SyncSettings {
 
 class SettingsStore(context: Context) : SyncSettings {
     private val store = context.quotaPreferences
+    private val compactTokens = booleanPreferencesKey("compact_tokens")
+    suspend fun compactTokens(value: Boolean) { store.edit { it[compactTokens] = value } }
     private val minutes = longPreferencesKey("refresh_minutes")
     private val remaining = booleanPreferencesKey("show_remaining")
     private val theme = stringPreferencesKey("theme")
@@ -95,7 +98,7 @@ class SettingsStore(context: Context) : SyncSettings {
     private val retry = longPreferencesKey("retry_at")
     private val attempt = longPreferencesKey("last_attempt_at")
     val flow = store.data.map { p -> PreferencesState(p[minutes] ?: 30, p[remaining] ?: true, p[theme] ?: "system",
-        p[demo] ?: false, p[failure]?.let { runCatching { FailureKind.valueOf(it) }.getOrNull() }, p[retry] ?: 0, p[attempt] ?: 0) }
+        p[demo] ?: false, p[failure]?.let { runCatching { FailureKind.valueOf(it) }.getOrNull() }, p[retry] ?: 0, p[attempt] ?: 0, p[compactTokens] ?: false) }
     override suspend fun read() = flow.first()
     suspend fun refreshMinutes(value: Long) { require(value in listOf(15L, 30L, 60L)); store.edit { it[minutes] = value } }
     suspend fun showRemaining(value: Boolean) {
