@@ -1,6 +1,16 @@
-# Android 原生截图
+# Android 原生截图与动效录屏
 
-## 当前工作区：小组件与设置页统一（2026-10-23）
+## alpha22 动效录屏（2026-10-26）
+
+[在官网播放动效](https://tsonglew.github.io/quodex/#motion) · [打开 MP4](assets/motion/quodex-motion.mp4) · [动效参数与行为](MOTION.md)
+
+<a href="https://tsonglew.github.io/quodex/#motion"><img src="assets/motion/poster.jpg" width="300" alt="Quodex 页面、额度条与 Token 柱图动效录屏海报，点击播放" /></a>
+
+视频由 Android 12 / API 31 模拟器的实际屏幕录制剪辑而成，包含页面淡入、连接按钮扫光、额度条填充和 7／30 天 Token 柱图切换。录制使用 alpha22 发布前的 debug 构建，与发布版采用相同的最终动效实现；全部为明确标注的示例数据。这段素材不属于签名 alpha22 APK 的实录。
+
+上述界面与动效现已随 [alpha22 · build-40285639293-1](https://github.com/tsonglew/Quodex/releases/tag/build-40285639293-1) 公开发布。录屏说明视觉行为，安装包版本、签名、校验和与源提交以该 Release 附件为准。以下截图继续保留各自的拍摄日期、构建与验证记录。
+
+## 小组件与设置页统一（2026-10-23）
 
 两页沿用新版额度首页的圆角面板、字号和留白，保留现有 Logo 与深海青配色。小组件页分为标准、紧凑两张预览卡，各有系统添加入口；设置页优先展示外观和显示方式，将刷新及更新的详细说明按需展开。
 
@@ -19,7 +29,7 @@ APK SHA-256：`103210317eb8b455dcb1bb4d44ad93ab24eb3ee6b624b0be4ded147ef52d634f`
 
 以下图片来自 `0.1.0-alpha21` 工作区的本地 debug 构建，在 Android 12 / API 31、Pixel 6、420 dpi 的只读临时模拟器中直接取得。全部使用离线示例数据，未登录真实账号。图片原样复制到 `screenshots/deep-teal-api31/`，没有合成、裁切或重绘；网页中的宽度仅用于展示缩放。
 
-这组图片证明当前工作区的显示效果，不表示对应代码已通过远端 CI、正式签名验收或已经公开发布。公开安装包以 [Releases](https://github.com/tsonglew/Quodex/releases) 的实际附件为准。
+这组图片记录发布前工作区的显示效果，截图本身不作为远端 CI 或正式签名验收的证据。相关界面现已随 alpha22 发布，公开安装包见[对应 Release](https://github.com/tsonglew/Quodex/releases/tag/build-40285639293-1)。
 
 ### 额度总览
 

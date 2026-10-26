@@ -1,6 +1,6 @@
 # Quodex 发布素材与帮助
 
-本文准备产品身份、简介、视觉素材和使用帮助。公开渠道为 [GitHub Releases](https://github.com/tsonglew/Quodex/releases) APK；alpha22 将深海青界面、流线 Q 图标与原生动效纳入发布版本，具体安装包、来源提交和校验和以对应 Release 为准。固定签名、覆盖升级与真实账号接入范围继续按发布 checklist 验收。
+本文准备产品身份、简介、视觉素材和使用帮助。当前公开预发布为 [alpha22 · build-40285639293-1](https://github.com/tsonglew/Quodex/releases/tag/build-40285639293-1)，包含深海青界面、流线 Q 图标与原生动效。固定签名 APK、来源提交和校验和见该 Release 附件；覆盖升级与真实账号接入范围继续按发布 checklist 验收。
 
 ## 产品身份与简介
 
@@ -10,9 +10,9 @@
 
 简短介绍：在 Android 手机和桌面小组件查看 Codex 额度、重置时间与 Token 使用趋势。
 
-完整介绍：Quodex 提供单账号额度速览、剩余／已用切换、近 7／30 天 Token 日用量图表和逐日明细。流线 Q 标志与深海青浅深色主题贯穿 App 和桌面组件。标准与独立 2×1 额度组件共享成功快照；手动刷新有进度反馈，后台刷新受 Android 网络、省电和厂商限制。设置页提供分品牌后台更新引导。示例模式由用户主动选择，明确显示示例数据。
+完整介绍：Quodex 提供单账号额度速览、剩余／已用切换、近 7／30 天 Token 日用量图表和逐日明细。流线 Q 标志与深海青浅深色主题贯穿 App 和桌面组件。页面淡入、按钮扫光、额度条过渡和柱图错峰展开提供操作反馈，遵循系统动画设置，数字始终显示实际数据。标准与独立 2×1 额度组件共享成功快照；手动刷新有进度反馈，后台刷新受 Android 网络、省电和厂商限制。设置页提供分品牌后台更新引导。示例模式由用户主动选择，明确显示示例数据。
 
-当前文案描述 `0.1.0-alpha22`。Token 兼容接口仍待真实账号验收；缺失记录与实际零值分别展示，失败保留缓存，不提供输入／输出／缓存拆分或费用估算。本地 debug 包和 API 31 示例截图不构成正式 Release。
+当前文案描述已公开预发布的 `0.1.0-alpha22`。Token 兼容接口仍待真实账号验收；缺失记录与实际零值分别展示，失败保留缓存，不提供输入／输出／缓存拆分或费用估算。文中的 API 31 截图与动效录屏来自发布前 debug 构建，公开安装包另见 Release 附件。
 
 当前为实验版本。一次连接成功不代表续期、全部账号／工作区或长期后台运行均已验证。公开接入条件见 [接入证据与边界](CODEX_INTEGRATION.md)，对外描述采用 [支持范围与已知限制](SUPPORT.md)，明确已验证范围及未完成验收。
 
@@ -21,10 +21,11 @@
 - 品牌素材：[流线 Q、字标与配色规范](BRANDING.md)；默认 App 图标为深墨底 `#112B30` 配亮青 Q `#5CD8CD`，浅色背景标志使用深海青 `#007C83`。不使用 OpenAI 官方标志。
 - 可交付 SVG：[浅底横向组合](assets/brand/quodex-horizontal-color.svg)、[深底横向组合](assets/brand/quodex-horizontal-on-dark.svg)、[默认 App 图标](assets/brand/quodex-app-icon.svg)；Android 工作区使用同一轮廓与配色，资源路径见品牌说明。
 - 当前真实页面与组件图片：[截图索引](SCREENSHOTS.md)。2026-10-23 在本地 API 31 截取，包含额度总览、Token 柱图、组件预览、设置的浅深色，以及真实标准／紧凑额度组件；均为示例数据。
+- 动效录屏：[官网播放入口](https://tsonglew.github.io/quodex/#motion)、[MP4](assets/motion/quodex-motion.mp4)、[海报](assets/motion/poster.jpg)及[动效说明](MOTION.md)。素材来自 API 31 模拟器的发布前 debug 构建，使用与 alpha22 相同的最终动效实现和示例数据；宣传时保留该来源说明。
 - 历史宣传图：[quodex-preview.png](assets/quodex-preview.png)，[原制作说明](assets/preview-generation.md)。该合成图属于 alpha03 蓝色主题，保留来源，不再用于当前 README 或深海青版的首屏介绍。
 - 历史无障碍验证截图：[标准组件焦点](screenshots/talkback-standard-focus.png)、[紧凑组件更新](screenshots/talkback-slim-updated.png)，来源见 [alpha11](VALIDATION_ALPHA11.md)。这些图片保留当时界面，不能代替本轮验证。
 
-准备 GitHub Release 说明时，可使用本轮品牌素材与真实示例截图，但必须随实际发布的 APK 核对版本、签名和来源。当前资料更新本身不会上传 APK、创建 Release 或证明公开构建已包含这些界面。
+准备 GitHub Release 说明时，可使用本轮品牌素材、真实示例截图和动效录屏，并链接[已发布的 alpha22](https://github.com/tsonglew/Quodex/releases/tag/build-40285639293-1)。截图和录屏标注各自来源，安装包版本、签名与源提交使用 Release 附件中的记录。
 
 ## 使用帮助
 
@@ -42,7 +43,7 @@
 
 ## GitHub APK 安装与更新
 
-1. 从 [Quodex Releases](https://github.com/tsonglew/Quodex/releases) 选择版本，实验版本带 Pre-release 标记；只有附件中实际存在的 APK 才可下载，本文不表示已有正式签名版本。
+1. 从 [alpha22 发布页](https://github.com/tsonglew/Quodex/releases/tag/build-40285639293-1)下载固定签名 APK；实验版本带 Pre-release 标记。其他版本见 [Quodex Releases](https://github.com/tsonglew/Quodex/releases)。
 2. 下载 Quodex-版本.apk、SHA256SUMS 和 provenance.json；在电脑上可运行 `shasum -a 256 文件名.apk`，核对对应 SHA-256。哈希用于检查下载完整性，签名指纹与源提交记录在 provenance.json。
 3. 用手机打开 APK，按 Android 提示允许当前下载／文件应用安装来自此来源的应用，再确认安装。安装后打开 Quodex；不需要 root。
 4. 当前无自动安装功能。更新前查看版本说明中的已知限制；发布异常可先保留现用版本并在 Issues 反馈，不移动或替换已公开版本 tag。
