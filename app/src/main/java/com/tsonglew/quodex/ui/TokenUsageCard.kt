@@ -1,5 +1,10 @@
 package com.tsonglew.quodex.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,6 +35,8 @@ fun TokenUsageCard(
     failure: FailureKind?,
     demo: Boolean,
     onRefresh: () -> Unit,
+    compact: Boolean = false,
+    onCompactChange: (Boolean) -> Unit = {},
 ) {
     var period by rememberSaveable { mutableIntStateOf(7) }
     var details by rememberSaveable { mutableStateOf(false) }
@@ -46,15 +53,21 @@ fun TokenUsageCard(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(7, 30).forEach { days ->
                     FilterChip(selected = period == days, onClick = { period = days },
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer),
                         label = { Text("近 $days 天") }, modifier = Modifier.testTag("token-trend-$days"))
                 }
             }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("易读单位（K / M / B / T）", modifier = Modifier.weight(1f))
+                Switch(checked = compact, onCheckedChange = onCompactChange, modifier = Modifier.testTag("compact-token-toggle"))
+            }
             if (trend != null) {
                 Text("截至 ${trend.endDate} · 近 $period 天", fontSize = 12.sp, color = secondary)
-                Text(exactTokenCount(trend.total), fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
+                Text(formatTokenCount(trend.total, compact), fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
                     lineHeight = 32.sp, modifier = Modifier.testTag("token-trend-total"))
                 Text("已返回日用量合计 · ${trend.knownDays}/${trend.days.size} 天有数据", fontSize = 12.sp, color = secondary)
-                TokenBars(trend)
+                TokenBars(trend, compact)
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                     verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(trend.startDate.toString(), fontSize = 12.sp, color = secondary)
@@ -73,8 +86,8 @@ fun TokenUsageCard(
             }
             if (displayed?.lifetimeTokens != null || displayed?.peakDailyTokens != null) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                displayed?.lifetimeTokens?.let { TokenMetric("累计 token", it) }
-                displayed?.peakDailyTokens?.let { TokenMetric("历史单日峰值", it) }
+                displayed?.lifetimeTokens?.let { TokenMetric("累计 token", it, compact) }
+                displayed?.peakDailyTokens?.let { TokenMetric("历史单日峰值", it, compact) }
             }
             if (displayed?.partial == true) {
                 Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.tertiaryContainer,
@@ -115,7 +128,7 @@ fun TokenUsageCard(
                         }
                         Column(Modifier.fillMaxWidth().padding(vertical = 9.dp).semantics(mergeDescendants = true) {}) {
                             Text(day.date.toString(), fontSize = 12.sp, color = secondary)
-                            Text(day.tokens?.let { "${exactTokenCount(it)} tokens" } ?: "未提供数据", fontSize = 15.sp,
+                            Text(day.tokens?.let { "${formatTokenCount(it, compact)} tokens" } ?: "未提供数据", fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium)
                         }
                     }
@@ -125,25 +138,42 @@ fun TokenUsageCard(
 }
 
 @Composable
-private fun TokenMetric(label: String, value: Long) {
+private fun TokenMetric(label: String, value: Long, compact: Boolean) {
     Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(exactTokenCount(BigInteger.valueOf(value)), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text(formatTokenCount(BigInteger.valueOf(value), compact), fontSize = 16.sp, fontWeight = FontWeight.Medium)
     }
 }
 
 @Composable
-private fun TokenBars(trend: TokenTrend) {
+private fun TokenBars(trend: TokenTrend, compact: Boolean) {
     val bar = MaterialTheme.colorScheme.primary
     val grid = MaterialTheme.colorScheme.outlineVariant
     val missing = MaterialTheme.colorScheme.onSurfaceVariant
     val peak = trend.peak.max(BigInteger.ONE).toDouble()
+    // A new date range gets one staggered reveal. Refreshes within that range
+    // interpolate the existing bars, without replaying when only metadata changes.
+    val reveal = remember(trend.startDate, trend.endDate, trend.days.size) { Animatable(0f) }
+    LaunchedEffect(reveal) {
+        reveal.animateTo(1f, tween(durationMillis = 600, easing = LinearEasing))
+    }
+    val heights = key(trend.startDate, trend.endDate, trend.days.size) {
+        trend.days.map { day ->
+            key(day.date) {
+                animateFloatAsState(
+                    targetValue = ((day.tokens?.toDouble() ?: 0.0) / peak).toFloat().coerceIn(0f, 1f),
+                    animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
+                    label = "token-bar-${day.date}",
+                )
+            }
+        }
+    }
     val description = "${trend.startDate} 至 ${trend.endDate}，${trend.knownDays} 天有记录，" +
-        "已返回日用量合计 ${exactTokenCount(trend.total)} tokens，" +
+        "已返回日用量合计 ${formatTokenCount(trend.total, compact)} tokens，" +
         "${trend.days.size - trend.knownDays} 天未提供数据，" +
         "${trend.days.count { it.tokens == BigInteger.ZERO }} 天记录为 0。具体数值可打开逐日明细。"
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("日用量最高 ${exactTokenCount(trend.peak)} tokens", fontSize = 12.sp,
+        Text("日用量最高 ${formatTokenCount(trend.peak, compact)} tokens", fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Canvas(Modifier.fillMaxWidth().height(140.dp).testTag("token-trend-chart").semantics { contentDescription = description }) {
             val baseline = size.height - 4.dp.toPx()
@@ -154,16 +184,26 @@ private fun TokenBars(trend: TokenTrend) {
             }
             val slot = size.width / trend.days.size
             val width = (slot * 0.64f).coerceAtMost(26.dp.toPx())
+            // Read animation state only while drawing, so frames do not recompose
+            // the card or change the real values exposed to accessibility services.
+            val elapsed = reveal.value * 600f
             trend.days.forEachIndexed { index, day ->
                 val center = slot * (index + 0.5f)
                 when {
                     day.tokens == null -> drawLine(missing, Offset(center - width / 3, baseline - 3.dp.toPx()),
                         Offset(center + width / 3, baseline - 3.dp.toPx()), strokeWidth = 1.5.dp.toPx())
-                    day.tokens == BigInteger.ZERO -> drawCircle(bar, radius = 2.dp.toPx(), center = Offset(center, baseline))
                     else -> {
-                        val height = (day.tokens.toDouble() / peak * plotHeight).toFloat().coerceAtLeast(2.dp.toPx())
-                        drawRoundRect(bar, Offset(center - width / 2, baseline - height), Size(width, height),
-                            CornerRadius(3.dp.toPx(), 3.dp.toPx()))
+                        val start = index.toFloat() / (trend.days.size - 1).coerceAtLeast(1) * 180f
+                        val growth = FastOutSlowInEasing.transform(((elapsed - start) / 420f).coerceIn(0f, 1f))
+                        val minimum = if (day.tokens == BigInteger.ZERO) 0f else 2.dp.toPx()
+                        val height = (heights[index].value * plotHeight).coerceAtLeast(minimum) * growth
+                        if (height > 0f) {
+                            drawRoundRect(bar, Offset(center - width / 2, baseline - height), Size(width, height),
+                                CornerRadius(3.dp.toPx(), 3.dp.toPx()))
+                        }
+                        if (day.tokens == BigInteger.ZERO) {
+                            drawCircle(bar, radius = 2.dp.toPx(), center = Offset(center, baseline))
+                        }
                     }
                 }
             }

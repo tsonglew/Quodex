@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="quodex_icon_background">#112B30</color>
+    <color name="quodex_icon_foreground">#5CD8CD</color>
+    <color name="quodex_primary">#007C83</color>
+    <color name="quodex_accent">@color/quodex_primary</color>
+    <color name="quodex_background">#EEF8F7</color>
+    <color name="quodex_on_background">@color/quodex_icon_background</color>
+    <color name="quodex_on_surface_variant">#4B6265</color>
+    <bool name="quodex_light_system_bars">true</bool>
+</resources>

@@ -38,12 +38,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     fun refresh() { launchOperation { withContext(Dispatchers.IO) { app.diagnostics.record(com.tsonglew.quodex.diagnostics.DiagnosticEvent.MANUAL_REFRESH) }; app.repository.refresh(true); app.updateWidgets(); loadTokenTrend(force = true) } }
-    private fun loadTokenTrend(force: Boolean = false) { launchOperation { app.repository.refreshTokenUsage(force) } }
+    private fun loadTokenTrend(force: Boolean = false) { launchOperation { app.repository.refreshTokenUsage(force); app.updateWidgets() } }
     fun refreshTokenUsage() { loadTokenTrend(force = true) }
     fun demo() { launchOperation { cancelLogin(); app.repository.demo(); app.reconcileSync(); app.updateWidgets() } }
     fun logout() { cancelLogin(); app.scope.launch { runUiOperation(::reportError) { app.repository.logout(); app.reconcileSync(); app.updateWidgets() } } }
+    fun compactTokens(value: Boolean) { launchOperation { app.settings.compactTokens(value); app.updateWidgets() } }
     fun showRemaining(value: Boolean) { launchOperation { app.settings.showRemaining(value); app.updateWidgets() } }
-    fun theme(value: String) { launchOperation { app.settings.theme(value) } }
+    fun theme(value: String) { launchOperation { app.settings.theme(value); app.updateWidgets() } }
     fun refreshMinutes(value: Long) { launchOperation { app.settings.refreshMinutes(value); app.reconcileSync() } }
     fun checkForUpdates() { viewModelScope.launch { app.updates.check(force = true) } }
     fun updateNotificationPermissionChanged() { viewModelScope.launch { app.updates.check() } }

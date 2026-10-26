@@ -4,6 +4,7 @@
     android:targetCellWidth="2" android:targetCellHeight="1"
     android:resizeMode="horizontal" android:widgetCategory="home_screen"
     android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewImage="@drawable/slim_quota_widget_preview"
     android:configure="com.tsonglew.quodex.widget.WidgetConfigurationActivity"
     android:widgetFeatures="reconfigurable"
     android:description="@string/slim_widget_description"

@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,6 +68,7 @@ internal enum class BackgroundBrand(val label: String, val steps: List<String>) 
 @Composable
 internal fun BackgroundGuide() {
     val context = LocalContext.current
+    val colors = MaterialTheme.colorScheme
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var expanded by rememberSaveable { mutableStateOf(false) }
     var selected by rememberSaveable { mutableStateOf(BackgroundBrand.detect(Build.MANUFACTURER, Build.BRAND).name) }
@@ -78,34 +81,64 @@ internal fun BackgroundGuide() {
         onDispose { lifecycle.removeObserver(observer) }
     }
     val guide = BackgroundBrand.valueOf(selected)
-    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
-        Column(Modifier.fillMaxWidth().padding(20.dp)) {
-            Text("后台更新保障", fontWeight = FontWeight.Medium)
+    Surface(shape = RoundedCornerShape(28.dp), color = colors.surface) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp)) {
+            Text("后台更新保障", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.semantics { heading() })
             Spacer(Modifier.height(8.dp))
-            Text("清理后台后不再更新？按手机品牌检查自启动、省电与后台锁定。", fontSize = 13.sp, lineHeight = 21.sp)
-            TextButton(onClick = { expanded = !expanded }, modifier = Modifier.testTag("background-guide-toggle")) {
-                Text(if (expanded) "收起引导" else "查看设置引导")
+            Text("清理后台后不再更新？按手机品牌检查自启动、省电与后台锁定。",
+                fontSize = 12.sp, lineHeight = 20.sp, color = colors.onSurfaceVariant)
+            TextButton(onClick = { expanded = !expanded },
+                modifier = Modifier.heightIn(min = 48.dp).testTag("background-guide-toggle"),
+                contentPadding = PaddingValues(vertical = 10.dp)) {
+                Text(if (expanded) "收起引导" else "查看设置引导", fontSize = 13.sp)
             }
             if (expanded) {
+                HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.55f))
+                Spacer(Modifier.height(14.dp))
                 Box {
-                    OutlinedButton(onClick = { menu = true }, modifier = Modifier.testTag("background-brand-picker")) { Text(guide.label) }
+                    OutlinedButton(onClick = { menu = true },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("background-brand-picker"),
+                        shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)) {
+                        Text(guide.label, fontSize = 13.sp, lineHeight = 20.sp)
+                    }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        BackgroundBrand.entries.forEach { item -> DropdownMenuItem(text = { Text(item.label) }, onClick = { selected = item.name; menu = false }) }
+                        BackgroundBrand.entries.forEach { item ->
+                            DropdownMenuItem(text = { Text(item.label, fontSize = 13.sp, lineHeight = 20.sp) },
+                                onClick = { selected = item.name; menu = false })
+                        }
                     }
                 }
-                Text("已按设备品牌选择，可手动切换。菜单会随系统版本、地区变化，找不到时使用设置搜索。", fontSize = 12.sp, lineHeight = 20.sp)
+                Spacer(Modifier.height(10.dp))
+                Text("已按设备品牌选择，可手动切换。菜单会随系统版本、地区变化，找不到时使用设置搜索。",
+                    fontSize = 12.sp, lineHeight = 20.sp, color = colors.onSurfaceVariant)
                 guide.steps.forEachIndexed { index, step ->
                     Spacer(Modifier.height(12.dp))
                     Text("${index + 1}. $step", fontSize = 13.sp, lineHeight = 22.sp)
                 }
-                TextButton(onClick = { openBackgroundSettings(context, false) }, modifier = Modifier.testTag("background-app-settings")) { Text("打开 Quodex 应用信息") }
-                TextButton(onClick = { openBackgroundSettings(context, true) }) { Text("打开系统电池优化列表") }
-                Text(if (exempt) "系统电池优化：已豁免" else "系统电池优化：未豁免", fontSize = 12.sp)
-                Text("此状态只反映 Android 电池优化；无法读取厂商自启动或后台锁定状态，请在系统页面确认。允许后台运行可能增加耗电。", fontSize = 12.sp, lineHeight = 20.sp)
-                Spacer(Modifier.height(12.dp))
-                Text("设置后返回 App 刷新一次，再回到桌面观察组件的最后更新时间。目标间隔不是准点保证，休眠或断网仍可能延迟。", fontSize = 13.sp, lineHeight = 22.sp)
                 Spacer(Modifier.height(8.dp))
-                Text("若在应用信息中点过“强制停止”，请先重新打开 Quodex 才能恢复调度；后台锁定不能绕过强制停止。", fontSize = 13.sp, lineHeight = 22.sp)
+                TextButton(onClick = { openBackgroundSettings(context, false) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("background-app-settings"),
+                    contentPadding = PaddingValues(vertical = 10.dp)) {
+                    Text("打开 Quodex 应用信息", Modifier.fillMaxWidth(), fontSize = 13.sp, lineHeight = 20.sp)
+                }
+                TextButton(onClick = { openBackgroundSettings(context, true) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    contentPadding = PaddingValues(vertical = 10.dp)) {
+                    Text("打开系统电池优化列表", Modifier.fillMaxWidth(), fontSize = 13.sp, lineHeight = 20.sp)
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(if (exempt) "系统电池优化：已豁免" else "系统电池优化：未豁免",
+                    fontSize = 12.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(6.dp))
+                Text("此状态只反映 Android 电池优化；无法读取厂商自启动或后台锁定状态，请在系统页面确认。允许后台运行可能增加耗电。",
+                    fontSize = 12.sp, lineHeight = 20.sp, color = colors.onSurfaceVariant)
+                Spacer(Modifier.height(12.dp))
+                Text("设置后返回 App 刷新一次，再回到桌面观察组件的最后更新时间。目标间隔不是准点保证，休眠或断网仍可能延迟。",
+                    fontSize = 12.sp, lineHeight = 20.sp, color = colors.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                Text("若在应用信息中点过“强制停止”，请先重新打开 Quodex 才能恢复调度；后台锁定不能绕过强制停止。",
+                    fontSize = 12.sp, lineHeight = 20.sp, color = colors.onSurfaceVariant)
             }
         }
     }

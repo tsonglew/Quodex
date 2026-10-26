@@ -44,7 +44,9 @@ class WidgetConfigurationActivity : ComponentActivity() {
                                 Text("外观", style = MaterialTheme.typography.titleSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     listOf("system" to "系统", "light" to "浅色", "dark" to "深色").forEach { (value, label) ->
-                                        FilterChip(theme == value, { theme = value }, label = { Text(label) }, enabled = !saving)
+                                        FilterChip(theme == value, { theme = value }, label = { Text(label) }, enabled = !saving,
+                                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer))
                                     }
                                 }
                                 Text("可在桌面长按并缩放。后台更新可能延迟，最后更新时间始终可见。", style = MaterialTheme.typography.bodyMedium)
