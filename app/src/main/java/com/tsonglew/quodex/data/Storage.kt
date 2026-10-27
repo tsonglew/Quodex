@@ -78,6 +78,8 @@ data class PreferencesState(
     val retryAt: Long = 0,
     val lastAttemptAt: Long = 0,
     val compactTokens: Boolean = false,
+    val desktopIconEnabled: Boolean = true,
+    val desktopIconWindow: String = "short",
 )
 
 interface SyncSettings {
@@ -97,8 +99,12 @@ class SettingsStore(context: Context) : SyncSettings {
     private val failure = stringPreferencesKey("last_failure")
     private val retry = longPreferencesKey("retry_at")
     private val attempt = longPreferencesKey("last_attempt_at")
+    private val iconEnabled = booleanPreferencesKey("desktop_icon_enabled")
+    private val iconWindow = stringPreferencesKey("desktop_icon_window")
     val flow = store.data.map { p -> PreferencesState(p[minutes] ?: 30, p[remaining] ?: true, p[theme] ?: "system",
-        p[demo] ?: false, p[failure]?.let { runCatching { FailureKind.valueOf(it) }.getOrNull() }, p[retry] ?: 0, p[attempt] ?: 0, p[compactTokens] ?: false) }
+        p[demo] ?: false, p[failure]?.let { runCatching { FailureKind.valueOf(it) }.getOrNull() }, p[retry] ?: 0, p[attempt] ?: 0,
+        p[compactTokens] ?: false, p[iconEnabled] ?: true,
+        p[iconWindow]?.takeIf { it in listOf("short", "weekly") } ?: "short") }
     override suspend fun read() = flow.first()
     suspend fun refreshMinutes(value: Long) { require(value in listOf(15L, 30L, 60L)); store.edit { it[minutes] = value } }
     suspend fun showRemaining(value: Boolean) {
@@ -111,6 +117,8 @@ class SettingsStore(context: Context) : SyncSettings {
         }
     }
     suspend fun theme(value: String) { require(value in listOf("system", "light", "dark")); store.edit { it[theme] = value } }
+    suspend fun desktopIconEnabled(value: Boolean) { store.edit { it[iconEnabled] = value } }
+    suspend fun desktopIconWindow(value: String) { require(value in listOf("short", "weekly")); store.edit { it[iconWindow] = value } }
     override suspend fun demo(value: Boolean) { store.edit { it[demo] = value } }
     override suspend fun syncResult(kind: FailureKind?, retryAt: Long, lastAttemptAt: Long?) {
         store.edit { p ->

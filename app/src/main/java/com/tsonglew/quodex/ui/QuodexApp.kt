@@ -128,7 +128,7 @@ fun QuodexApp(model: MainViewModel) {
                                 when (tab) {
                                     "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock) }
                                     "widgets" -> WidgetPage(state, prefs)
-                                    else -> SettingsPage(state, prefs, model)
+                                    else -> SettingsPage(state, prefs, model, clock)
                                 }
                                 Spacer(Modifier.height(28.dp))
                             }

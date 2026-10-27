@@ -36,12 +36,21 @@ bash scripts/power_smoke.sh
 - Android 组件：使用 debug 专用原生 AppWidgetHost，渲染真实 Glance RemoteViews，检查 140×150、280×150、140×230 dp，退出后切换到未连接状态。
 - 可选额度回归：仅周额度、无窗口且可用、未提供周期额度、用量未知、服务端受限；检查解析和缓存替换、Compose 说明及三种真实组件尺寸，确保不虚构百分比且提示与更新时间完整可见。
 - 2×1 原生组件：验证独立入口的 2×1 网格元数据，130×70、140×70、280×70 与横屏 260×50 dp；覆盖浅深色、已用／剩余、无周期、未知用量、受限和退出，逐项检查所有文字可见且不省略。与标准组件同时绑定时检查共享更新和独立设置。
+- 桌面额度图标：`DesktopIconContentTest` 覆盖周期选择、剩余语义、0／100／小数、非法值、附加窗口隔离、示例／旧数据／受限／退出及关闭；`DesktopQuotaIconDeviceTest` 只在受控模拟器执行，检查 Launcher 确认添加、同 ID 更新、后台 worker、桌面实际点击、退出清理、设置切换和圆形裁切，保存 `desktop-icon-*` 截图。OEM Launcher 仍须真机验收。
 
 组件测试临时通过系统 shell 授予绑定权限，结束时撤销。测试宿主仅包含在 debug 变体中，未导出，不进入 release。实现依据 [Android widget host 文档](https://developer.android.com/develop/ui/views/appwidgets/host) 和 [AOSP appwidget shell 命令](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/cmds/appwidget/src/com/android/commands/appwidget/AppWidget.java)。宿主测试不能替代真实 Launcher、系统选择器和 OEM 验证。
 
 小米触摸修复的定向集合现为 16 项：`WidgetOpenAppDeviceTest` 7 项、`WidgetRefreshActionDeviceTest` 5 项，加既有 4 项组件渲染回归；TalkBack 另有 2 项显式专项。打开与刷新均注入真实 DOWN/UP；API 31+ 还检查实际动作节点的类精确为 `TextView`（不能用会同时接受 Button 的子类判断），同组件的动作 ID 有效且唯一，动作区域不重叠。新增 slim 页脚时间中心点击以已连接的合成账号验证打开应用且不新增 HTTP 请求，并预先解除最近尝试节流，避免误刷新被示例模式或节流掩盖。打开、刷新及 TalkBack 夹具显式初始化和清理自己创建的组件偏好，不依赖旧模拟器中同 ID 的残留设置。API 31 覆盖基础资源、API 33+ 覆盖限定资源，API 29/30 继续验证 Glance 的旧版模拟路径；资源替换后的通过结论须来自新 APK 实跑，下面的 v3 记录不覆盖这次替换。
 
 CI 产物 `android-build` 含 debug APK、单元测试与 lint 报告；设备矩阵配置 API 29、31、35、36、37.0 与 37.2／16KB；配置覆盖不等于全部通过，最新结果须核对 CI gate。`android-device-tests-api-<API>` 各含对应设备测试报告和截图，保留 14 天。不上传凭据或真实账号数据。模拟器矩阵不替代 OEM Launcher、真实授权与连续自用。
+
+## alpha23 桌面额度图标
+
+2026-10-28 基于 master `8b064c5` 接入新的流线 Q 和深海青界面。干净构建通过 165 项 JVM 测试、debug lint、App 和设备测试 APK 构建。图标的 10 项单元测试覆盖周期与剩余语义、有效边界、缺失／非法数据、示例／缓存／受限／退出和关闭。
+
+API 29 的桌面图标、AppFlow、Worker 与唯一周期任务共 13 项用例均取得通过证据：首轮添加确认误选了同名标题，修正测试选择器后，实际添加、背景更新、真实触摸打开及退出清理独立重跑通过。另有 3 项 UI 回归通过，覆盖整行开关、滚动状态和 200% 字体；宽屏专项因当前窗口不足 600×480 dp 按条件跳过。API 37 的 4 项图标专项全部通过，包括 Pixel Launcher 的系统确认、同 ID 更新、真实桌面触摸和无组件时的后台策略。
+
+[图标边界与状态样例](screenshots/desktop-icon-overview.png)和[原生设置预览](screenshots/desktop-icon-settings.png)均来自本次模拟器截图，只包含合成数据。此结果不代替 OEM 桌面、真实授权或长期自用验收；远端完整 CI 和正式签名发布以对应 PR／Release 结果为准。
 
 ## 首次自用验收
 

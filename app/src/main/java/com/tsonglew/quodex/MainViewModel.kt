@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tsonglew.quodex.data.*
+import com.tsonglew.quodex.launcher.PinIconResult
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.time.Instant
@@ -15,6 +16,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val app = application as QuodexApplication
     val state = app.repository.state
     val updates = app.updates.state
+    val desktopIconAvailability = app.desktopIcon.availability
+    private val mutableIconMessage = MutableStateFlow<String?>(null)
+    val desktopIconMessage = mutableIconMessage.asStateFlow()
     private val mutableError = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = mutableError
     fun dismissError() { mutableError.value = null }
@@ -34,6 +38,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             withContext(Dispatchers.IO) { app.diagnostics.record(com.tsonglew.quodex.diagnostics.DiagnosticEvent.FOREGROUND) }
             app.repository.initialize()
             if (state.value.connected) { app.repository.refresh(); app.updateWidgets(); loadTokenTrend() }
+            app.desktopIcon.update()
             app.reconcileSync()
         }
     }
@@ -46,6 +51,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun showRemaining(value: Boolean) { launchOperation { app.settings.showRemaining(value); app.updateWidgets() } }
     fun theme(value: String) { launchOperation { app.settings.theme(value); app.updateWidgets() } }
     fun refreshMinutes(value: Long) { launchOperation { app.settings.refreshMinutes(value); app.reconcileSync() } }
+    fun desktopIconEnabled(value: Boolean) {
+        launchOperation { app.settings.desktopIconEnabled(value); app.desktopIcon.update(); app.reconcileSync() }
+    }
+    fun desktopIconWindow(value: String) {
+        launchOperation { app.settings.desktopIconWindow(value); app.desktopIcon.update() }
+    }
+    fun addDesktopIcon() {
+        launchOperation {
+            mutableIconMessage.value = when (app.desktopIcon.requestPin()) {
+                PinIconResult.REQUESTED -> "请在桌面提示中确认添加"
+                PinIconResult.UPDATED -> "桌面额度图标已更新"
+                PinIconResult.UNSUPPORTED -> "当前桌面不支持添加额度图标，可使用桌面小组件"
+                PinIconResult.FAILED -> "桌面图标暂时无法更新，请重试"
+            }
+            app.reconcileSync()
+        }
+    }
     fun checkForUpdates() { viewModelScope.launch { app.updates.check(force = true) } }
     fun updateNotificationPermissionChanged() { viewModelScope.launch { app.updates.check() } }
     fun automaticUpdates(enabled: Boolean) { launchOperation {
