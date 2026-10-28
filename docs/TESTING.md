@@ -50,6 +50,8 @@ CI 产物 `android-build` 含 debug APK、单元测试与 lint 报告；设备�
 
 API 29 的桌面图标、AppFlow、Worker 与唯一周期任务共 13 项用例均取得通过证据：首轮添加确认误选了同名标题，修正测试选择器后，实际添加、背景更新、真实触摸打开及退出清理独立重跑通过。另有 3 项 UI 回归通过，覆盖整行开关、滚动状态和 200% 字体；宽屏专项因当前窗口不足 600×480 dp 按条件跳过。API 37 的 4 项图标专项全部通过，包括 Pixel Launcher 的系统确认、同 ID 更新、真实桌面触摸和无组件时的后台策略。
 
+远端首轮 [CI 40650387822](https://github.com/tsonglew/Quodex/actions/runs/40650387822) 的 API 31 图标用例报 `Activity has been destroyed already`：真实桌面点击可重建 Activity，测试不能继续通过旧 ActivityScenario 取得应用。夹具改用 instrumentation 的应用上下文，保留实际桌面触摸、同 ID／后台任务和退出清理全部断言；修正后设备测试 APK 编译通过，完整六组结果继续由后续 CI 验证。原失败记录保留。
+
 [图标边界与状态样例](screenshots/desktop-icon-overview.png)和[原生设置预览](screenshots/desktop-icon-settings.png)均来自本次模拟器截图，只包含合成数据。此结果不代替 OEM 桌面、真实授权或长期自用验收；远端完整 CI 和正式签名发布以对应 PR／Release 结果为准。
 
 ## 首次自用验收

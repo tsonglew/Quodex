@@ -32,7 +32,8 @@ import java.util.concurrent.TimeUnit
 class DesktopQuotaIconDeviceTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
-    private val app get() = compose.activity.quotaApp as TestQuotaApplication
+    // Opening a real launcher shortcut may replace the original ActivityScenario instance.
+    private val app get() = instrumentation.targetContext.applicationContext as TestQuotaApplication
     private val shortcuts get() = app.getSystemService(ShortcutManager::class.java)
     private var prepared = false
     private fun shell(command: String): String = instrumentation.uiAutomation.executeShellCommand(command).use {
