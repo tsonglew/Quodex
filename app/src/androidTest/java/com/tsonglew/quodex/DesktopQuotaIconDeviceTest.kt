@@ -160,7 +160,14 @@ class DesktopQuotaIconDeviceTest {
     }
 
     private fun confirmPinDialog() {
+        var resumedLauncher = false
         waitFor {
+            // A known boot-time launcher ANR can surface only when its pin Activity opens.
+            // Resume it once, keeping this request alive; a repeated ANR must still fail.
+            if (!resumedLauncher && dismissLauncherAnrOnEmulator(instrumentation, LauncherAnrResponse.WAIT)) {
+                resumedLauncher = true
+                return@waitFor false
+            }
             val root = instrumentation.uiAutomation.rootInActiveWindow ?: return@waitFor false
             if (root.packageName?.toString()?.contains("launcher") != true) return@waitFor false
             val target = descendants(root).asSequence().filter {
@@ -204,6 +211,7 @@ class DesktopQuotaIconDeviceTest {
             if (predicate()) return
             Thread.sleep(100)
         }
-        fail("Desktop icon condition was not reached")
+        instrumentation.uiAutomation.takeScreenshot()?.let { saveDeviceScreenshot(app, "desktop-icon-failure", it) }
+        fail("Desktop icon condition was not reached; focused package=${instrumentation.uiAutomation.rootInActiveWindow?.packageName}")
     }
 }

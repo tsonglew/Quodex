@@ -52,6 +52,8 @@ API 29 的桌面图标、AppFlow、Worker 与唯一周期任务共 13 项用例�
 
 远端首轮 [CI 40650387822](https://github.com/tsonglew/Quodex/actions/runs/40650387822) 的 API 31 图标用例报 `Activity has been destroyed already`：真实桌面点击可重建 Activity，测试不能继续通过旧 ActivityScenario 取得应用。夹具改用 instrumentation 的应用上下文，保留实际桌面触摸、同 ID／后台任务和退出清理全部断言；修正后设备测试 APK 编译通过，完整六组结果继续由后续 CI 验证。原失败记录保留。
 
+第二轮 [CI 40652592537](https://github.com/tsonglew/Quodex/actions/runs/40652592537) 的 API 31 修正通过，另外四组亦通过；API 37.0 在添加确认时失败。该轮日志显示 Pixel Launcher 在测试前的 07:55:50 已因启动解锁的 MENU 事件发生 ANR，截图保留其系统弹窗覆盖添加页；不是 Quodex ANR。添加确认夹具复用现有严格识别逻辑，仅在一次性模拟器、系统 Launcher 包及准确弹窗标题均匹配时选择一次「Wait」，使原添加请求继续；再次 ANR 或应用自己的异常仍失败。超时会保存截图及前台包名，不据此降低添加成功、同 ID、真实点击或退出清理断言。
+
 [图标边界与状态样例](screenshots/desktop-icon-overview.png)和[原生设置预览](screenshots/desktop-icon-settings.png)均来自本次模拟器截图，只包含合成数据。此结果不代替 OEM 桌面、真实授权或长期自用验收；远端完整 CI 和正式签名发布以对应 PR／Release 结果为准。
 
 ## 首次自用验收
