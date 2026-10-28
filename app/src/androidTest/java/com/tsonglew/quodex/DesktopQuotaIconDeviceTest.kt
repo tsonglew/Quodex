@@ -36,6 +36,7 @@ class DesktopQuotaIconDeviceTest {
     private val app get() = instrumentation.targetContext.applicationContext as TestQuotaApplication
     private val shortcuts get() = app.getSystemService(ShortcutManager::class.java)
     private var prepared = false
+    private var resumedLauncher = false
     private fun shell(command: String): String = instrumentation.uiAutomation.executeShellCommand(command).use {
         FileInputStream(it.fileDescriptor).bufferedReader().use { reader -> reader.readText().trim() }
     }
@@ -160,14 +161,7 @@ class DesktopQuotaIconDeviceTest {
     }
 
     private fun confirmPinDialog() {
-        var resumedLauncher = false
         waitFor {
-            // A known boot-time launcher ANR can surface only when its pin Activity opens.
-            // Resume it once, keeping this request alive; a repeated ANR must still fail.
-            if (!resumedLauncher && dismissLauncherAnrOnEmulator(instrumentation, LauncherAnrResponse.WAIT)) {
-                resumedLauncher = true
-                return@waitFor false
-            }
             val root = instrumentation.uiAutomation.rootInActiveWindow ?: return@waitFor false
             if (root.packageName?.toString()?.contains("launcher") != true) return@waitFor false
             val target = descendants(root).asSequence().filter {
@@ -208,6 +202,11 @@ class DesktopQuotaIconDeviceTest {
     private fun waitFor(predicate: () -> Boolean) {
         val deadline = android.os.SystemClock.elapsedRealtime() + 15_000
         while (android.os.SystemClock.elapsedRealtime() < deadline) {
+            // The known boot-time dialog may surface on pin confirmation or on returning Home.
+            // Allow one recovery for the whole test; subsequent ANRs and App failures still fail.
+            if (!resumedLauncher && dismissLauncherAnrOnEmulator(instrumentation, LauncherAnrResponse.WAIT)) {
+                resumedLauncher = true
+            }
             if (predicate()) return
             Thread.sleep(100)
         }
