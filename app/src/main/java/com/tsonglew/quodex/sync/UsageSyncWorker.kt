@@ -10,6 +10,14 @@ import java.util.concurrent.TimeUnit
 class UsageSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val app = applicationContext.quotaApp
+        // Launchers do not broadcast shortcut removal. Check before the next periodic request.
+        if (inputData.getBoolean("periodic", false)) {
+            app.repository.initialize()
+            if (app.repository.state.value.connected && !app.backgroundSyncRequired()) {
+                SyncScheduler.cancelPeriodic(applicationContext)
+                return Result.success()
+            }
+        }
         app.diagnostics.record(DiagnosticEvent.WORK_START, runAttemptCount.toLong())
         val outcome = app.repository.refresh(inputData.getBoolean("force", false))
         app.diagnostics.record(DiagnosticEvent.WORK_END, outcome.ordinal.toLong())
@@ -30,6 +38,7 @@ object SyncScheduler {
     fun schedule(context: Context, minutes: Long): Operation {
         context.quotaApp.diagnostics.record(DiagnosticEvent.SCHEDULE, minutes)
         val request = PeriodicWorkRequestBuilder<UsageSyncWorker>(minutes, TimeUnit.MINUTES)
+            .setInputData(workDataOf("periodic" to true))
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS).build()
         return WorkManager.getInstance(context).enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.UPDATE, request)
@@ -58,7 +67,9 @@ object SyncScheduler {
 
     fun cancel(context: Context) {
         context.quotaApp.diagnostics.record(DiagnosticEvent.CANCEL_WORK)
-        WorkManager.getInstance(context).cancelUniqueWork(PERIODIC)
+        cancelPeriodic(context)
         WorkManager.getInstance(context).cancelUniqueWork(MANUAL)
     }
+
+    fun cancelPeriodic(context: Context) { WorkManager.getInstance(context).cancelUniqueWork(PERIODIC) }
 }

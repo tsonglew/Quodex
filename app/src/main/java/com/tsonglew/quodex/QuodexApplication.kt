@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.appwidget.AppWidgetManager
 import androidx.room.Room
 import com.tsonglew.quodex.data.*
+import com.tsonglew.quodex.launcher.DesktopQuotaIcon
 import com.tsonglew.quodex.sync.SyncScheduler
 import com.tsonglew.quodex.widget.QuotaWidget
 import com.tsonglew.quodex.widget.QuotaWidgetReceiver
@@ -28,6 +29,7 @@ open class QuodexApplication : Application() {
     fun wallClockChanged() { mutableWallClockRevision.update { it + 1 } }
     open val api by lazy { CodexApi(diagnostics = diagnostics) }
     val settings by lazy { SettingsStore(this) }
+    val desktopIcon by lazy { DesktopQuotaIcon(this) }
     open val updateSource: UpdateSource by lazy {
         GitHubUpdateClient(BuildConfig.VERSION_CODE.toLong(), installedSigningCertificate(this))
     }
@@ -40,7 +42,11 @@ open class QuodexApplication : Application() {
         Thread.getDefaultUncaughtExceptionHandler()?.let { previous ->
             Thread.setDefaultUncaughtExceptionHandler(CrashRecorder(previous, diagnostics, android.os.Looper.getMainLooper().thread))
         }
-        scope.launch { diagnostics.record(DiagnosticEvent.APP_START); repository.initialize() }
+        scope.launch {
+            diagnostics.record(DiagnosticEvent.APP_START)
+            repository.initialize()
+            desktopIcon.update()
+        }
         scope.launch {
             try {
                 updates.initialize()
@@ -50,6 +56,7 @@ open class QuodexApplication : Application() {
         }
     }
     suspend fun updateWidgets() = withContext(Dispatchers.IO) {
+        desktopIcon.update()
         diagnostics.record(DiagnosticEvent.WIDGET_START)
         try {
             QuotaWidget().updateAll(this@QuodexApplication); SlimQuotaWidget().updateAll(this@QuodexApplication)
@@ -60,14 +67,20 @@ open class QuodexApplication : Application() {
         }
     }
     suspend fun reconcileSync() {
+        if (backgroundSyncRequired()) SyncScheduler.schedule(this, settings.read().refreshMinutes)
+        else SyncScheduler.cancel(this)
+    }
+    suspend fun backgroundSyncRequired(): Boolean {
         repository.initialize()
         val state = repository.state.value
+        if (!state.connected || state.demo) return false
         val manager = AppWidgetManager.getInstance(this)
         val hasWidget = listOf(QuotaWidgetReceiver::class.java, SlimQuotaWidgetReceiver::class.java).any {
             manager.getAppWidgetIds(ComponentName(this, it)).isNotEmpty()
         }
-        if (state.connected && !state.demo && hasWidget) SyncScheduler.schedule(this, settings.read().refreshMinutes)
-        else SyncScheduler.cancel(this)
+        val preferences = settings.read()
+        val hasIcon = preferences.desktopIconEnabled && desktopIcon.refreshAvailability().pinned
+        return hasWidget || hasIcon
     }
 }
 

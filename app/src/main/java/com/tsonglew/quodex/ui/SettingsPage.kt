@@ -24,7 +24,7 @@ import com.tsonglew.quodex.data.userMessage
 /** Settings use the same quiet, rounded panels as the quota overview. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainViewModel) {
+internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainViewModel, now: Long = java.time.Instant.now().epochSecond) {
     val colors = MaterialTheme.colorScheme
     val updates by model.updates.collectAsStateWithLifecycle()
     var confirmLogout by rememberSaveable { mutableStateOf(false) }
@@ -80,6 +80,7 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
             }
         }
 
+        DesktopIconSettings(state, prefs, model, now)
         BackgroundGuide()
         AppUpdatesCard(updates, model::checkForUpdates, model::automaticUpdates, model::updateNotificationPermissionChanged)
 
