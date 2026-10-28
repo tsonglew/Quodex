@@ -55,10 +55,7 @@ class WidgetDisplayPreferenceTest {
                         compose.waitUntil(10_000) { runBlocking { app.settings.read().showRemaining == remaining } }
                         if (remaining) toggle.assertIsOn() else toggle.assertIsOff()
                     }
-                    host.onActivity { activity ->
-                        activity.getSystemService(android.app.ActivityManager::class.java).appTasks
-                            .first { it.taskInfo.taskId == activity.taskId }.moveToFront()
-                    }
+                    bringHostToFront(host)
                     // No test-triggered updateAll here: the real settings action must repaint every instance.
                     awaitWidgets(host, remaining)
                     ids.forEachIndexed { index, id ->
@@ -87,6 +84,28 @@ class WidgetDisplayPreferenceTest {
             }
             instrumentation.uiAutomation.dropShellPermissionIdentity()
         }
+    }
+
+    private fun bringHostToFront(host: ActivityScenario<WidgetTestHostActivity>) {
+        var expectedTask = -1
+        var actualTasks = emptyList<Int>()
+        val deadline = android.os.SystemClock.uptimeMillis() + 10_000
+        while (android.os.SystemClock.uptimeMillis() < deadline) {
+            var found = false
+            host.onActivity { activity ->
+                expectedTask = activity.taskId
+                val tasks = activity.getSystemService(android.app.ActivityManager::class.java).appTasks
+                actualTasks = tasks.map { it.taskInfo.taskId }
+                tasks.firstOrNull { it.taskInfo.taskId == expectedTask }?.let {
+                    it.moveToFront()
+                    found = true
+                }
+            }
+            if (found) return
+            // Closing the settings task and publishing the remaining task list are asynchronous.
+            Thread.sleep(100)
+        }
+        fail("The original widget host task must return; expected=$expectedTask, actual=$actualTasks")
     }
 
     private fun awaitWidgets(host: ActivityScenario<WidgetTestHostActivity>, remaining: Boolean) {
