@@ -28,12 +28,12 @@ def bounds(node):
 
 
 def navigation_items(tree):
-    # Match all three localized tabs, including their clickable parent bounds.
+    # Match all three tabs, including the selected tab (Android marks it non-clickable).
     # Headings may repeat a tab's text; the bottommost instance is the dock item.
     candidates = {}
 
     def visit(node, clickable=None):
-        if node.attrib.get('clickable') == 'true':
+        if node.attrib.get('clickable') == 'true' or node.attrib.get('selected') == 'true':
             clickable = node
         text = node.attrib.get('text')
         if text and clickable is not None:

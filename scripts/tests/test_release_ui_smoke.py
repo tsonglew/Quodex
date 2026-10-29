@@ -15,7 +15,9 @@ def screen(target='[300,1010][700,1060]', labels=('Quota', 'Widgets', 'Settings'
     for index, label in enumerate(labels):
         top = 200 + index * 150 if rail else 1000
         left = 20 if rail else 100 + index * 270
-        tab = ET.SubElement(root, 'node', clickable='true', bounds=f'[{left},{top}][{left+260},{top+100}]')
+        tab = ET.SubElement(root, 'node', clickable='false' if index == 2 else 'true',
+                            selected='true' if index == 2 else 'false',
+                            bounds=f'[{left},{top}][{left+260},{top+100}]')
         ET.SubElement(tab, 'node', text=label, bounds=f'[{left+20},{top+50}][{left+240},{top+90}]')
     return root
 
