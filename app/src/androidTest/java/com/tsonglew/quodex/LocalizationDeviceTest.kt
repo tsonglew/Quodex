@@ -75,34 +75,43 @@ class LocalizationDeviceTest {
                         .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_MULTIPLE_TASK)).use {
                         compose.onNodeWithTag("tab-settings").performClick()
                         select(tag, heading)
-                        // Bring the host forward while an app Activity is still visible.
-                        // Closing it first can make moveToFront a denied background launch.
-                        val deadline = android.os.SystemClock.uptimeMillis() + 20_000
-                        var matched = false
-                        var focused = false
-                        var recoveredSystemDialog = false
-                        var actual = emptyList<String>()
-                        while (!matched && android.os.SystemClock.uptimeMillis() < deadline) {
-                            host.onActivity { activity ->
-                                activity.getSystemService(android.app.ActivityManager::class.java).appTasks
-                                    .firstOrNull { it.taskInfo.taskId == activity.taskId }?.moveToFront()
-                                assertEquals("The original host must survive app language changes", ids.first(), activity.widgetId)
-                                actual = listOf(activity.widgetView, checkNotNull(activity.secondaryWidgetView), checkNotNull(activity.thirdWidgetView))
-                                    .map { labels(it).joinToString(" | ") }
-                                focused = activity.widgetView.hasWindowFocus()
-                                matched = focused && actual.all { label in it && "62%" in it }
-                            }
-                            if (!focused && !recoveredSystemDialog) {
-                                recoveredSystemDialog = dismissLauncherAnrOnEmulator(instrumentation)
-                            }
-                            if (!matched) Thread.sleep(100)
-                        }
-                        assertTrue("Every existing widget must use $tag without a test-triggered repaint; " +
-                            "focused=$focused, recoveredSystemDialog=$recoveredSystemDialog: $actual", matched)
-                        assertEquals(requests, app.usageRequests.get())
-                        instrumentation.waitForIdleSync()
-                        saveDeviceScreenshot(context, "language-widgets-$tag", checkNotNull(instrumentation.uiAutomation.takeScreenshot()))
                     }
+                    val deadline = android.os.SystemClock.uptimeMillis() + 20_000
+                    var matched = false
+                    var focused = false
+                    var requestedFocus = false
+                    var recoveredSystemDialog = false
+                    var actual = emptyList<String>()
+                    while (!matched && android.os.SystemClock.uptimeMillis() < deadline) {
+                        host.onActivity { activity ->
+                            // Request foreground once, then allow the window focus transition to settle.
+                            if (!requestedFocus) {
+                                activity.getSystemService(android.app.ActivityManager::class.java).appTasks
+                                    .firstOrNull { it.taskInfo.taskId == activity.taskId }?.let {
+                                        it.moveToFront()
+                                        requestedFocus = true
+                                    }
+                            }
+                            assertEquals("The original host must survive app language changes", ids.first(), activity.widgetId)
+                            actual = listOf(activity.widgetView, checkNotNull(activity.secondaryWidgetView), checkNotNull(activity.thirdWidgetView))
+                                .map { labels(it).joinToString(" | ") }
+                            focused = activity.widgetView.hasWindowFocus()
+                            matched = focused && actual.all { label in it && "62%" in it }
+                        }
+                        if (!focused && !recoveredSystemDialog) {
+                            recoveredSystemDialog = dismissLauncherAnrOnEmulator(instrumentation)
+                            if (recoveredSystemDialog) requestedFocus = false
+                        }
+                        if (!matched) Thread.sleep(100)
+                    }
+                    if (!matched) instrumentation.uiAutomation.takeScreenshot()?.let {
+                        saveDeviceScreenshot(context, "language-widget-timeout", it)
+                    }
+                    assertTrue("Every existing widget must use $tag without a test-triggered repaint; " +
+                        "focused=$focused, recoveredSystemDialog=$recoveredSystemDialog: $actual", matched)
+                    assertEquals(requests, app.usageRequests.get())
+                    instrumentation.waitForIdleSync()
+                    saveDeviceScreenshot(context, "language-widgets-$tag", checkNotNull(instrumentation.uiAutomation.takeScreenshot()))
                 }
             }
         } finally {
