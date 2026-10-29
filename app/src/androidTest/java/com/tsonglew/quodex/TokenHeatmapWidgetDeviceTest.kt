@@ -111,7 +111,9 @@ class TokenHeatmapWidgetDeviceTest {
                 assertEquals(beforeRefresh + 1, app.tokenUsageRequests.get())
                 app.tokenUsageStatusCode = 403
                 tapAction(scenario) { it == refreshDescription }
-                awaitLabels(scenario, "96K", context.getString(R.string.cached))
+                // Before API 33 the app locale is resolved by AndroidX, while a
+                // plain application Context can still expose the system language.
+                awaitLabels(scenario, "96K", texts(R.string.cached))
                 assertEquals(beforeRefresh + 2, app.tokenUsageRequests.get())
                 verifyLayoutAndSave(scenario, "token-heatmap-widget-cached")
                 tapAction(scenario) { it.endsWith("打开 Quodex") }
