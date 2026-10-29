@@ -57,14 +57,14 @@ class UiExperienceTest {
     @Test fun tabSwitchPreservesScrollAndTrendPeriodWhileRefreshStaysReachable() {
         ActivityScenario.launch(MainActivity::class.java).use {
             enterDemo()
-            compose.onNodeWithTag("token-trend-30").performScrollTo().performClick().assertIsSelected()
-            compose.onNodeWithTag("token-trend-chart").performScrollTo()
+            compose.onNodeWithTag("token-trend-30").performScrollToVisible(compose).performClick().assertIsSelected()
+            compose.onNodeWithTag("token-trend-chart").performScrollToVisible(compose)
             val quotaScroll = scrollPosition("quota")
             assertTrue("The regression must leave the first viewport", quotaScroll > 0f)
             compose.onNodeWithTag("refresh-button").assertIsDisplayed()
 
             compose.onNodeWithTag("tab-settings").performClick()
-            compose.onNodeWithTag("diagnostics-preview").performScrollTo()
+            compose.onNodeWithTag("diagnostics-preview").performScrollToVisible(compose)
             val settingsScroll = scrollPosition("settings")
             compose.onNodeWithTag("tab-quota").performClick()
             compose.onNodeWithTag("token-trend-30").assertIsSelected()
@@ -81,7 +81,7 @@ class UiExperienceTest {
         ActivityScenario.launch(MainActivity::class.java).use {
             awaitWelcome()
             compose.onNodeWithTag("tab-settings").performClick()
-            val toggle = compose.onNodeWithTag("show-remaining-toggle").performScrollTo()
+            val toggle = compose.onNodeWithTag("show-remaining-toggle").performScrollToVisible(compose)
             toggle.assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch))
                 .assertHasClickAction().assertIsOn().assertHeightIsAtLeast(48.dp)
                 .assertTextContains("显示剩余额度")
@@ -122,28 +122,28 @@ class UiExperienceTest {
                 assertTextFits()
                 screenshot("ux-narrow-large-font-quota")
 
-                compose.onNodeWithTag("token-trend-30").performScrollTo().performClick().assertIsSelected()
+                compose.onNodeWithTag("token-trend-30").performScrollToVisible(compose).performClick().assertIsSelected()
                 assertTextFits()
-                compose.onNodeWithTag("token-trend-chart").performScrollTo().assertIsDisplayed()
+                compose.onNodeWithTag("token-trend-chart").performScrollToVisible(compose).assertIsDisplayed()
                 screenshot("ux-narrow-large-font-trend")
-                compose.onNodeWithTag("token-trend-details").performScrollTo().performClick()
+                compose.onNodeWithTag("token-trend-details").performScrollToVisible(compose).performClick()
                 compose.onNodeWithTag("token-trend-day-list").assertExists()
                 compose.onNodeWithTag("token-trend-details-close").performClick()
 
                 compose.onNodeWithTag("tab-settings").performClick()
-                compose.onNodeWithTag("show-remaining-toggle").performScrollTo().assertIsOn()
+                compose.onNodeWithTag("show-remaining-toggle").performScrollToVisible(compose).assertIsOn()
                 assertTextFits()
                 screenshot("ux-narrow-large-font-settings")
-                compose.onNodeWithTag("theme-dark").performScrollTo().performClick()
+                compose.onNodeWithTag("theme-dark").performScrollToVisible(compose).performClick()
                 compose.waitUntil(5_000) { runBlocking { app.settings.flow.first() }.theme == "dark" }
                 compose.onNodeWithTag("theme-dark").assertIsSelected()
-                compose.onNodeWithTag("automatic-app-updates").performScrollTo().assertHasClickAction()
+                compose.onNodeWithTag("automatic-app-updates").performScrollToVisible(compose).assertHasClickAction()
                 assertTextFits()
                 screenshot("ux-narrow-large-font-updates-dark")
 
                 compose.onNodeWithTag("tab-widgets").performClick()
-                compose.onNodeWithTag("add-slim-widget-button").performScrollTo().assertIsDisplayed()
-                compose.onNodeWithTag("add-widget-button").performScrollTo().assertIsDisplayed()
+                compose.onNodeWithTag("add-slim-widget-button").performScrollToVisible(compose).assertIsDisplayed()
+                compose.onNodeWithTag("add-widget-button").performScrollToVisible(compose).assertIsDisplayed()
                 assertTextFits()
                 screenshot("ux-narrow-large-font-widgets-dark")
             }
@@ -157,10 +157,21 @@ class UiExperienceTest {
             val dock = compose.onNodeWithTag("floating-navigation").assertIsDisplayed().getUnclippedBoundsInRoot()
             val page = compose.onNodeWithTag("page-settings").getUnclippedBoundsInRoot()
             assertTrue("Dock floats inside the content width", dock.left > page.left && dock.right < page.right)
-            assertTrue("Scroll viewport avoids obscured touch targets", page.bottom <= dock.top)
+            assertTrue("Content continues beneath the floating glass instead of ending in a solid bottom strip", page.bottom > dock.bottom)
+            // The transparent space beside the capsule must still belong to the page.
+            val before = scrollPosition("settings")
+            val pagePixels = compose.onNodeWithTag("page-settings").fetchSemanticsNode().boundsInRoot
+            val dockPixels = compose.onNodeWithTag("floating-navigation").fetchSemanticsNode().boundsInRoot
+            compose.onNodeWithTag("page-settings").performTouchInput {
+                swipe(androidx.compose.ui.geometry.Offset(4f, dockPixels.center.y - pagePixels.top),
+                    androidx.compose.ui.geometry.Offset(4f, dockPixels.top - pagePixels.top - 160f), 400)
+            }
+            assertTrue("The dock must not intercept swipes in its side margins", scrollPosition("settings") > before)
+            screenshot("ux-glass-navigation-light")
             compose.onNodeWithTag("page-settings").performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 100000f) }
             val footer = compose.onNodeWithText("独立第三方工具", substring = true).getUnclippedBoundsInRoot()
             assertTrue("Bottom padding keeps the last content above the dock", footer.bottom <= dock.top)
+            screenshot("ux-glass-navigation-footer")
             compose.onNodeWithTag("tab-quota").performClick().assertIsSelected()
         }
     }
@@ -199,7 +210,7 @@ class UiExperienceTest {
 
     private fun enterDemo() {
         awaitWelcome()
-        compose.onNodeWithTag("demo-button").performScrollTo().performClick()
+        compose.onNodeWithTag("demo-button").performScrollToVisible(compose).performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("token-usage-card").fetchSemanticsNodes().isNotEmpty() }
     }
 

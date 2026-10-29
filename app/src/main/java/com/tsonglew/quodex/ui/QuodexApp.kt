@@ -5,6 +5,9 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +25,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.onSizeChanged
@@ -49,6 +53,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import com.tsonglew.quodex.diagnostics.DiagnosticEvent
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun QuodexApp(model: MainViewModel) {
     val texts = localTextResources()
@@ -84,6 +89,11 @@ fun QuodexApp(model: MainViewModel) {
             val useRail = maxWidth >= 600.dp && maxHeight >= 480.dp
             var dockHeight by remember { mutableStateOf(100.dp) }
             val density = LocalDensity.current
+            val backdropLayer = rememberGraphicsLayer()
+            val backdrop = remember(backdropLayer) { NavigationBackdrop(backdropLayer) }
+            val bringIntoView = remember(useRail, dockHeight, density) {
+                DockBringIntoViewSpec(if (useRail) 0f else with(density) { dockHeight.toPx() })
+            }
             Scaffold(contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal), containerColor = MaterialTheme.colorScheme.background, topBar = {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Row(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
@@ -98,7 +108,7 @@ fun QuodexApp(model: MainViewModel) {
                 }
             }) { padding ->
                 Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
-                    Row(Modifier.fillMaxSize().padding(bottom = if (useRail) 0.dp else dockHeight)) {
+                    Row(Modifier.fillMaxSize().then(if (useRail) Modifier else Modifier.navigationBackdropSource(backdrop))) {
                         if (useRail) NavigationRail(Modifier.fillMaxHeight(), containerColor = MaterialTheme.colorScheme.surface,
                             windowInsets = WindowInsets(0)) {
                             destinations.forEach { (id, label, icon) ->
@@ -113,22 +123,25 @@ fun QuodexApp(model: MainViewModel) {
                         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
                             // Keep each destination's render nodes separate as well as its saved state.
                             key(tab) { pageStates.SaveableStateProvider(tab) {
-                                Column(Modifier.widthIn(max = 640.dp).fillMaxSize()
-                                    .revealOnEnter(if (tab == "quota") state.snapshot != null else Unit).testTag("page-$tab")
-                                    .verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-                                    Spacer(Modifier.height(16.dp))
-                                    if (tab != "settings") updates.saved.available?.let { AvailableUpdateNotice(it) }
-                                    when (tab) {
-                                        "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock) }
-                                        "widgets" -> WidgetPage(state, prefs)
-                                        else -> SettingsPage(state, prefs, model, clock)
+                                CompositionLocalProvider(LocalBringIntoViewSpec provides bringIntoView) {
+                                    Column(Modifier.widthIn(max = 640.dp).fillMaxSize()
+                                        .revealOnEnter(if (tab == "quota") state.snapshot != null else Unit).testTag("page-$tab")
+                                        .verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+                                        Spacer(Modifier.height(16.dp))
+                                        if (tab != "settings") updates.saved.available?.let { AvailableUpdateNotice(it) }
+                                        when (tab) {
+                                            "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock) }
+                                            "widgets" -> WidgetPage(state, prefs)
+                                            else -> SettingsPage(state, prefs, model, clock)
+                                        }
+                                        // Content scrolls behind the dock; only its end needs clearance.
+                                        Spacer(Modifier.height(28.dp + if (useRail) 0.dp else dockHeight))
                                     }
-                                    Spacer(Modifier.height(28.dp))
                                 }
                             } }
                         }
                     }
-                    if (!useRail) FloatingNavigation(destinations, tab, { tab = it },
+                    if (!useRail) FloatingNavigation(destinations, tab, { tab = it }, backdrop,
                         Modifier.align(Alignment.BottomCenter).onSizeChanged { dockHeight = with(density) { it.height.toDp() } })
                 }
             }
@@ -141,6 +154,12 @@ fun QuodexApp(model: MainViewModel) {
         }
         login?.let { LoginDialog(it, model::cancelLogin, model::startLogin) }
     }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+private class DockBringIntoViewSpec(private val bottomOverlay: Float) : BringIntoViewSpec {
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
+        super.calculateScrollDistance(offset, size, (containerSize - bottomOverlay).coerceAtLeast(1f))
 }
 
 @Composable

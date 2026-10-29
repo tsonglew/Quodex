@@ -33,7 +33,7 @@ class AppFlowTest {
         compose.waitForIdle()
         screenshot("quota-dark")
         compose.onNodeWithTag("tab-settings").performClick()
-        compose.onNodeWithTag("logout-button").performScrollTo().performClick()
+        compose.onNodeWithTag("logout-button").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("confirm-logout").performClick()
         compose.onNodeWithTag("tab-quota").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("connect-button").fetchSemanticsNodes().isNotEmpty() }
@@ -49,11 +49,11 @@ class AppFlowTest {
             "0.1.0-alpha22", "https://github.com/tsonglew/Quodex/releases/tag/v0.1.0-alpha22", "a".repeat(40))
         try {
             compose.onNodeWithTag("tab-settings").performClick()
-            compose.onNodeWithTag("automatic-app-updates").performScrollTo().assertIsOff()
+            compose.onNodeWithTag("automatic-app-updates").performScrollToVisible(compose).assertIsOff()
             val before = app.updateRequests.get()
-            compose.onNodeWithTag("check-app-update").performScrollTo().performClick()
+            compose.onNodeWithTag("check-app-update").performScrollToVisible(compose).performClick()
             compose.waitUntil(10_000) { app.updateRequests.get() > before && !app.updates.state.value.checking }
-            compose.onNodeWithTag("open-app-update").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithTag("open-app-update").performScrollToVisible(compose).assertIsDisplayed()
             screenshot("app-update-settings")
             compose.onNodeWithTag("tab-quota").performClick()
             compose.onNodeWithTag("open-app-update").assertIsDisplayed()
@@ -66,29 +66,29 @@ class AppFlowTest {
 
     @Test fun backgroundGuideCanSwitchBrandsAndCollapse() {
         compose.onNodeWithTag("tab-settings").performClick()
-        compose.onNodeWithTag("background-guide-toggle").performScrollTo().performClick()
-        compose.onNodeWithTag("background-brand-picker").performScrollTo().performClick()
+        compose.onNodeWithTag("background-guide-toggle").performScrollToVisible(compose).performClick()
+        compose.onNodeWithTag("background-brand-picker").performScrollToVisible(compose).performClick()
         compose.onNodeWithText("小米 / Redmi / POCO").performClick()
-        compose.onNodeWithText("1. 允许自启动：", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("1. 允许自启动：", substring = true).performScrollToVisible(compose).assertIsDisplayed()
         screenshot("background-guide-xiaomi")
-        compose.onNodeWithTag("background-brand-picker").performScrollTo().performClick()
+        compose.onNodeWithTag("background-brand-picker").performScrollToVisible(compose).performClick()
         compose.onNodeWithText("Samsung").performClick()
-        compose.onNodeWithText("1. 排除休眠：", substring = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("background-app-settings").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("background-guide-toggle").performScrollTo().performClick()
+        compose.onNodeWithText("1. 排除休眠：", substring = true).performScrollToVisible(compose).assertIsDisplayed()
+        compose.onNodeWithTag("background-app-settings").performScrollToVisible(compose).assertIsDisplayed()
+        compose.onNodeWithTag("background-guide-toggle").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("background-brand-picker").assertDoesNotExist()
     }
 
     @Test fun privacyNoticeIsAvailableOfflineInSettingsAndBeforeLogin() {
         compose.onNodeWithTag("tab-settings").performClick()
-        compose.onNodeWithTag("privacy-notice-button").performScrollTo().performClick()
+        compose.onNodeWithTag("privacy-notice-button").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("privacy-notice-text").assertTextContains("缓存本身不是加密数据库", substring = true)
         saveDeviceScreenshot(compose.activity, "privacy-notice", compose.onNode(isDialog()).captureToImage().asAndroidBitmap())
         compose.onNodeWithTag("privacy-notice-close").performClick()
         compose.onNodeWithTag("privacy-notice-text").assertDoesNotExist()
         compose.onNodeWithTag("tab-quota").performClick()
         compose.onNodeWithTag("connect-button").performClick()
-        compose.onNodeWithTag("privacy-notice-button").performScrollTo().performClick()
+        compose.onNodeWithTag("privacy-notice-button").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("privacy-notice-text").assertTextContains("此操作不撤销远程授权", substring = true)
         compose.onNodeWithTag("privacy-notice-close").performClick()
         compose.onNodeWithText("取消", substring = false).performClick()
@@ -104,14 +104,14 @@ class AppFlowTest {
         repeat(5) {
             diagnostics.clear()
             diagnostics.record(com.tsonglew.quodex.diagnostics.DiagnosticEvent.HTTP_START, 0)
-            compose.onNodeWithTag("diagnostics-preview").performScrollTo().performClick()
+            compose.onNodeWithTag("diagnostics-preview").performScrollToVisible(compose).performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithTag("diagnostics-report").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithTag("diagnostics-report").assertTextContains("Hourly observations schema=1", substring = true)
             compose.onNodeWithTag("diagnostics-report").assertTextContains("HTTP_START 0", substring = true)
             compose.onNodeWithTag("diagnostics-close").performClick()
-            compose.onNodeWithTag("diagnostics-clear").performScrollTo().performClick()
+            compose.onNodeWithTag("diagnostics-clear").performScrollToVisible(compose).performClick()
             compose.waitUntil(10_000) { !diagnostics.report().contains("HTTP_START 0") }
-            compose.onNodeWithTag("diagnostics-preview").performScrollTo().performClick()
+            compose.onNodeWithTag("diagnostics-preview").performScrollToVisible(compose).performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithTag("diagnostics-report").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithTag("diagnostics-report").assertTextContains("Recent events", substring = true)
             compose.onNodeWithTag("diagnostics-close").performClick()
@@ -137,7 +137,7 @@ class AppFlowTest {
             listOf(false, true, false).forEach { restricted ->
                 shell("cmd appops set $packageName RUN_ANY_IN_BACKGROUND ${if (restricted) "ignore" else "allow"}")
                 compose.waitUntil(10_000) { activity.isBackgroundRestricted == restricted }
-                compose.onNodeWithTag("diagnostics-preview").performScrollTo().performClick()
+                compose.onNodeWithTag("diagnostics-preview").performScrollToVisible(compose).performClick()
                 compose.waitUntil(10_000) { compose.onAllNodesWithTag("diagnostics-report").fetchSemanticsNodes().isNotEmpty() }
                 compose.onNodeWithTag("diagnostics-report").assertTextContains("backgroundRestricted=$restricted", substring = true)
                 compose.onNodeWithTag("diagnostics-close").performClick()

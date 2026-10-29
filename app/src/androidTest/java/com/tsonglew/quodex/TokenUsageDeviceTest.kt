@@ -32,20 +32,20 @@ class TokenUsageDeviceTest {
 
     @Test fun serviceDatesZeroAndMissingDaysRemainDistinctInBothPeriods() {
         connectWithTokens()
-        compose.onNodeWithTag("token-trend-7").performScrollTo().assertIsSelected()
+        compose.onNodeWithTag("token-trend-7").performScrollToVisible(compose).assertIsSelected()
         compose.onNodeWithTag("token-trend-total").assertTextEquals("57,000")
         compose.onNodeWithText("已返回日用量合计 · 3/7 天有数据").assertExists()
-        compose.onNodeWithTag("token-trend-chart").performScrollTo().assertContentDescriptionContains("2026-10-16 至 2026-10-22", substring = true)
+        compose.onNodeWithTag("token-trend-chart").performScrollToVisible(compose).assertContentDescriptionContains("2026-10-16 至 2026-10-22", substring = true)
         screenshot("token-trend-seven-days")
-        compose.onNodeWithTag("token-trend-details").performScrollTo().performClick()
+        compose.onNodeWithTag("token-trend-details").performScrollToVisible(compose).performClick()
         compose.onNodeWithText("0 tokens").assertExists()
         compose.onAllNodesWithText("未提供数据").onFirst().assertExists()
         saveDeviceScreenshot(compose.activity, "token-trend-day-details", compose.onNode(isDialog()).captureToImage().asAndroidBitmap())
         compose.onNodeWithTag("token-trend-details-close").performClick()
-        compose.onNodeWithTag("token-trend-30").performScrollTo().performClick().assertIsSelected()
+        compose.onNodeWithTag("token-trend-30").performScrollToVisible(compose).performClick().assertIsSelected()
         compose.onNodeWithTag("token-trend-total").assertTextEquals("57,000")
         compose.onNodeWithText("已返回日用量合计 · 3/30 天有数据").assertExists()
-        compose.onNodeWithTag("token-trend-details").performScrollTo().performClick()
+        compose.onNodeWithTag("token-trend-details").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("token-trend-day-list").performScrollToIndex(29)
         compose.onNode(hasText("2026-09-23") and hasAnyAncestor(hasTestTag("token-trend-day-list"))).assertIsDisplayed()
         compose.onNodeWithTag("token-trend-details-close").performClick()
@@ -57,7 +57,7 @@ class TokenUsageDeviceTest {
         val quotaSnapshot = app.repository.state.value.snapshot
         val tokenRequests = app.tokenUsageRequests.get()
         app.tokenUsageStatusCode = 403
-        compose.onNodeWithTag("token-trend-refresh").performScrollTo().performClick()
+        compose.onNodeWithTag("token-trend-refresh").performScrollToVisible(compose).performClick()
         compose.waitUntil(10_000) {
             app.tokenUsageRequests.get() > tokenRequests && !app.repository.state.value.tokenLoading
         }
@@ -66,10 +66,10 @@ class TokenUsageDeviceTest {
         assertEquals(quotaSnapshot, app.repository.state.value.snapshot)
         assertEquals(quotaRequests, app.usageRequests.get())
         compose.onNodeWithTag("token-trend-total").assertTextEquals("57,000")
-        compose.onNodeWithText("仍显示上次获取的数据。", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("仍显示上次获取的数据。", substring = true).performScrollToVisible(compose).assertIsDisplayed()
         screenshot("token-trend-cached-error")
         compose.onNodeWithTag("tab-settings").performClick()
-        compose.onNodeWithTag("logout-button").performScrollTo().performClick()
+        compose.onNodeWithTag("logout-button").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("confirm-logout").performClick()
         compose.onNodeWithTag("tab-quota").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("connect-button").fetchSemanticsNodes().isNotEmpty() }
@@ -87,9 +87,9 @@ class TokenUsageDeviceTest {
         compose.onNodeWithTag("tab-settings").performClick()
         compose.onNodeWithTag("theme-dark").performClick()
         compose.onNodeWithTag("tab-quota").performClick()
-        compose.onNodeWithTag("token-trend-30").performScrollTo().performClick().assertIsSelected()
+        compose.onNodeWithTag("token-trend-30").performScrollToVisible(compose).performClick().assertIsSelected()
         compose.onNodeWithText("已返回日用量合计 · 30/30 天有数据").assertExists()
-        compose.onNodeWithTag("token-trend-chart").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("token-trend-chart").performScrollToVisible(compose).assertIsDisplayed()
         screenshot("token-trend-demo-dark")
         compose.onNodeWithTag("token-trend-refresh").assertDoesNotExist()
         assertEquals(requests, app.tokenUsageRequests.get())
