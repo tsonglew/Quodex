@@ -7,7 +7,7 @@
 
 面向 Android 的 Codex 额度监控 App，支持桌面小组件、重置时间和 Token 使用趋势。Quodex 是独立第三方工具，与 OpenAI 无隶属关系。
 
-> alpha24 已发布：参考 FlClash 安卓版的蓝色卡片界面与悬浮导航，以及 App 内下载、校验和安装更新。见[界面截图与验证说明](docs/ANDROID_DASHBOARD_UPDATE.md)。alpha25 新增简体中文、English、日本語与跟随系统，见[多语言支持](docs/LOCALIZATION.md)。
+> alpha24 已发布：参考 FlClash 安卓版的蓝色卡片界面与悬浮导航，以及 App 内下载、校验和安装更新。见[界面截图与验证说明](docs/ANDROID_DASHBOARD_UPDATE.md)。alpha25 新增简体中文、English、日本語与跟随系统，见[多语言支持](docs/LOCALIZATION.md)。alpha26 调整为内容穿透的[液态玻璃风格导航](docs/GLASS_NAVIGATION.md)。
 
 [官网](https://tsonglew.github.io/quodex/) · [观看动效](https://tsonglew.github.io/quodex/#motion) · [公开 APK 与预发布](https://github.com/tsonglew/Quodex/releases) · [支持范围](docs/SUPPORT.md)
 

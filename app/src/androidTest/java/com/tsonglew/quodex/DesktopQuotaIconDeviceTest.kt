@@ -65,13 +65,13 @@ class DesktopQuotaIconDeviceTest {
     @Test fun settingsPreviewSelectsWindowAndCanRestoreOriginalLogo() {
         runBlocking { app.repository.demo(demoSnapshot(java.time.Instant.now().epochSecond)) }
         compose.onNodeWithTag("tab-settings").performClick()
-        compose.onNodeWithTag("desktop-icon-preview").performScrollTo()
+        compose.onNodeWithTag("desktop-icon-preview").performScrollToVisible(compose)
         compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("Quodex · 示例 · 5 小时额度 剩余 36%").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("desktop-icon-window-weekly").performScrollTo().performClick()
+        compose.onNodeWithTag("desktop-icon-window-weekly").performScrollToVisible(compose).performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("Quodex · 示例 · 每周额度 剩余 62%").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("desktop-icon-settings").performScrollTo()
+        compose.onNodeWithTag("desktop-icon-settings").performScrollToVisible(compose)
         saveDeviceScreenshot(app, "desktop-icon-settings", compose.onNodeWithTag("desktop-icon-settings").captureToImage().asAndroidBitmap())
-        compose.onNodeWithTag("desktop-icon-toggle").performScrollTo().performClick()
+        compose.onNodeWithTag("desktop-icon-toggle").performScrollToVisible(compose).performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("Quodex").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("desktop-icon-window-weekly").assertIsNotEnabled()
     }
@@ -82,7 +82,7 @@ class DesktopQuotaIconDeviceTest {
         app.usedPercent = 38
         app.repository.connect(Session("test-access", "test-refresh", "test-account", Long.MAX_VALUE))
         compose.onNodeWithTag("tab-settings").performClick()
-        compose.onNodeWithTag("add-desktop-icon").performScrollTo().performClick()
+        compose.onNodeWithTag("add-desktop-icon").performScrollToVisible(compose).performClick()
         if (shortcuts.pinnedShortcuts.none { it.id == DesktopQuotaIcon.SHORTCUT_ID }) confirmPinDialog()
         waitFor { shortcuts.pinnedShortcuts.any { it.id == DesktopQuotaIcon.SHORTCUT_ID } }
         app.desktopIcon.update()

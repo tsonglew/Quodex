@@ -50,20 +50,20 @@ class QuotaOverviewUiTest {
 
     @Test fun windowlessAndRestrictedAccountsKeepTheirDistinctMeaning() {
         withOverview(parse("""{"plan_type":"pro","rate_limit":{"allowed":true}}""")) {
-            compose.onNodeWithText("当前可用").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("当前可用").performScrollToVisible(compose).assertIsDisplayed()
             compose.onNodeWithText("账号未提供周期额度，无需显示百分比。实际使用仍以账号权益为准。")
-                .performScrollTo().assertIsDisplayed()
+                .performScrollToVisible(compose).assertIsDisplayed()
             compose.onNodeWithTag("quota-primary").assertDoesNotExist()
             compose.onAllNodesWithText("%", substring = true).assertCountEquals(0)
 
             replaceSnapshot("""{"plan_type":"pro","rate_limit":null}""")
-            compose.onNodeWithText("未提供周期额度").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("未提供周期额度").performScrollToVisible(compose).assertIsDisplayed()
             compose.onNodeWithText("当前可用").assertDoesNotExist()
             compose.onNodeWithTag("quota-primary").assertDoesNotExist()
             compose.onAllNodesWithText("%", substring = true).assertCountEquals(0)
 
             replaceSnapshot("""{"rate_limit":{"allowed":false,"primary_window":{"used_percent":20,"limit_window_seconds":18000}}}""")
-            compose.onNodeWithText("当前使用受限").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("当前使用受限").performScrollToVisible(compose).assertIsDisplayed()
             // A restriction does not erase a valid cached quota or turn it into zero.
             compose.onNodeWithTag("quota-primary-value").assertTextEquals("80")
             compose.onNodeWithTag("quota-meter-codex:primary_window").assertExists()
@@ -72,9 +72,9 @@ class QuotaOverviewUiTest {
 
     @Test fun weeklyOnlyAccountKeepsItsQuotaWithoutInventingAShortWindow() {
         withOverview(parse("""{"plan_type":"pro","rate_limit":{"secondary_window":{"used_percent":38,"limit_window_seconds":604800}}}""")) {
-            compose.onNodeWithText("未提供短周期额度").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("未提供短周期额度").performScrollToVisible(compose).assertIsDisplayed()
             compose.onNodeWithText("当前账号未提供按小时计算的额度；已返回的长期额度仍正常显示。")
-                .performScrollTo().assertIsDisplayed()
+                .performScrollToVisible(compose).assertIsDisplayed()
             compose.onNodeWithText("每周额度").assertExists()
             compose.onNodeWithTag("quota-primary-value").assertTextEquals("62")
             compose.onNodeWithText("5 小时额度").assertDoesNotExist()
@@ -91,14 +91,14 @@ class QuotaOverviewUiTest {
                 "primary_window":{"used_percent":60,"limit_window_seconds":86400}}}
         ]}""")
         withOverview(snapshot) {
-            compose.onNodeWithText("未提供周期额度").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("未提供周期额度").performScrollToVisible(compose).assertIsDisplayed()
             compose.onNodeWithTag("quota-primary").assertDoesNotExist()
             compose.onNodeWithTag("quota-primary-value").assertDoesNotExist()
             val expectedLabels = mapOf("review:primary_window" to "Review · 5 小时额度",
                 "review:secondary_window" to "Review · 每周额度", "research:primary_window" to "Research · 每日额度")
             for (window in snapshot.windows) {
-                compose.onNodeWithText(expectedLabels.getValue(window.id)).performScrollTo().assertIsDisplayed()
-                compose.onNodeWithTag("quota-meter-${window.id}").performScrollTo().assertIsDisplayed()
+                compose.onNodeWithText(expectedLabels.getValue(window.id)).performScrollToVisible(compose).assertIsDisplayed()
+                compose.onNodeWithTag("quota-meter-${window.id}").performScrollToVisible(compose).assertIsDisplayed()
             }
             capture("arc-review-only")
         }
@@ -106,9 +106,9 @@ class QuotaOverviewUiTest {
 
     @Test fun unknownUsageHasAnExplanationWhileARealZeroStillHasAMeter() {
         withOverview(parse("""{"rate_limit":{"primary_window":{"limit_window_seconds":18000}}}""")) {
-            compose.onNodeWithText("暂不可用").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("暂不可用").performScrollToVisible(compose).assertIsDisplayed()
             compose.onNodeWithText("服务暂未提供有效的用量数据，请稍后刷新。")
-                .performScrollTo().assertIsDisplayed()
+                .performScrollToVisible(compose).assertIsDisplayed()
             compose.onNodeWithTag("quota-meter-codex:primary_window").assertDoesNotExist()
             compose.onAllNodesWithText("%", substring = true).assertCountEquals(0)
 
@@ -148,8 +148,8 @@ class QuotaOverviewUiTest {
             for (failure in listOf(FailureKind.AUTH, FailureKind.STORAGE)) {
                 compose.runOnIdle { state.value = state.value.copy(failure = failure) }
                 compose.onNodeWithText(if (failure == FailureKind.AUTH) "连接已失效，请重新登录"
-                    else "无法读取安全凭据，请重新连接账号").performScrollTo().assertIsDisplayed()
-                compose.onNodeWithTag("quota-reconnect").performScrollTo().assertHasClickAction().performClick()
+                    else "无法读取安全凭据，请重新连接账号").performScrollToVisible(compose).assertIsDisplayed()
+                compose.onNodeWithTag("quota-reconnect").performScrollToVisible(compose).assertHasClickAction().performClick()
                 compose.onNodeWithTag("quota-primary-value").assertTextEquals("62")
                 compose.onNodeWithText("更新于 ${absoluteTime(NOW, true)}").assertExists()
             }
@@ -157,10 +157,10 @@ class QuotaOverviewUiTest {
                 assertEquals("Both credential errors must call the supplied reconnect action", 2, reconnects)
                 assertEquals("Reconnecting must not mutate the displayed cached snapshot", cached, state.value.snapshot)
             }
-            compose.onNodeWithTag("quota-update-info").performScrollTo().performClick()
+            compose.onNodeWithTag("quota-update-info").performScrollToVisible(compose).performClick()
             compose.onNodeWithText("额度更新说明").assertIsDisplayed()
             compose.onNodeWithText("右上角可手动刷新。更新失败时保留最后成功的数据，超过重置时间的额度需刷新确认。")
-                .performScrollTo().assertIsDisplayed()
+                .performScrollToVisible(compose).assertIsDisplayed()
             compose.onNodeWithText("知道了").performClick()
             compose.onNode(isDialog()).assertDoesNotExist()
         }
@@ -171,20 +171,20 @@ class QuotaOverviewUiTest {
             withOverview(demoSnapshot(NOW), failure = FailureKind.AUTH, width = 320.dp) {
                 assertEquals(2f, requireNotNull(host).resources.configuration.fontScale, 0.01f)
                 compose.onNodeWithTag(VIEWPORT).assertWidthIsEqualTo(320.dp)
-                compose.onNodeWithText("额度概览").performScrollTo().assertIsDisplayed()
+                compose.onNodeWithText("额度概览").performScrollToVisible(compose).assertIsDisplayed()
                 assertTextFits()
                 capture("arc-narrow-double-font-top")
 
                 for (window in requireNotNull(state.value.snapshot).windows) {
-                    compose.onNodeWithTag("quota-meter-${window.id}").performScrollTo().assertIsDisplayed()
+                    compose.onNodeWithTag("quota-meter-${window.id}").performScrollToVisible(compose).assertIsDisplayed()
                     assertTextFits()
                 }
                 compose.onNodeWithText("更新于 ${absoluteTime(NOW, true)}")
-                    .performScrollTo().assertIsDisplayed()
-                compose.onNodeWithTag("quota-update-info").performScrollTo().assertIsDisplayed().performClick()
+                    .performScrollToVisible(compose).assertIsDisplayed()
+                compose.onNodeWithTag("quota-update-info").performScrollToVisible(compose).assertIsDisplayed().performClick()
                 compose.onNodeWithText("额度更新说明").assertIsDisplayed()
                 compose.onNodeWithText("知道了").assertIsDisplayed().performClick()
-                compose.onNodeWithTag("quota-reconnect").performScrollTo().assertIsDisplayed()
+                compose.onNodeWithTag("quota-reconnect").performScrollToVisible(compose).assertIsDisplayed()
                 capture("arc-narrow-double-font-reconnect-idle")
                 val instrumentation = InstrumentationRegistry.getInstrumentation()
                 saveDeviceScreenshot(instrumentation.targetContext, "arc-narrow-double-font-reconnect-screen",

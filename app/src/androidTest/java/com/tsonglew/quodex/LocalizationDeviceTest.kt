@@ -141,7 +141,7 @@ class LocalizationDeviceTest {
     }
 
     private fun select(tag: String, heading: String) {
-        compose.onNodeWithTag("language-$tag").performScrollTo().performClick()
+        compose.onNodeWithTag("language-$tag").performScrollToVisible(compose).performClick()
         waitForText(heading)
     }
     private fun waitForText(text: String) {

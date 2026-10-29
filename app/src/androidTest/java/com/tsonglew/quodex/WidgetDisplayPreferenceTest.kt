@@ -49,7 +49,7 @@ class WidgetDisplayPreferenceTest {
                     ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)).use {
                         compose.onNodeWithTag("tab-settings").performClick()
-                        val toggle = compose.onNodeWithTag("show-remaining-toggle").performScrollTo()
+                        val toggle = compose.onNodeWithTag("show-remaining-toggle").performScrollToVisible(compose)
                         if (remaining) toggle.assertIsOff() else toggle.assertIsOn()
                         toggle.performClick()
                         compose.waitUntil(10_000) { runBlocking { app.settings.read().showRemaining == remaining } }
