@@ -1,5 +1,7 @@
 # Quodex 界面规格
 
+2026-10-29 开发分支的新界面见 [Android 仪表盘与悬浮导航](ANDROID_DASHBOARD_UPDATE.md)，以下保留已发布版本的规格。
+
 2026-10-26：描述已公开预发布的 [0.1.0-alpha22](https://github.com/tsonglew/Quodex/releases/tag/build-40285639293-1) 的深海青界面与原生动效。实际截图与验证范围见 [截图索引](SCREENSHOTS.md)，[官网动效预览](https://tsonglew.github.io/quodex/#motion)可直接播放录屏。
 
 ## 视觉规则

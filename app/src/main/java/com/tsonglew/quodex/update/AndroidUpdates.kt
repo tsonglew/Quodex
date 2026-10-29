@@ -52,13 +52,13 @@ class AndroidUpdateNotifier(private val context: Context) : UpdateNotifier {
             description = "发现可安装的 Quodex 新版本时提醒"
         })
         if (!enabled()) return false
-        val intent = Intent(Intent.ACTION_VIEW, update.releaseUrl.toUri())
+        val intent = Intent(context, com.tsonglew.quodex.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val pending = PendingIntent.getActivity(context, NOTIFICATION_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         return try {
             manager.notify(NOTIFICATION_ID, NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_update_notification)
                 .setContentTitle("Quodex ${update.versionName} 可更新")
-                .setContentText("点击查看更新说明并下载安装包")
+                .setContentText("点击在 App 内下载并安装更新")
                 .setContentIntent(pending).setAutoCancel(true).setOnlyAlertOnce(true)
                 .build())
             true

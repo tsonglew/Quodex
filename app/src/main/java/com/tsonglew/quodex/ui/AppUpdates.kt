@@ -27,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.tsonglew.quodex.BuildConfig
+import com.tsonglew.quodex.quotaApp
 import com.tsonglew.quodex.data.absoluteTime
 import com.tsonglew.quodex.update.AndroidUpdateNotifier
 import com.tsonglew.quodex.update.AppUpdate
@@ -37,8 +38,8 @@ internal fun AvailableUpdateNotice(update: AppUpdate) {
     Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("新版本 ${update.versionName} 已发布", fontWeight = FontWeight.SemiBold)
-            Text("查看更新说明，下载后按系统提示安装。", fontSize = 13.sp)
-            ReleaseLink(update)
+            Text("在 App 内下载，完成后按系统提示安装。", fontSize = 13.sp)
+            UpdateAction(update)
         }
     }
     Spacer(Modifier.height(20.dp))
@@ -64,8 +65,8 @@ internal fun AppUpdatesCard(state: UpdateState, onCheck: () -> Unit, onEnabled: 
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    Surface(shape = RoundedCornerShape(28.dp), color = colors.surface) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp)) {
+    Surface(shape = RoundedCornerShape(24.dp), color = colors.surface) {
+        Column(Modifier.fillMaxWidth().padding(20.dp)) {
             Text("应用更新", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.semantics { heading() })
             Spacer(Modifier.height(8.dp))
@@ -106,7 +107,7 @@ internal fun AppUpdatesCard(state: UpdateState, onCheck: () -> Unit, onEnabled: 
                     Text(if (showDetails) "收起说明" else "更新说明", fontSize = 13.sp)
                 }
             }
-            state.saved.available?.let { ReleaseLink(it) }
+            state.saved.available?.let { UpdateAction(it) }
             if (BuildConfig.DEBUG) Text("调试安装包 · 仅检查相同签名的更新", fontSize = 12.sp,
                 lineHeight = 20.sp, color = colors.onSurfaceVariant)
             if (state.saved.enabled && !notificationsEnabled) {
@@ -141,12 +142,12 @@ internal fun AppUpdatesCard(state: UpdateState, onCheck: () -> Unit, onEnabled: 
 }
 
 @Composable
-private fun ReleaseLink(update: AppUpdate) {
+private fun UpdateAction(update: AppUpdate) {
     val context = LocalContext.current
-    var failed by remember(update.releaseUrl) { mutableStateOf(false) }
-    TextButton(onClick = { failed = !openUpdateIntent(context, Intent(Intent.ACTION_VIEW, update.releaseUrl.toUri())) },
-        modifier = Modifier.heightIn(min = 48.dp).testTag("open-app-update")) { Text("查看更新并下载", fontSize = 14.sp, lineHeight = 21.sp) }
-    if (failed) Text("无法打开下载页，请安装或启用浏览器后重试。", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+    FilledTonalButton(onClick = { context.quotaApp.inAppUpdate.start(update) },
+        modifier = Modifier.heightIn(min = 48.dp).testTag("open-app-update")) {
+        Text("下载并安装更新", fontSize = 14.sp, lineHeight = 21.sp)
+    }
 }
 
 private fun openUpdateIntent(context: Context, intent: Intent): Boolean = try {

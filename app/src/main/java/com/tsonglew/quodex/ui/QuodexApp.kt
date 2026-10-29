@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -74,69 +75,63 @@ fun QuodexApp(model: MainViewModel) {
         }
     }
     val pageStates = rememberSaveableStateHolder()
-    val destinations = listOf(Triple("quota", "额度", Icons.Outlined.DonutLarge),
-        Triple("widgets", "小组件", Icons.Outlined.Widgets), Triple("settings", "设置", Icons.Outlined.Tune))
+    val destinations = listOf(Triple("quota", "额度", Icons.Outlined.Dashboard),
+        Triple("widgets", "小组件", Icons.Outlined.Widgets), Triple("settings", "设置", Icons.Outlined.Settings))
     QuotaTheme(prefs.theme) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val useRail = maxWidth >= 600.dp && maxHeight >= 480.dp
-            Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
+            var dockHeight by remember { mutableStateOf(100.dp) }
+            val density = LocalDensity.current
+            Scaffold(contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal), containerColor = MaterialTheme.colorScheme.background, topBar = {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Row(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-                        .heightIn(min = 64.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                        BrandMark(28)
-                        Spacer(Modifier.width(10.dp))
-                        Text("Quodex", Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                        if (tab == "quota" && state.snapshot != null) IconButton(onClick = model::refresh,
+                        .heightIn(min = 68.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Quodex", Modifier.weight(1f), fontSize = 24.sp, letterSpacing = (-0.6).sp, fontWeight = FontWeight.Bold)
+                        if (tab == "quota" && state.snapshot != null) FilledTonalIconButton(onClick = model::refresh,
                             enabled = !state.syncing && !state.demo, modifier = Modifier.testTag("refresh-button")) {
                             if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp).semantics { contentDescription = "正在刷新额度" }, strokeWidth = 2.dp)
                             else Icon(Icons.Outlined.Refresh, "刷新额度")
                         }
                     }
                 }
-            }, bottomBar = {
-                if (!useRail) NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
-                    destinations.forEach { (id, label, icon) ->
-                        NavigationBarItem(selected = tab == id, onClick = { tab = id }, icon = { Icon(icon, null) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer),
-                            label = { Text(label) }, modifier = Modifier.testTag("tab-$id"))
-                    }
-                }
             }) { padding ->
-                Row(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
-                    if (useRail) NavigationRail(Modifier.fillMaxHeight(), containerColor = MaterialTheme.colorScheme.surface,
-                        windowInsets = WindowInsets(0)) {
-                        destinations.forEach { (id, label, icon) ->
-                            NavigationRailItem(selected = tab == id, onClick = { tab = id }, icon = { Icon(icon, null) },
-                                colors = NavigationRailItemDefaults.colors(
-                                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                                    indicatorColor = MaterialTheme.colorScheme.primaryContainer),
-                                label = { Text(label) }, modifier = Modifier.testTag("tab-$id"))
+                Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+                    Row(Modifier.fillMaxSize().padding(bottom = if (useRail) 0.dp else dockHeight)) {
+                        if (useRail) NavigationRail(Modifier.fillMaxHeight(), containerColor = MaterialTheme.colorScheme.surface,
+                            windowInsets = WindowInsets(0)) {
+                            destinations.forEach { (id, label, icon) ->
+                                NavigationRailItem(selected = tab == id, onClick = { tab = id }, icon = { Icon(icon, null) },
+                                    colors = NavigationRailItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer),
+                                    label = { Text(label) }, modifier = Modifier.testTag("tab-$id"))
+                            }
+                        }
+                        Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+                            // Keep each destination's render nodes separate as well as its saved state.
+                            key(tab) { pageStates.SaveableStateProvider(tab) {
+                                Column(Modifier.widthIn(max = 640.dp).fillMaxSize()
+                                    .revealOnEnter(if (tab == "quota") state.snapshot != null else Unit).testTag("page-$tab")
+                                    .verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+                                    Spacer(Modifier.height(16.dp))
+                                    if (tab != "settings") updates.saved.available?.let { AvailableUpdateNotice(it) }
+                                    when (tab) {
+                                        "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock) }
+                                        "widgets" -> WidgetPage(state, prefs)
+                                        else -> SettingsPage(state, prefs, model, clock)
+                                    }
+                                    Spacer(Modifier.height(28.dp))
+                                }
+                            } }
                         }
                     }
-                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
-                        // Keep each destination's render nodes separate as well as its saved state.
-                        key(tab) { pageStates.SaveableStateProvider(tab) {
-                            Column(Modifier.widthIn(max = 640.dp).fillMaxSize()
-                                .revealOnEnter(if (tab == "quota") state.snapshot != null else Unit).testTag("page-$tab")
-                                .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
-                                Spacer(Modifier.height(16.dp))
-                                if (tab != "settings") updates.saved.available?.let { AvailableUpdateNotice(it) }
-                                when (tab) {
-                                    "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock) }
-                                    "widgets" -> WidgetPage(state, prefs)
-                                    else -> SettingsPage(state, prefs, model, clock)
-                                }
-                                Spacer(Modifier.height(28.dp))
-                            }
-                        } }
-                    }
+                    if (!useRail) FloatingNavigation(destinations, tab, { tab = it },
+                        Modifier.align(Alignment.BottomCenter).onSizeChanged { dockHeight = with(density) { it.height.toDp() } })
                 }
             }
         }
+        InAppUpdateDialog()
         operationError?.let { message ->
             AlertDialog(onDismissRequest = model::dismissError,
                 title = { Text("操作未完成") }, text = { Text(message) },
@@ -190,7 +185,7 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
     }
     Column(Modifier.testTag("dashboard")) {
         QuotaOverview(state, prefs, now, onReconnect = model::startLogin)
-        Spacer(Modifier.height(22.dp))
+        Spacer(Modifier.height(16.dp))
         TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage, prefs.compactTokens, model::compactTokens)
         if (state.demo) {
             Spacer(Modifier.height(18.dp))

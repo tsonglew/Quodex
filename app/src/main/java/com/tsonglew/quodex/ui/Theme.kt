@@ -12,51 +12,51 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Share the approved deep-teal palette with Glance widgets as well as Compose screens.
-private val DeepTealLightColors = lightColorScheme(
-    primary = Color(0xFF007C83), onPrimary = Color.White,
-    primaryContainer = Color(0xFFBCEDEA), onPrimaryContainer = Color(0xFF002F32),
-    secondary = Color(0xFF486568), onSecondary = Color.White,
-    secondaryContainer = Color(0xFFEAF7F4), onSecondaryContainer = Color(0xFF213A3D),
-    tertiary = Color(0xFF7D570B), onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFFFDEA4), onTertiaryContainer = Color(0xFF271900),
-    background = Color(0xFFEEF8F7), onBackground = Color(0xFF112B30),
-    surface = Color.White, onSurface = Color(0xFF112B30),
-    surfaceVariant = Color(0xFFDCE9E7), onSurfaceVariant = Color(0xFF4B6265),
-    outline = Color(0xFF6D8487), outlineVariant = Color(0xFFC1D4D1),
-    surfaceTint = Color(0xFF007C83), surfaceBright = Color.White, surfaceDim = Color(0xFFD7E5E2),
-    surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFF8FCFB),
-    surfaceContainer = Color(0xFFF3F9F7), surfaceContainerHigh = Color(0xFFEDF7F5),
-    surfaceContainerHighest = Color(0xFFE7F1EF),
-    inversePrimary = Color(0xFF5CD8CD), inverseSurface = Color(0xFF112B30), inverseOnSurface = Color(0xFFEEF8F7),
+// Neutral surfaces and a blue accent, shared by Compose and Glance.
+private val DashboardLightColors = lightColorScheme(
+    primary = Color(0xFF0065D0), onPrimary = Color.White,
+    primaryContainer = Color(0xFFD9E7FF), onPrimaryContainer = Color(0xFF001B3F),
+    secondary = Color(0xFF555F71), onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE4EAF5), onSecondaryContainer = Color(0xFF192331),
+    tertiary = Color(0xFF685581), onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFEFDBFF), onTertiaryContainer = Color(0xFF231035),
+    background = Color(0xFFF1EFF2), onBackground = Color(0xFF1B1C20),
+    surface = Color.White, onSurface = Color(0xFF1B1C20),
+    surfaceVariant = Color(0xFFE7E5EA), onSurfaceVariant = Color(0xFF464B59),
+    outline = Color(0xFF777B86), outlineVariant = Color(0xFFD4D4DE),
+    surfaceTint = Color(0xFF0065D0), surfaceBright = Color.White, surfaceDim = Color(0xFFDEDEE5),
+    surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFFCF9FC),
+    surfaceContainer = Color(0xFFF0EDF2), surfaceContainerHigh = Color(0xFFECEAF0),
+    surfaceContainerHighest = Color(0xFFE3E1E8),
+    inversePrimary = Color(0xFF9EC5FF), inverseSurface = Color(0xFF1B1C20), inverseOnSurface = Color(0xFFF1EFF2),
     error = Color(0xFFBA1A1A), onError = Color.White,
     errorContainer = Color(0xFFFFDAD6), onErrorContainer = Color(0xFF410002),
     scrim = Color.Black,
 )
 
-private val DeepTealDarkColors = darkColorScheme(
-    primary = Color(0xFF5CD8CD), onPrimary = Color(0xFF003734),
-    primaryContainer = Color(0xFF005157), onPrimaryContainer = Color(0xFFA0F1E7),
-    secondary = Color(0xFFB0CDCC), onSecondary = Color(0xFF1B3537),
-    secondaryContainer = Color(0xFF324C4E), onSecondaryContainer = Color(0xFFD0E9E7),
-    tertiary = Color(0xFFEFC16B), onTertiary = Color(0xFF402D00),
-    tertiaryContainer = Color(0xFF5C420A), onTertiaryContainer = Color(0xFFFFDEA4),
-    background = Color(0xFF0B1C20), onBackground = Color(0xFFEEF8F7),
-    surface = Color(0xFF112B30), onSurface = Color(0xFFEEF8F7),
-    surfaceVariant = Color(0xFF2C4447), onSurfaceVariant = Color(0xFFBCCFCC),
-    outline = Color(0xFF869C9E), outlineVariant = Color(0xFF415A5D),
-    surfaceTint = Color(0xFF5CD8CD), surfaceBright = Color(0xFF304C50), surfaceDim = Color(0xFF0B1C20),
-    surfaceContainerLowest = Color(0xFF08171A), surfaceContainerLow = Color(0xFF0E2428),
-    surfaceContainer = Color(0xFF112B30), surfaceContainerHigh = Color(0xFF1C363A),
-    surfaceContainerHighest = Color(0xFF274145),
-    inversePrimary = Color(0xFF007C83), inverseSurface = Color(0xFFEEF8F7), inverseOnSurface = Color(0xFF112B30),
+private val DashboardDarkColors = darkColorScheme(
+    primary = Color(0xFF9EC5FF), onPrimary = Color(0xFF003263),
+    primaryContainer = Color(0xFF164B82), onPrimaryContainer = Color(0xFFD9E7FF),
+    secondary = Color(0xFFBDC7DC), onSecondary = Color(0xFF273141),
+    secondaryContainer = Color(0xFF3E4859), onSecondaryContainer = Color(0xFFD9E7FF),
+    tertiary = Color(0xFFD5BDEB), onTertiary = Color(0xFF39264F),
+    tertiaryContainer = Color(0xFF503D66), onTertiaryContainer = Color(0xFFEFDBFF),
+    background = Color(0xFF121316), onBackground = Color(0xFFF1EFF2),
+    surface = Color(0xFF202125), onSurface = Color(0xFFF1EFF2),
+    surfaceVariant = Color(0xFF44464F), onSurfaceVariant = Color(0xFFC5C6D0),
+    outline = Color(0xFF8F909B), outlineVariant = Color(0xFF444650),
+    surfaceTint = Color(0xFF9EC5FF), surfaceBright = Color(0xFF38393F), surfaceDim = Color(0xFF121316),
+    surfaceContainerLowest = Color(0xFF0C0D10), surfaceContainerLow = Color(0xFF191A1F),
+    surfaceContainer = Color(0xFF1B1C20), surfaceContainerHigh = Color(0xFF2A2B31),
+    surfaceContainerHighest = Color(0xFF35363D),
+    inversePrimary = Color(0xFF0065D0), inverseSurface = Color(0xFFF1EFF2), inverseOnSurface = Color(0xFF1B1C20),
     error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
     errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6),
     scrim = Color.Black,
 )
 
 internal fun quodexColorScheme(dark: Boolean): ColorScheme =
-    if (dark) DeepTealDarkColors else DeepTealLightColors
+    if (dark) DashboardDarkColors else DashboardLightColors
 
 @Composable
 fun QuotaTheme(mode: String = "system", content: @Composable () -> Unit) {

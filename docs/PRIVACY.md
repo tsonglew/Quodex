@@ -1,10 +1,10 @@
 # 隐私说明与数据流核对
 
-更新：2026-10-28。完整政策采用随 App 打包的[隐私说明原文](../app/src/main/res/raw/privacy_notice.txt)，设置和连接对话框读取同一份文件，离线可查看。此页为实现核对，不是另一份政策。
+更新：2026-10-29。完整政策采用随 App 打包的[隐私说明原文](../app/src/main/res/raw/privacy_notice.txt)，设置和连接对话框读取同一份文件，离线可查看。此页为实现核对，不是另一份政策。
 
 | 数据／行为 | 实现证据 |
 | --- | --- |
-| 版本检查与通知 | `update/GitHubUpdateClient.kt`：独立客户端访问 api.github.com 的公开 Releases，不携带账号、令牌或设备标识；签名比较在本机完成。默认开启目标 12 小时检查，设置可关闭；`AndroidUpdates.kt` 使用 WorkManager 和本机通知，点击交给浏览器打开 GitHub 发布页，不自动下载／安装。`UpdateRepository.kt` 与独立 DataStore 保存公开版本缓存、时间和提醒去重；退出账号保留这些偏好。 |
+| 版本检查与通知 | `update/GitHubUpdateClient.kt`：独立客户端访问 api.github.com 的公开 Releases，不携带账号、令牌或设备标识；签名比较在本机完成。默认开启目标 12 小时检查，设置可关闭；`AndroidUpdates.kt` 使用 WorkManager 和本机通知，点击打开 App；用户主动下载后由 `ApkDownloader.kt` 通过独立公共客户端获取 APK，校验哈希、包名、版本和签名，`InAppUpdate.kt` 通过仅暴露 updates 缓存目录的 FileProvider 调起系统安装确认。安装包不含账号数据，取消／失败会删除未完成文件；无静默安装。`UpdateRepository.kt` 与独立 DataStore 保存公开版本缓存、时间和提醒去重；退出账号保留这些偏好。 |
 | 授权、续期、额度请求域名及携带信息 | `CodexApi.kt`：authBase、usageUrl、设备码／令牌请求、Authorization／ChatGPT-Account-Id headers；没有聊天生成调用 |
 | Token 统计 | `CodexApi.tokenUsage()`：仅向已有 chatgpt.com 服务发送账号请求；`TokenUsageParser` 忽略 profile 身份资料，只保留统计及时间，将服务端错误转成布尔标记。缓存跟随账号快照，退出／切换时隔离，诊断不包含 token 用量数值。 |
 | 凭据加密与存放 | `Storage.kt`：CredentialVault、noBackupFilesDir、AndroidKeyStore、AES/GCM/NoPadding、原子文件 |

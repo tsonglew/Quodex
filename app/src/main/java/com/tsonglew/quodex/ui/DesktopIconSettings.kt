@@ -33,9 +33,9 @@ internal fun DesktopIconSettings(state: AppState, prefs: PreferencesState, model
     val message by model.desktopIconMessage.collectAsStateWithLifecycle()
     val content = desktopIconContent(state, prefs, now)
     val bitmap = remember(context, content) { QuotaIconRenderer.render(context, content, 216).asImageBitmap() }
-    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface,
+    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.testTag("desktop-icon-settings")) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("桌面额度图标", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.semantics { heading() })
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -48,7 +48,7 @@ internal fun DesktopIconSettings(state: AppState, prefs: PreferencesState, model
                 modifier = Modifier.testTag("desktop-icon-toggle"))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("short" to "短周期", "weekly" to "每周").forEach { (id, label) ->
-                    FilterChip(prefs.desktopIconWindow == id, { model.desktopIconWindow(id) },
+                    FilterChip(prefs.desktopIconWindow == id, { model.desktopIconWindow(id) }, shape = RoundedCornerShape(50),
                         enabled = prefs.desktopIconEnabled, label = { Text(label) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,

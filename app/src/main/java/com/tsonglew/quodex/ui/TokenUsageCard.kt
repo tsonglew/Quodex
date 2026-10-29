@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -47,25 +49,20 @@ fun TokenUsageCard(
 
     Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().padding(20.dp).testTag("token-usage-card"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Token 使用趋势", fontWeight = FontWeight.SemiBold, fontSize = 18.sp,
-                modifier = Modifier.semantics { heading() })
+            PanelHeading("Token 使用趋势", Icons.Outlined.BarChart)
             Text(if (demo) "示例数据 · 仅用于预览" else "账号级 token 总量 · 按服务端日期统计", fontSize = 12.sp, color = secondary)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(7, 30).forEach { days ->
-                    FilterChip(selected = period == days, onClick = { period = days },
+                    FilterChip(shape = RoundedCornerShape(50), selected = period == days, onClick = { period = days },
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer),
                         label = { Text("近 $days 天") }, modifier = Modifier.testTag("token-trend-$days"))
                 }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("易读单位（K / M / B / T）", modifier = Modifier.weight(1f))
-                Switch(checked = compact, onCheckedChange = onCompactChange, modifier = Modifier.testTag("compact-token-toggle"))
-            }
             if (trend != null) {
                 Text("截至 ${trend.endDate} · 近 $period 天", fontSize = 12.sp, color = secondary)
-                Text(formatTokenCount(trend.total, compact), fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
-                    lineHeight = 32.sp, modifier = Modifier.testTag("token-trend-total"))
+                Text(formatTokenCount(trend.total, compact), fontSize = 32.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
+                    lineHeight = 40.sp, modifier = Modifier.testTag("token-trend-total"))
                 Text("已返回日用量合计 · ${trend.knownDays}/${trend.days.size} 天有数据", fontSize = 12.sp, color = secondary)
                 TokenBars(trend, compact)
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
@@ -112,6 +109,9 @@ fun TokenUsageCard(
                     Text(if (loading) "正在更新统计" else "刷新 token 统计")
                 }
             }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            PreferenceToggle("易读单位（K / M / B / T）", compact, onCompactChange,
+                modifier = Modifier.testTag("compact-token-toggle"))
             Text("统计可能延迟；该接口不提供输入、输出或缓存 token 拆分。", fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
         }
     }

@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,17 +33,17 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
     var confirmLogout by rememberSaveable { mutableStateOf(false) }
     var showRefreshInfo by rememberSaveable { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("设置", fontSize = 21.sp, fontWeight = FontWeight.SemiBold,
             modifier = Modifier.semantics { heading() })
 
         SettingsPanel {
-            SettingsLabel("外观")
+            SettingsLabel("外观", Icons.Outlined.Palette)
             Spacer(Modifier.height(8.dp))
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("system" to "跟随系统", "light" to "浅色", "dark" to "深色").forEach { (id, label) ->
-                    FilterChip(selected = prefs.theme == id, onClick = { model.theme(id) },
+                    FilterChip(shape = RoundedCornerShape(50), selected = prefs.theme == id, onClick = { model.theme(id) },
                         label = { Text(label, fontSize = 14.sp, lineHeight = 20.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = colors.primaryContainer,
@@ -51,19 +54,19 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
             Spacer(Modifier.height(14.dp))
             HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.55f))
             Spacer(Modifier.height(18.dp))
-            SettingsLabel("显示方式")
+            SettingsLabel("显示方式", Icons.Outlined.Visibility)
             PreferenceToggle("显示剩余额度", prefs.showRemaining, model::showRemaining,
                 modifier = Modifier.testTag("show-remaining-toggle"),
                 supportingText = "同步更新所有桌面小组件。")
         }
 
         SettingsPanel {
-            SettingsLabel("后台目标间隔")
+            SettingsLabel("后台目标间隔", Icons.Outlined.Schedule)
             Spacer(Modifier.height(8.dp))
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(15L, 30L, 60L).forEach { minutes ->
-                    FilterChip(selected = prefs.refreshMinutes == minutes, onClick = { model.refreshMinutes(minutes) },
+                    FilterChip(shape = RoundedCornerShape(50), selected = prefs.refreshMinutes == minutes, onClick = { model.refreshMinutes(minutes) },
                         label = { Text("$minutes 分钟", fontSize = 14.sp, lineHeight = 20.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = colors.primaryContainer,
@@ -85,7 +88,7 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
         AppUpdatesCard(updates, model::checkForUpdates, model::automaticUpdates, model::updateNotificationPermissionChanged)
 
         SettingsPanel {
-            SettingsLabel("Codex 连接")
+            SettingsLabel("Codex 连接", Icons.Outlined.AccountCircle)
             Spacer(Modifier.height(10.dp))
             Text(if (state.demo) "示例模式" else if (state.connected) "已连接 · 凭据在本机加密保存" else "尚未连接",
                 fontSize = 13.sp, lineHeight = 20.sp, color = colors.onSurfaceVariant)
@@ -138,13 +141,12 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
 
 @Composable
 private fun SettingsPanel(content: @Composable ColumnScope.() -> Unit) {
-    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp), content = content)
+    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
+        Column(Modifier.fillMaxWidth().padding(20.dp), content = content)
     }
 }
 
 @Composable
-private fun SettingsLabel(text: String) {
-    Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.semantics { heading() })
+private fun SettingsLabel(text: String, icon: ImageVector) {
+    PanelHeading(text, icon)
 }

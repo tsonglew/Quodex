@@ -13,7 +13,10 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 @Serializable
-data class AppUpdate(val versionCode: Long, val versionName: String, val releaseUrl: String, val sourceSha: String)
+data class AppUpdate(
+    val versionCode: Long, val versionName: String, val releaseUrl: String, val sourceSha: String,
+    val apkUrl: String? = null, val apkSize: Long = 0, val apkSha256: String? = null,
+)
 
 fun interface UpdateSource { suspend fun latest(): AppUpdate? }
 
@@ -132,15 +135,19 @@ class GitHubUpdateClient(
         } ?: return null
         val assetUrl = "$RELEASE_BASE/download/$tag/$apk"
         val assets = release["assets"] as? JsonArray ?: return null
-        if (assets.none { item ->
-            val asset = item as? JsonObject
-            asset?.string("name") == apk && asset.string("state") == "uploaded" &&
-                (asset.integer("size") ?: 0) > 0 && asset.string("browser_download_url") == assetUrl
-        }) return null
-        return AppUpdate(code, version, releaseUrl, source)
+        val asset = assets.mapNotNull { it as? JsonObject }.singleOrNull {
+            it.string("name") == apk && it.string("state") == "uploaded" &&
+                (it.integer("size") ?: 0) in 1..MAX_APK_BYTES && it.string("browser_download_url") == assetUrl
+        } ?: return null
+        val digest = asset.string("digest")?.let {
+            if (!Regex("sha256:[0-9a-fA-F]{64}").matches(it)) return null
+            it.removePrefix("sha256:").lowercase()
+        }
+        return AppUpdate(code, version, releaseUrl, source, assetUrl, asset.integer("size")!!, digest)
     }
 
     companion object {
+        const val MAX_APK_BYTES = 128 * 1024 * 1024L
         private const val MAX_PAGES = 5
         private const val MAX_RESPONSE_BYTES = 2 * 1024 * 1024L
         private const val RELEASE_BASE = "https://github.com/tsonglew/Quodex/releases"
