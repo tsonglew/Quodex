@@ -34,7 +34,10 @@ internal fun TokenHeatmapChart(trend: TokenTrend, compact: Boolean, modifier: Mo
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     var selected by rememberSaveable(trend.startDate.toString(), trend.endDate.toString()) { mutableStateOf(trend.endDate.toString()) }
-    val day = trend.days.first { it.date.toString() == selected }
+    // A restored selection may predate a snapshot updated by the widget while
+    // the Activity was gone. Saved-state restoration does not validate input keys.
+    val day = trend.days.firstOrNull { it.date.toString() == selected } ?: trend.days.last()
+    val selectedDate = day.date.toString()
     val description = texts(R.string.value_to_value_value_days_with_records, trend.startDate, trend.endDate, trend.knownDays) +
         texts(R.string.total_reported_daily_usage_value_tokens, formatTokenCount(trend.total, compact)) +
         texts(R.string.value_days_without_data, trend.days.size - trend.knownDays) +
@@ -49,8 +52,8 @@ internal fun TokenHeatmapChart(trend: TokenTrend, compact: Boolean, modifier: Mo
             val density = LocalDensity.current
             val width = with(density) { maxWidth.roundToPx() }.coerceAtLeast(1)
             val height = with(density) { 210.dp.roundToPx() }
-            val bitmap = remember(map, width, height, dark, texts.locale, selected) {
-                TokenHeatmapRenderer.render(map, width, height, dark, texts.locale, selected).asImageBitmap()
+            val bitmap = remember(map, width, height, dark, texts.locale, selectedDate) {
+                TokenHeatmapRenderer.render(map, width, height, dark, texts.locale, selectedDate).asImageBitmap()
             }
             Image(bitmap, null, Modifier.fillMaxSize().testTag("token-heatmap").pointerInput(map, width, height) {
                 detectTapGestures { point -> TokenHeatmapRenderer.hit(map, width.toFloat(), height.toFloat(), point.x, point.y)?.let { selected = it.date.toString() } }
