@@ -36,6 +36,7 @@ internal fun DesktopIconSettings(state: AppState, prefs: PreferencesState, model
     val message by model.desktopIconMessage.collectAsStateWithLifecycle()
     val content = desktopIconContent(state, prefs, texts, now)
     val bitmap = remember(context, content) { QuotaIconRenderer.render(context, content, 216).asImageBitmap() }
+    val requestPin = rememberHomePinRequest { model.addDesktopIcon() }
     Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.testTag("desktop-icon-settings")) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -61,7 +62,9 @@ internal fun DesktopIconSettings(state: AppState, prefs: PreferencesState, model
             }
             Text(texts(R.string.add_a_home_screen_icon_with_your),
                 fontSize = 12.sp, lineHeight = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Button(model::addDesktopIcon, enabled = availability.supported || availability.pinned,
+            Button(onClick = {
+                if (availability.pinned) model.addDesktopIcon() else requestPin(HomePinTarget.ICON)
+            }, enabled = availability.supported || availability.pinned,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("add-desktop-icon")) {
                 Icon(Icons.AutoMirrored.Outlined.AddToHomeScreen, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))

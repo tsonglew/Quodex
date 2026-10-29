@@ -326,4 +326,10 @@
     <string name="slim_widget_description">"Compact 2×1 widget with your main quota or account status and last update time."</string>
     <string name="icon_disconnected">"Sign in"</string>
     <string name="count_tokens">"%1$s tokens"</string>
+    <string name="home_pin_permission_title">"Allow adding to the home screen"</string>
+    <string name="home_pin_permission_explanation">"On Xiaomi, Redmi and POCO phones, both quota icons and in-app widget adding need the Home screen shortcuts permission. If it is denied, tapping Add may do nothing."</string>
+    <string name="home_pin_permission_steps">"In Quodex app info, open Permissions → Other permissions → Home screen shortcuts → Always allow. Menu names may vary by system version."</string>
+    <string name="home_pin_permission_return">"After enabling it, return here and tap Continue adding. If it is already allowed, you can continue now."</string>
+    <string name="home_pin_permission_settings">"Open permission settings"</string>
+    <string name="home_pin_permission_continue">"Continue adding"</string>
 </resources>

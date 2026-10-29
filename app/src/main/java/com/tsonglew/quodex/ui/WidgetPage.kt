@@ -51,6 +51,13 @@ internal fun WidgetPage(state: AppState, prefs: PreferencesState) {
     val isExample = state.snapshot == null || state.demo
     val isOld = !isExample && state.failure != null
     var manualWidget by rememberSaveable { mutableStateOf<String?>(null) }
+    val requestPin = rememberHomePinRequest { target ->
+        val compact = target == HomePinTarget.COMPACT_WIDGET
+        val receiver = if (compact) SlimQuotaWidgetReceiver::class.java else QuotaWidgetReceiver::class.java
+        if (!requestWidgetPin(context, receiver)) {
+            manualWidget = texts(if (compact) R.string.codex_quota_2_1 else R.string.codex_quota)
+        }
+    }
 
     Column(Modifier.fillMaxWidth().testTag("widget-page")) {
         Text(texts(R.string.home_screen_widgets), fontSize = 21.sp, fontWeight = FontWeight.SemiBold,
@@ -79,14 +86,14 @@ internal fun WidgetPage(state: AppState, prefs: PreferencesState) {
 
         WidgetLayoutPanel(texts(R.string.standard_widget), texts(R.string.quota_and_reset_times_adapted_to_the), texts(R.string.add_standard_widget),
             "add-widget-button", onAdd = {
-                if (!requestWidgetPin(context, QuotaWidgetReceiver::class.java)) manualWidget = texts(R.string.codex_quota)
+                requestPin(HomePinTarget.STANDARD_WIDGET)
             }) {
             StandardWidgetIllustration(snapshot, prefs.showRemaining, isExample, isOld)
         }
         Spacer(Modifier.height(18.dp))
         WidgetLayoutPanel(texts(R.string.compact_widget_2_1), texts(R.string.main_quota_and_update_time_in_less), texts(R.string.add_compact_2_1_widget),
             "add-slim-widget-button", onAdd = {
-                if (!requestWidgetPin(context, SlimQuotaWidgetReceiver::class.java)) manualWidget = texts(R.string.codex_quota_2_1)
+                requestPin(HomePinTarget.COMPACT_WIDGET)
             }) {
             CompactWidgetIllustration(snapshot, prefs.showRemaining, isExample, isOld)
         }
