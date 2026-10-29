@@ -12,6 +12,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.runtime.DisposableEffect
 import com.tsonglew.quodex.ui.QuodexApp
 import com.tsonglew.quodex.widget.EXTRA_WIDGET_LAUNCH
+import com.tsonglew.quodex.widget.EXTRA_TOKEN_HEATMAP_LAUNCH
 import com.tsonglew.quodex.diagnostics.DiagnosticEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,6 +42,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun recordWidgetLaunch(intent: Intent) {
+        if (intent.getBooleanExtra(EXTRA_TOKEN_HEATMAP_LAUNCH, false)) {
+            intent.removeExtra(EXTRA_TOKEN_HEATMAP_LAUNCH)
+            model.openTokenHeatmap()
+        }
         if (intent.getBooleanExtra(EXTRA_WIDGET_LAUNCH, false)) {
             intent.removeExtra(EXTRA_WIDGET_LAUNCH)
             quotaApp.scope.launch(Dispatchers.IO) { quotaApp.diagnostics.record(DiagnosticEvent.WIDGET_OPEN_APP) }

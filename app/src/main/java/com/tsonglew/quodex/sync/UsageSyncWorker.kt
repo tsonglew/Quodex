@@ -22,6 +22,12 @@ class UsageSyncWorker(context: Context, params: WorkerParameters) : CoroutineWor
         val outcome = app.repository.refresh(inputData.getBoolean("force", false))
         app.diagnostics.record(DiagnosticEvent.WORK_END, outcome.ordinal.toLong())
         app.updateWidgets()
+        if (app.hasTokenHeatmapWidgets()) {
+            // The token repository has its own hourly cache and Retry-After policy.
+            // Render quota first so an optional statistics request cannot hold it up.
+            app.repository.refreshTokenUsage()
+            app.updateWidgets()
+        }
         val retry = outcome == SyncResult.RETRY || outcome == SyncResult.DEFERRED && inputData.getBoolean("force", false)
         // Bound this work cycle; a later periodic cycle or explicit user action can try again.
         return when {
@@ -32,9 +38,25 @@ class UsageSyncWorker(context: Context, params: WorkerParameters) : CoroutineWor
     }
 }
 
+class TokenWidgetSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
+        val outcome = com.tsonglew.quodex.widget.refreshTokenWidget(applicationContext, inputData.getBoolean("force", false))
+        applicationContext.quotaApp.updateWidgets()
+        return if (outcome == SyncResult.RETRY || outcome == SyncResult.DEFERRED) {
+            if (runAttemptCount < 2) Result.retry() else Result.failure()
+        } else Result.success()
+    }
+}
+
 object SyncScheduler {
     private const val PERIODIC = "codex-periodic-sync"
     private const val MANUAL = "codex-manual-sync"
+    private const val TOKENS = "codex-token-widget-sync"
+    fun refreshTokens(context: Context, force: Boolean = true): Operation = WorkManager.getInstance(context).enqueueUniqueWork(
+        TOKENS, if (force) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<TokenWidgetSyncWorker>()
+            .setInputData(workDataOf("force" to force))
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS).build())
     fun schedule(context: Context, minutes: Long): Operation {
         context.quotaApp.diagnostics.record(DiagnosticEvent.SCHEDULE, minutes)
         val request = PeriodicWorkRequestBuilder<UsageSyncWorker>(minutes, TimeUnit.MINUTES)
@@ -57,7 +79,7 @@ object SyncScheduler {
     }
 
     /** Called on an IO dispatcher. Do not expose WorkManager UUIDs or input/output data. */
-    fun diagnosticReport(context: Context): String = listOf(PERIODIC, MANUAL).joinToString("\n", postfix = "\n") { name ->
+    fun diagnosticReport(context: Context): String = listOf(PERIODIC, MANUAL, TOKENS).joinToString("\n", postfix = "\n") { name ->
         runCatching {
             val work = WorkManager.getInstance(context).getWorkInfosForUniqueWork(name).get(2, TimeUnit.SECONDS)
             val active = work.filter { !it.state.isFinished }
@@ -69,6 +91,7 @@ object SyncScheduler {
         context.quotaApp.diagnostics.record(DiagnosticEvent.CANCEL_WORK)
         cancelPeriodic(context)
         WorkManager.getInstance(context).cancelUniqueWork(MANUAL)
+        WorkManager.getInstance(context).cancelUniqueWork(TOKENS)
     }
 
     fun cancelPeriodic(context: Context) { WorkManager.getInstance(context).cancelUniqueWork(PERIODIC) }

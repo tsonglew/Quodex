@@ -21,6 +21,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val desktopIconAvailability = app.desktopIcon.availability
     private val mutableIconMessage = MutableStateFlow<UiText?>(null)
     val desktopIconMessage = mutableIconMessage.asStateFlow()
+    private val mutableHeatmapLaunch = MutableStateFlow<String?>(null)
+    val heatmapLaunch = mutableHeatmapLaunch.asStateFlow()
+    fun openTokenHeatmap() { mutableHeatmapLaunch.value = java.util.UUID.randomUUID().toString() }
     private val mutableError = MutableStateFlow<UiText?>(null)
     val error: StateFlow<UiText?> = mutableError
     fun dismissError() { mutableError.value = null }

@@ -42,7 +42,7 @@ class HomePinPermissionDeviceTest {
             }
         }
         compose.onNodeWithTag("tab-widgets").performClick()
-        for (tag in listOf("add-widget-button", "add-slim-widget-button")) {
+        for (tag in listOf("add-widget-button", "add-slim-widget-button", "add-heatmap-widget-button")) {
             compose.onNodeWithTag(tag).performScrollToVisible(compose).performClick()
             checkSettingsAndDismiss(settings)
         }
@@ -52,7 +52,7 @@ class HomePinPermissionDeviceTest {
         compose.onNodeWithTag("add-desktop-icon").performScrollToVisible(compose).performClick()
         if (alreadyPinned) compose.onNodeWithTag("home-pin-permission-dialog").assertDoesNotExist()
         else checkSettingsAndDismiss(settings)
-        assertEquals(if (alreadyPinned) 2 else 3, settings.opened.size)
+        assertEquals(if (alreadyPinned) 3 else 4, settings.opened.size)
     }
 
     @Test fun settingsReturnAndSavedStateKeepTheChosenWidgetUntilExplicitContinuation() {

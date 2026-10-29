@@ -67,6 +67,14 @@ fun QuodexApp(model: MainViewModel) {
         while (true) { value = Instant.now().epochSecond; delay(30_000) }
     }
     var tab by rememberSaveable { mutableStateOf("quota") }
+    val heatmapLaunch by model.heatmapLaunch.collectAsStateWithLifecycle()
+    var handledHeatmapLaunch by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(heatmapLaunch) {
+        if (heatmapLaunch != null && heatmapLaunch != handledHeatmapLaunch) {
+            tab = "quota"
+            handledHeatmapLaunch = heatmapLaunch
+        }
+    }
     val diagnosticApp = LocalContext.current.quotaApp
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     LaunchedEffect(tab, state, prefs, configuration) {
@@ -130,7 +138,7 @@ fun QuodexApp(model: MainViewModel) {
                                         Spacer(Modifier.height(16.dp))
                                         if (tab != "settings") updates.saved.available?.let { AvailableUpdateNotice(it) }
                                         when (tab) {
-                                            "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock) }
+                                            "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock, heatmapLaunch) }
                                             "widgets" -> WidgetPage(state, prefs)
                                             else -> SettingsPage(state, prefs, model, clock)
                                         }
@@ -181,7 +189,7 @@ private fun PageTitle(title: String, subtitle: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewModel, now: Long) {
+private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewModel, now: Long, heatmapLaunch: String?) {
     val texts = localTextResources()
     if (state.snapshot == null) {
         PageTitle(texts(R.string.keep_track_of_your_quota), texts(R.string.see_your_remaining_codex_quota_and_reset))
@@ -208,7 +216,7 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
     Column(Modifier.testTag("dashboard")) {
         QuotaOverview(state, prefs, now, onReconnect = model::startLogin)
         Spacer(Modifier.height(16.dp))
-        TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage, prefs.compactTokens, model::compactTokens)
+        TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage, prefs.compactTokens, model::compactTokens, heatmapLaunch)
         if (state.demo) {
             Spacer(Modifier.height(18.dp))
             ConnectButton(texts(R.string.connect_my_codex_account), model::startLogin, modifier = Modifier.fillMaxWidth())

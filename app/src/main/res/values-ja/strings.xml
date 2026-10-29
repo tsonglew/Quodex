@@ -329,4 +329,21 @@
     <string name="home_pin_permission_return">"許可したらここに戻り、「追加を続ける」をタップしてください。すでに許可している場合は、そのまま続けられます。"</string>
     <string name="home_pin_permission_settings">"権限設定を開く"</string>
     <string name="home_pin_permission_continue">"追加を続ける"</string>
+    <string name="token_heatmap_scale">"色の濃さは、この期間の 1 日あたりの最大使用量を基準にしています。"</string>
+    <string name="token_heatmap_selected_day">"%1$s · %2$s"</string>
+    <string name="token_heatmap_less">"少"</string>
+    <string name="token_heatmap_more">"多"</string>
+    <string name="token_heatmap_legend">"1 マスはサービス側の日付 1 日分です。灰色は 0、枠のみはデータなし。マスをタップするか、日別の詳細を開いて確認できます。"</string>
+    <string name="token_heatmap_widget_title">"Token · 30 日"</string>
+    <string name="token_heatmap_unavailable">"日別トークンデータなし"</string>
+    <string name="token_heatmap_partial">"一部のデータ"</string>
+    <string name="token_heatmap_accessibility">"トークンヒートマップ、%1$s から %2$s、%3$s トークン、記録のある日数 %4$s。%5$s"</string>
+    <string name="token_heatmap_tokens">"報告済みトークン"</string>
+    <string name="token_heatmap_known_days">"%1$s/%2$s 日分のデータ"</string>
+    <string name="token_heatmap_through">"%1$s まで"</string>
+    <string name="token_heatmap_no_estimates">"欠損データを使用枠の割合から推測することはありません。"</string>
+    <string name="token_heatmap_widget_name">"トークンヒートマップ · 30 日"</string>
+    <string name="token_heatmap_widget_description">"サービス側の日付で 30 日分を GitHub のコントリビューショングラフ風に表示。4×3 でサイズ変更と更新に対応し、グラフをタップすると 30 日表示が開きます。"</string>
+    <string name="add_token_heatmap_widget">"ヒートマップを追加"</string>
+    <string name="token_heatmap_known_days_short">"%1$s/%2$s 日"</string>
 </resources>

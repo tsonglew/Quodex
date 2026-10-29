@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.tsonglew.quodex.data.*
 import com.tsonglew.quodex.widget.QuotaWidgetReceiver
 import com.tsonglew.quodex.widget.SlimQuotaWidgetReceiver
+import com.tsonglew.quodex.widget.TokenHeatmapWidgetReceiver
 import java.time.Instant
 
 /** Layout illustrations use the same window selection as the corresponding desktop widgets. */
@@ -52,10 +53,13 @@ internal fun WidgetPage(state: AppState, prefs: PreferencesState) {
     val isOld = !isExample && state.failure != null
     var manualWidget by rememberSaveable { mutableStateOf<String?>(null) }
     val requestPin = rememberHomePinRequest { target ->
-        val compact = target == HomePinTarget.COMPACT_WIDGET
-        val receiver = if (compact) SlimQuotaWidgetReceiver::class.java else QuotaWidgetReceiver::class.java
+        val (receiver, label) = when (target) {
+            HomePinTarget.COMPACT_WIDGET -> SlimQuotaWidgetReceiver::class.java to R.string.codex_quota_2_1
+            HomePinTarget.TOKEN_HEATMAP -> TokenHeatmapWidgetReceiver::class.java to R.string.token_heatmap_widget_name
+            else -> QuotaWidgetReceiver::class.java to R.string.codex_quota
+        }
         if (!requestWidgetPin(context, receiver)) {
-            manualWidget = texts(if (compact) R.string.codex_quota_2_1 else R.string.codex_quota)
+            manualWidget = texts(label)
         }
     }
 
@@ -96,6 +100,14 @@ internal fun WidgetPage(state: AppState, prefs: PreferencesState) {
                 requestPin(HomePinTarget.COMPACT_WIDGET)
             }) {
             CompactWidgetIllustration(snapshot, prefs.showRemaining, isExample, isOld)
+        }
+        Spacer(Modifier.height(18.dp))
+        WidgetLayoutPanel(texts(R.string.token_heatmap_widget_name), texts(R.string.token_heatmap_widget_description),
+            texts(R.string.add_token_heatmap_widget), "add-heatmap-widget-button", onAdd = { requestPin(HomePinTarget.TOKEN_HEATMAP) }) {
+            val actual = if (state.demo) demoTokenUsage() else state.snapshot?.tokenUsage
+            val heatmap = remember(actual) { tokenTrend(actual?.dailyBuckets, 30) }
+            if (state.demo || heatmap == null) Text(texts(R.string.layout_preview_sample_data_not_your_quota), fontSize = 12.sp, color = colors.onSurfaceVariant)
+            TokenHeatmapChart(heatmap ?: tokenTrend(demoTokenUsage().dailyBuckets, 30)!!, compact = true)
         }
         Spacer(Modifier.height(14.dp))
         Text(texts(R.string.the_layout_adapts_to_home_screen_size),

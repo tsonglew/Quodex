@@ -45,6 +45,20 @@ class TokenUsageDeviceTest {
         compose.onNodeWithTag("token-trend-30").performScrollToVisible(compose).performClick().assertIsSelected()
         compose.onNodeWithTag("token-trend-total").assertTextEquals("57,000")
         compose.onNodeWithText("已返回日用量合计 · 3/30 天有数据").assertExists()
+        compose.onNodeWithTag("token-trend-chart").performScrollToVisible(compose)
+        val heatmap = com.tsonglew.quodex.data.TokenHeatmap(com.tsonglew.quodex.data.tokenTrend(app.repository.state.value.snapshot!!.tokenUsage!!.dailyBuckets, 30)!!)
+        fun selectDay(index: Int) {
+            val slot = heatmap.leadingDays + index
+            compose.onNodeWithTag("token-heatmap", useUnmergedTree = true).performTouchInput {
+                val cell = com.tsonglew.quodex.ui.TokenHeatmapRenderer.geometry(heatmap, width.toFloat(), height.toFloat()).bounds(slot / 7, slot % 7)
+                click(androidx.compose.ui.geometry.Offset(cell.centerX(), cell.centerY()))
+            }
+        }
+        selectDay(28)
+        compose.onNodeWithTag("heatmap-selected-day").assertTextEquals("2026-10-21 · 0 tokens")
+        selectDay(0)
+        compose.onNodeWithTag("heatmap-selected-day").assertTextEquals("2026-09-23 · 未提供数据")
+        screenshot("token-heatmap-missing-and-zero")
         compose.onNodeWithTag("token-trend-details").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("token-trend-day-list").performScrollToIndex(29)
         compose.onNode(hasText("2026-09-23") and hasAnyAncestor(hasTestTag("token-trend-day-list"))).assertIsDisplayed()
@@ -90,10 +104,25 @@ class TokenUsageDeviceTest {
         compose.onNodeWithTag("token-trend-30").performScrollToVisible(compose).performClick().assertIsSelected()
         compose.onNodeWithText("已返回日用量合计 · 30/30 天有数据").assertExists()
         compose.onNodeWithTag("token-trend-chart").performScrollToVisible(compose).assertIsDisplayed()
+        compose.onNodeWithTag("heatmap-selected-day").performScrollToVisible(compose)
         screenshot("token-trend-demo-dark")
         compose.onNodeWithTag("token-trend-refresh").assertDoesNotExist()
         assertEquals(requests, app.tokenUsageRequests.get())
         assertNull(app.repository.state.value.snapshot?.tokenUsage)
+    }
+
+    @Test fun heatmapWidgetIntentReturnsFromSettingsAndShowsThirtyDays() {
+        connectWithTokens()
+        compose.onNodeWithTag("tab-settings").performClick()
+        compose.activity.startActivity(com.tsonglew.quodex.widget.widgetLaunchIntent(compose.activity)
+            .putExtra(com.tsonglew.quodex.widget.EXTRA_TOKEN_HEATMAP_LAUNCH, true))
+        compose.waitUntil(10_000) {
+            compose.onAllNodes(hasTestTag("token-trend-30") and isSelected()).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("token-trend-chart").assertIsDisplayed()
+        // A later tab change must not be overridden by the consumed launch request.
+        compose.onNodeWithTag("tab-settings").performClick()
+        compose.onNodeWithTag("logout-button").assertExists()
     }
 
     private fun connectWithTokens() {

@@ -18,7 +18,7 @@ Token trends use chatgpt.com/backend-api/wham/profiles/me to retrieve daily usag
 Android backup and device-transfer backup are disabled, and there is no cross-device sync. Local data remains available for the next launch and background updates until replaced by a later snapshot or cleared.
 
 Home screen display
-Widgets share quota, status, and update times with your home screen launcher. Anyone who can see your home screen may read this information. Decide whether to add widgets according to your privacy needs.
+Widgets share quota, status, and update times with your home screen launcher. The token heatmap widget also shares a daily usage chart, the total of reported daily usage, and record dates. While that widget is present, background sync retrieves token statistics using a separate cache and rate-limit policy. Anyone who can see your home screen may read this information. Decide whether to add widgets according to your privacy needs.
 If you add a quota icon, the app supplies the launcher with an image showing the remaining percentage and a period/status description, updating them with quota refreshes. They contain no account identifiers or credentials. The launcher stores the shortcut and icon cache. Disabling percentages requests restoration of the regular logo; disconnecting requests a disconnected display. The launcher controls its own display and cache. Decide whether to add an icon according to your privacy needs.
 
 Diagnostics and sharing

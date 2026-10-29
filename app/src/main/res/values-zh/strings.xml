@@ -329,4 +329,21 @@
     <string name="home_pin_permission_return">"开启后返回这里，点击“继续添加”。如果已经允许，可以直接继续。"</string>
     <string name="home_pin_permission_settings">"打开权限设置"</string>
     <string name="home_pin_permission_continue">"继续添加"</string>
+    <string name="token_heatmap_scale">"颜色深浅按当前周期的最高日用量分级。"</string>
+    <string name="token_heatmap_selected_day">"%1$s · %2$s"</string>
+    <string name="token_heatmap_less">"少"</string>
+    <string name="token_heatmap_more">"多"</string>
+    <string name="token_heatmap_legend">"每格对应一个服务端日期。灰色为已记录的 0，空心为缺失数据。点击格子或打开逐日明细查看。"</string>
+    <string name="token_heatmap_widget_title">"Token · 30 天"</string>
+    <string name="token_heatmap_unavailable">"暂无每日 token 数据"</string>
+    <string name="token_heatmap_partial">"部分数据"</string>
+    <string name="token_heatmap_accessibility">"Token 热力图，%1$s 至 %2$s，共 %3$s tokens，%4$s 天有记录。%5$s"</string>
+    <string name="token_heatmap_tokens">"已返回 tokens"</string>
+    <string name="token_heatmap_known_days">"%1$s/%2$s 天有数据"</string>
+    <string name="token_heatmap_through">"截至 %1$s"</string>
+    <string name="token_heatmap_no_estimates">"缺失数据不会根据额度百分比估算。"</string>
+    <string name="token_heatmap_widget_name">"Token 热力图 · 30 天"</string>
+    <string name="token_heatmap_widget_description">"按服务端日期显示 30 天用量，类似 GitHub 贡献图。4×3 布局支持缩放与刷新，点击图表打开 30 日视图。"</string>
+    <string name="add_token_heatmap_widget">"添加 Token 热力图组件"</string>
+    <string name="token_heatmap_known_days_short">"%1$s/%2$s 天"</string>
 </resources>

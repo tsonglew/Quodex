@@ -332,4 +332,21 @@
     <string name="home_pin_permission_return">"After enabling it, return here and tap Continue adding. If it is already allowed, you can continue now."</string>
     <string name="home_pin_permission_settings">"Open permission settings"</string>
     <string name="home_pin_permission_continue">"Continue adding"</string>
+    <string name="token_heatmap_scale">"Color intensity is relative to the peak day in this period."</string>
+    <string name="token_heatmap_selected_day">"%1$s · %2$s"</string>
+    <string name="token_heatmap_less">"Less"</string>
+    <string name="token_heatmap_more">"More"</string>
+    <string name="token_heatmap_legend">"One square per service date. Gray = recorded as 0; outlined = no data. Tap a square or open daily details."</string>
+    <string name="token_heatmap_widget_title">"Tokens · 30 days"</string>
+    <string name="token_heatmap_unavailable">"Daily token data unavailable"</string>
+    <string name="token_heatmap_partial">"Partial data"</string>
+    <string name="token_heatmap_accessibility">"Token heatmap, %1$s to %2$s, %3$s tokens, %4$s days with records. %5$s"</string>
+    <string name="token_heatmap_tokens">"reported tokens"</string>
+    <string name="token_heatmap_known_days">"%1$s/%2$s days reported"</string>
+    <string name="token_heatmap_through">"Through %1$s"</string>
+    <string name="token_heatmap_no_estimates">"Missing data is never estimated from quota percentages."</string>
+    <string name="token_heatmap_widget_name">"Token heatmap · 30 days"</string>
+    <string name="token_heatmap_widget_description">"Thirty service dates in a GitHub-style heatmap. Resizable 4×3 widget with refresh; tap the chart to open the 30-day view."</string>
+    <string name="add_token_heatmap_widget">"Add token heatmap widget"</string>
+    <string name="token_heatmap_known_days_short">"%1$s/%2$s days"</string>
 </resources>

@@ -30,6 +30,7 @@ class WidgetConfigurationActivity : AppCompatActivity() {
         val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
         setResult(RESULT_CANCELED)
         if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) { finish(); return }
+        val heatmap = AppWidgetManager.getInstance(this).getAppWidgetInfo(widgetId)?.provider?.className == TokenHeatmapWidgetReceiver::class.java.name
         lifecycleScope.launch {
             val config = quotaApp.settings.widgetSettings(widgetId)
             setContent {
@@ -45,8 +46,8 @@ class WidgetConfigurationActivity : AppCompatActivity() {
                                 verticalArrangement = Arrangement.spacedBy(20.dp),
                             ) {
                                 Text(texts(R.string.configure_widget), style = MaterialTheme.typography.headlineMedium)
-                                Text(texts(R.string.these_settings_apply_to_this_widget_only))
-                                PreferenceToggle(title = texts(R.string.show_remaining_quota), checked = remaining, onCheckedChange = { remaining = it }, enabled = !saving)
+                                Text(texts(if (heatmap) R.string.token_heatmap_widget_description else R.string.these_settings_apply_to_this_widget_only))
+                                if (!heatmap) PreferenceToggle(title = texts(R.string.show_remaining_quota), checked = remaining, onCheckedChange = { remaining = it }, enabled = !saving)
                                 Text(texts(R.string.appearance), style = MaterialTheme.typography.titleSmall)
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     listOf("system" to texts(R.string.system), "light" to texts(R.string.light), "dark" to texts(R.string.dark)).forEach { (value, label) ->
