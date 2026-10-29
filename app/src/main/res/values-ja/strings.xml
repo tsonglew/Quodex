@@ -323,4 +323,10 @@
     <string name="slim_widget_description">"主な使用枠またはアカウントの状態と最終更新時刻を表示する、横長のコンパクトな 2×1 ウィジェットです。"</string>
     <string name="icon_disconnected">"未接続"</string>
     <string name="count_tokens">"%1$s トークン"</string>
+    <string name="home_pin_permission_title">"ホーム画面への追加を許可"</string>
+    <string name="home_pin_permission_explanation">"Xiaomi、Redmi、POCO 端末では、残量アイコンとアプリ内からのウィジェット追加に「ホーム画面のショートカット」権限が必要です。拒否されていると、追加をタップしても反応しないことがあります。"</string>
+    <string name="home_pin_permission_steps">"Quodex のアプリ情報で、権限管理 → その他の権限 → ホーム画面のショートカット → 常に許可を選びます。メニュー名はシステムのバージョンにより異なります。"</string>
+    <string name="home_pin_permission_return">"許可したらここに戻り、「追加を続ける」をタップしてください。すでに許可している場合は、そのまま続けられます。"</string>
+    <string name="home_pin_permission_settings">"権限設定を開く"</string>
+    <string name="home_pin_permission_continue">"追加を続ける"</string>
 </resources>
