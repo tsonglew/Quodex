@@ -54,8 +54,7 @@ class LocalizationDeviceTest {
                 waitForText("App language")
                 assertEquals("Weekly quota", AndroidTextResources(app)(R.string.weekly_quota))
             } finally {
-                instrumentation.runOnMainSync { AppLanguages.select("zh-Hans") }
-                instrumentation.waitForIdleSync()
+                restoreTestLanguage()
             }
         }
     }
@@ -76,32 +75,47 @@ class LocalizationDeviceTest {
                         .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_MULTIPLE_TASK)).use {
                         compose.onNodeWithTag("tab-settings").performClick()
                         select(tag, heading)
-                    }
-                    val deadline = android.os.SystemClock.uptimeMillis() + 20_000
-                    var matched = false
-                    var actual = emptyList<String>()
-                    while (!matched && android.os.SystemClock.uptimeMillis() < deadline) {
-                        host.onActivity { activity ->
-                            activity.getSystemService(android.app.ActivityManager::class.java).appTasks
-                                .firstOrNull { it.taskInfo.taskId == activity.taskId }?.moveToFront()
-                            assertEquals("The original host must survive app language changes", ids.first(), activity.widgetId)
-                            actual = listOf(activity.widgetView, checkNotNull(activity.secondaryWidgetView), checkNotNull(activity.thirdWidgetView))
-                                .map { labels(it).joinToString(" | ") }
-                            matched = activity.widgetView.hasWindowFocus() && actual.all { label in it && "62%" in it }
+                        // Bring the host forward while an app Activity is still visible.
+                        // Closing it first can make moveToFront a denied background launch.
+                        val deadline = android.os.SystemClock.uptimeMillis() + 20_000
+                        var matched = false
+                        var actual = emptyList<String>()
+                        while (!matched && android.os.SystemClock.uptimeMillis() < deadline) {
+                            host.onActivity { activity ->
+                                activity.getSystemService(android.app.ActivityManager::class.java).appTasks
+                                    .firstOrNull { it.taskInfo.taskId == activity.taskId }?.moveToFront()
+                                assertEquals("The original host must survive app language changes", ids.first(), activity.widgetId)
+                                actual = listOf(activity.widgetView, checkNotNull(activity.secondaryWidgetView), checkNotNull(activity.thirdWidgetView))
+                                    .map { labels(it).joinToString(" | ") }
+                                matched = activity.widgetView.hasWindowFocus() && actual.all { label in it && "62%" in it }
+                            }
+                            if (!matched) Thread.sleep(100)
                         }
-                        if (!matched) Thread.sleep(100)
+                        assertTrue("Every existing widget must use $tag without a test-triggered repaint: $actual", matched)
+                        assertEquals(requests, app.usageRequests.get())
+                        instrumentation.waitForIdleSync()
+                        saveDeviceScreenshot(context, "language-widgets-$tag", checkNotNull(instrumentation.uiAutomation.takeScreenshot()))
                     }
-                    assertTrue("Every existing widget must use $tag without a test-triggered repaint: $actual", matched)
-                    assertEquals(requests, app.usageRequests.get())
-                    instrumentation.waitForIdleSync()
-                    saveDeviceScreenshot(context, "language-widgets-$tag", checkNotNull(instrumentation.uiAutomation.takeScreenshot()))
                 }
             }
         } finally {
-            instrumentation.runOnMainSync { AppLanguages.select("zh-Hans"); app.languageChanged() }
+            restoreTestLanguage()
             runBlocking { ids.forEach { app.settings.deleteWidget(it) } }
             instrumentation.uiAutomation.dropShellPermissionIdentity()
         }
+    }
+
+    private fun restoreTestLanguage() {
+        instrumentation.runOnMainSync {
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                // AppCompat cannot resolve a LocaleManager after its last Activity is gone.
+                app.getSystemService(android.app.LocaleManager::class.java).applicationLocales =
+                    android.os.LocaleList.forLanguageTags("zh-Hans")
+            } else AppLanguages.select("zh-Hans")
+            app.languageChanged()
+        }
+        instrumentation.waitForIdleSync()
+        assertEquals("zh-Hans", AppLanguages.selectedTag(app))
     }
 
     private fun labels(view: android.view.View): List<String> = when (view) {
