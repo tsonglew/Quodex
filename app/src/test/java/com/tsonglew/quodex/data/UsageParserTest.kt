@@ -1,5 +1,6 @@
 package com.tsonglew.quodex.data
 
+import com.tsonglew.quodex.i18n.testTexts
 import org.junit.Assert.*
 import org.junit.Test
 import java.util.TimeZone
@@ -9,57 +10,57 @@ class UsageParserTest {
     @Test fun singleWindowIsNotInventedIntoTwo() {
         val data = parse("""{"rate_limit":{"primary_window":{"used_percent":38,"limit_window_seconds":604800,"reset_at":2000}},"unknown":true}""")
         assertEquals(1, data.windows.size)
-        assertEquals("每周额度", data.windows.single().name)
-        assertEquals("62", data.windows.single().percentageLabel(true))
+        assertEquals("每周额度", data.windows.single().displayName(testTexts))
+        assertEquals("62", data.windows.single().percentageLabel(true, testTexts))
     }
     @Test fun weeklyWindowIsOrderedFirst() {
         val data = parse("""{"rate_limit":{"primary_window":{"used_percent":64,"limit_window_seconds":18000},"secondary_window":{"used_percent":38,"limit_window_seconds":604800}}}""")
-        assertEquals("每周额度", data.windows.first().name)
-        assertEquals("5 小时额度", data.windows.last().name)
+        assertEquals("每周额度", data.windows.first().displayName(testTexts))
+        assertEquals("5 小时额度", data.windows.last().displayName(testTexts))
     }
     @Test fun missingPercentageStaysUnknown() {
         val window = parse("""{"rate_limit":{"primary_window":{"limit_window_seconds":900}}}""").windows.single()
         assertNull(window.usedPercent)
-        assertEquals("暂不可用", window.percentageLabel(true))
-        assertEquals("暂不可用", window.percentageLabel(false))
+        assertEquals("暂不可用", window.percentageLabel(true, testTexts))
+        assertEquals("暂不可用", window.percentageLabel(false, testTexts))
     }
     @Test fun weeklyOnlyAccountGetsAnExplanationWithoutInventingShortWindow() {
         val data = parse("""{"plan_type":"pro","rate_limit":{"primary_window":null,"secondary_window":{"used_percent":38,"limit_window_seconds":604800}}}""")
         assertEquals(1, data.windows.size)
-        assertEquals("62", data.windows.single().percentageLabel(true))
-        assertEquals("未提供短周期额度", data.quotaNotice()!!.title)
+        assertEquals("62", data.windows.single().percentageLabel(true, testTexts))
+        assertEquals("未提供短周期额度", data.quotaNotice(testTexts)!!.title)
     }
     @Test fun explicitlyAllowedAccountWithoutWindowsIsASuccess() {
         val data = parse("""{"plan_type":"pro","rate_limit":{"allowed":true,"limit_reached":false,"primary_window":null,"secondary_window":null}}""")
         assertTrue(data.windows.isEmpty())
-        assertEquals("当前可用", data.quotaNotice()!!.title)
+        assertEquals("当前可用", data.quotaNotice(testTexts)!!.title)
         assertEquals(1000L, data.fetchedAt)
     }
     @Test fun nullQuotaDoesNotMeanUnlimitedOrAllowed() {
         val data = parse("""{"plan_type":"pro","rate_limit":null,"credits":{"unlimited":true}}""")
         assertTrue(data.windows.isEmpty())
         assertNull(data.allowed)
-        assertEquals("未提供周期额度", data.quotaNotice()!!.title)
+        assertEquals("未提供周期额度", data.quotaNotice(testTexts)!!.title)
     }
     @Test fun planAloneCannotDetermineQuotaState() {
         val data = parse("""{"plan_type":"pro","rate_limit":{"primary_window":{"used_percent":75,"limit_window_seconds":18000}}}""")
-        assertNull(data.quotaNotice())
-        assertEquals("25", data.windows.single().percentageLabel(true))
+        assertNull(data.quotaNotice(testTexts))
+        assertEquals("25", data.windows.single().percentageLabel(true, testTexts))
     }
     @Test fun blockedAccountWithoutWindowsStillShowsRestriction() {
         for (flags in listOf("\"allowed\":false", "\"allowed\":true,\"limit_reached\":true")) {
             val data = parse("""{"rate_limit":{$flags}}""")
-            assertEquals("当前使用受限", data.quotaNotice()!!.title)
+            assertEquals("当前使用受限", data.quotaNotice(testTexts)!!.title)
         }
     }
     @Test fun additionalLimitDoesNotHideMissingMainQuota() {
         val data = parse("""{"rate_limit":null,"additional_rate_limits":[{"metered_feature":"review","rate_limit":{"primary_window":{"used_percent":20,"limit_window_seconds":18000}}}]}""")
         assertEquals(1, data.windows.size)
-        assertEquals("未提供周期额度", data.quotaNotice()!!.title)
+        assertEquals("未提供周期额度", data.quotaNotice(testTexts)!!.title)
     }
     @Test fun unknownWindowDurationDoesNotImplyShortCycleIsAbsent() {
         val data = parse("""{"rate_limit":{"primary_window":{"used_percent":20}}}""")
-        assertNull(data.quotaNotice())
+        assertNull(data.quotaNotice(testTexts))
     }
     @Test fun windowlessSnapshotSurvivesStorageAndOldCacheRemainsReadable() {
         val data = parse("""{"rate_limit":{"allowed":true}}""")
@@ -67,11 +68,11 @@ class UsageParserTest {
         assertEquals(data, restored)
         val legacy = AppJson.decodeFromString<UsageSnapshot>("""{"accountId":"test-account","plan":"pro","windows":[],"fetchedAt":1000}""")
         assertNull(legacy.allowed)
-        assertEquals("未提供周期额度", legacy.quotaNotice()!!.title)
+        assertEquals("未提供周期额度", legacy.quotaNotice(testTexts)!!.title)
     }
     @Test fun zeroAndFullUsageArePreserved() {
         val data = parse("""{"rate_limit":{"primary_window":{"used_percent":0},"secondary_window":{"used_percent":100}}}""")
-        assertEquals(listOf("100", "0"), data.windows.map { it.percentageLabel(true) })
+        assertEquals(listOf("100", "0"), data.windows.map { it.percentageLabel(true, testTexts) })
     }
     @Test fun invalidPercentageIsNotClampedIntoCredibleValue() {
         val data = parse("""{"rate_limit":{"primary_window":{"used_percent":-1},"secondary_window":{"used_percent":101}}}""")
@@ -88,8 +89,8 @@ class UsageParserTest {
     }
     @Test fun elapsedResetDoesNotRestoreQuota() {
         val window = QuotaWindow("a", "每周额度", 100.0, 604800, 900)
-        assertEquals("重置待确认 · 请刷新", resetLabel(window, 1000))
-        assertEquals("0", window.percentageLabel(true))
+        assertEquals("重置待确认 · 请刷新", resetLabel(window, testTexts, 1000))
+        assertEquals("0", window.percentageLabel(true, testTexts))
     }
     @Test fun conflictingAccountIsRejected() {
         try { parse("""{"account_id":"other","rate_limit":{"primary_window":{"used_percent":10}}}"""); fail() }
@@ -122,8 +123,8 @@ class UsageParserTest {
             TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"))
             assertEquals("10/10 07:30", absoluteTime(snapshot.fetchedAt, true))
             assertEquals(fetchedAt, snapshot.fetchedAt)
-            assertEquals("重置待确认 · 请刷新", resetLabel(snapshot.windows.first(), snapshot.windows.first().resetsAt!!))
-            assertEquals("62", snapshot.windows.first().percentageLabel(true))
+            assertEquals("重置待确认 · 请刷新", resetLabel(snapshot.windows.first(), testTexts, snapshot.windows.first().resetsAt!!))
+            assertEquals("62", snapshot.windows.first().percentageLabel(true, testTexts))
         } finally { TimeZone.setDefault(original) }
     }
     @Test fun daylightSavingTransitionUsesLocalOffsetForEachInstant() {
@@ -135,9 +136,9 @@ class UsageParserTest {
             assertEquals("03/08 01:59", absoluteTime(before, true))
             assertEquals("03/08 03:00", absoluteTime(after, true))
             val window = QuotaWindow("test", "窗口", 100.0, 3600, after)
-            assertEquals("03/08 03:00 重置", resetLabel(window, before))
-            assertEquals("重置待确认 · 请刷新", resetLabel(window, after))
-            assertEquals("0", window.percentageLabel(true))
+            assertEquals("03/08 03:00 重置", resetLabel(window, testTexts, before))
+            assertEquals("重置待确认 · 请刷新", resetLabel(window, testTexts, after))
+            assertEquals("0", window.percentageLabel(true, testTexts))
         } finally { TimeZone.setDefault(original) }
     }
 }

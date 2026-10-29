@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.update
 
+import com.tsonglew.quodex.i18n.*
+import com.tsonglew.quodex.R
 import kotlinx.coroutines.*
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -17,10 +19,10 @@ class ApkDownloader(client: OkHttpClient = OkHttpClient()) {
         .callTimeout(10, TimeUnit.MINUTES).build()
 
     suspend fun download(update: AppUpdate, destination: File, progress: (Long, Long) -> Unit) = withContext(Dispatchers.IO) {
-        var url = trustedApkUrl(update) ?: throw IOException("更新缺少有效的安装包信息，请重新检查更新。")
+        var url = trustedApkUrl(update) ?: throw UserVisibleException(UiText(R.string.valid_apk_details_are_missing_check_for))
         val checksum = update.apkSha256?.takeIf { Regex("[0-9a-f]{64}").matches(it) }
-            ?: throw IOException("此版本缺少安装包校验信息，请稍后重新检查更新。")
-        if (update.apkSize !in 1..GitHubUpdateClient.MAX_APK_BYTES) throw IOException("安装包大小不受支持。")
+            ?: throw UserVisibleException(UiText(R.string.this_release_has_no_apk_checksum_check))
+        if (update.apkSize !in 1..GitHubUpdateClient.MAX_APK_BYTES) throw UserVisibleException(UiText(R.string.the_apk_size_is_not_supported))
         destination.parentFile?.mkdirs()
         val partial = File(destination.parentFile, destination.name + ".part")
         var complete = false
@@ -38,14 +40,14 @@ class ApkDownloader(client: OkHttpClient = OkHttpClient()) {
                             if (response.code in listOf(301, 302, 303, 307, 308)) {
                                 val next = response.header("Location")?.let(url::resolve)
                                 if (redirect == 5 || next == null || !trustedAssetRedirect(next))
-                                    throw IOException("下载地址无效，请重新检查更新。")
+                                    throw UserVisibleException(UiText(R.string.the_download_address_is_invalid_check_for))
                                 url = next
                                 false
                             } else {
-                                if (response.code != 200) throw IOException("下载失败（HTTP ${response.code}），请稍后重试。")
-                                val body = response.body ?: throw IOException("安装包内容为空。")
+                                if (response.code != 200) throw UserVisibleException(UiText(R.string.download_failed_http_value_try_again_later, response.code))
+                                val body = response.body ?: throw UserVisibleException(UiText(R.string.the_apk_response_is_empty))
                                 if (body.contentLength() != -1L && body.contentLength() != update.apkSize)
-                                    throw IOException("安装包大小不匹配，请重新下载。")
+                                    throw UserVisibleException(UiText(R.string.the_apk_size_does_not_match_download))
                                 val digest = MessageDigest.getInstance("SHA-256")
                                 var received = 0L
                                 var lastPercent = -1L
@@ -57,7 +59,7 @@ class ApkDownloader(client: OkHttpClient = OkHttpClient()) {
                                             val count = input.read(buffer)
                                             if (count == -1) break
                                             received += count
-                                            if (received > update.apkSize) throw IOException("安装包大小不匹配，请重新下载。")
+                                            if (received > update.apkSize) throw UserVisibleException(UiText(R.string.the_apk_size_does_not_match_download))
                                             digest.update(buffer, 0, count)
                                             output.write(buffer, 0, count)
                                             val percent = received * 100 / update.apkSize
@@ -67,8 +69,8 @@ class ApkDownloader(client: OkHttpClient = OkHttpClient()) {
                                 }
                                 ensureActive()
                                 if (received != update.apkSize || digest.digest().hex() != checksum)
-                                    throw IOException("安装包校验失败，请重新下载。")
-                                if (!partial.renameTo(destination)) throw IOException("无法保存安装包，请检查存储空间。")
+                                    throw UserVisibleException(UiText(R.string.apk_verification_failed_download_it_again))
+                                if (!partial.renameTo(destination)) throw UserVisibleException(UiText(R.string.could_not_save_the_apk_check_available))
                                 true
                             }
                         }

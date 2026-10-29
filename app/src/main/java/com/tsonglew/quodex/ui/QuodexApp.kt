@@ -1,5 +1,6 @@
 package com.tsonglew.quodex.ui
 
+import com.tsonglew.quodex.i18n.*
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Canvas
@@ -50,6 +51,7 @@ import com.tsonglew.quodex.diagnostics.DiagnosticEvent
 
 @Composable
 fun QuodexApp(model: MainViewModel) {
+    val texts = localTextResources()
     val timeRevision by LocalContext.current.quotaApp.wallClockRevision.collectAsStateWithLifecycle()
     val state by model.state.collectAsStateWithLifecycle()
     val prefs by model.preferences.collectAsStateWithLifecycle()
@@ -75,8 +77,8 @@ fun QuodexApp(model: MainViewModel) {
         }
     }
     val pageStates = rememberSaveableStateHolder()
-    val destinations = listOf(Triple("quota", "额度", Icons.Outlined.Dashboard),
-        Triple("widgets", "小组件", Icons.Outlined.Widgets), Triple("settings", "设置", Icons.Outlined.Settings))
+    val destinations = listOf(Triple("quota", texts(R.string.quota), Icons.Outlined.Dashboard),
+        Triple("widgets", texts(R.string.widgets), Icons.Outlined.Widgets), Triple("settings", texts(R.string.settings), Icons.Outlined.Settings))
     QuotaTheme(prefs.theme) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val useRail = maxWidth >= 600.dp && maxHeight >= 480.dp
@@ -89,8 +91,8 @@ fun QuodexApp(model: MainViewModel) {
                         Text("Quodex", Modifier.weight(1f), fontSize = 24.sp, letterSpacing = (-0.6).sp, fontWeight = FontWeight.Bold)
                         if (tab == "quota" && state.snapshot != null) FilledTonalIconButton(onClick = model::refresh,
                             enabled = !state.syncing && !state.demo, modifier = Modifier.testTag("refresh-button")) {
-                            if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp).semantics { contentDescription = "正在刷新额度" }, strokeWidth = 2.dp)
-                            else Icon(Icons.Outlined.Refresh, "刷新额度")
+                            if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp).semantics { contentDescription = texts(R.string.refreshing_quota) }, strokeWidth = 2.dp)
+                            else Icon(Icons.Outlined.Refresh, texts(R.string.refresh_quota))
                         }
                     }
                 }
@@ -134,8 +136,8 @@ fun QuodexApp(model: MainViewModel) {
         InAppUpdateDialog()
         operationError?.let { message ->
             AlertDialog(onDismissRequest = model::dismissError,
-                title = { Text("操作未完成") }, text = { Text(message) },
-                confirmButton = { TextButton(onClick = model::dismissError) { Text("知道了") } })
+                title = { Text(texts(R.string.operation_incomplete)) }, text = { Text(message.resolve(texts)) },
+                confirmButton = { TextButton(onClick = model::dismissError) { Text(texts(R.string.got_it)) } })
         }
         login?.let { LoginDialog(it, model::cancelLogin, model::startLogin) }
     }
@@ -161,26 +163,27 @@ private fun PageTitle(title: String, subtitle: String) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewModel, now: Long) {
+    val texts = localTextResources()
     if (state.snapshot == null) {
-        PageTitle("额度，心中有数。", "把 Codex 的剩余额度与重置时间，放到你的 Android 桌面。")
+        PageTitle(texts(R.string.keep_track_of_your_quota), texts(R.string.see_your_remaining_codex_quota_and_reset))
         Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Code, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp))
                     Spacer(Modifier.width(12.dp)); Text("Codex", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
                 }
-                Text("连接现有账号，查看订阅额度。凭据加密保存在此设备，额度直接从 OpenAI 获取。", lineHeight = 24.sp,
+                Text(texts(R.string.connect_your_existing_account_to_view_subscription), lineHeight = 24.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-                state.failure?.let { Text(it.userMessage(), color = MaterialTheme.colorScheme.error) }
-                ConnectButton(if (state.connected) "重新连接 Codex" else "连接 Codex", model::startLogin,
+                state.failure?.let { Text(it.userMessage().resolve(texts), color = MaterialTheme.colorScheme.error) }
+                ConnectButton(if (state.connected) texts(R.string.reconnect_codex) else texts(R.string.connect_codex), model::startLogin,
                     modifier = Modifier.fillMaxWidth().testTag("connect-button"))
-                TextButton(onClick = model::demo, modifier = Modifier.fillMaxWidth().testTag("demo-button")) { Text("先看看示例") }
+                TextButton(onClick = model::demo, modifier = Modifier.fillMaxWidth().testTag("demo-button")) { Text(texts(R.string.explore_a_demo)) }
             }
         }
         Spacer(Modifier.height(24.dp))
-        DetailRow(Icons.Outlined.Widgets, "桌面即刻可见", "紧凑与宽版布局，随桌面自由调整")
-        DetailRow(Icons.Outlined.Lock, "凭据留在设备", "无需创建 Quodex 账号")
-        DetailRow(Icons.Outlined.Schedule, "知道数据的新鲜度", "后台更新可能延迟，随时手动刷新")
+        DetailRow(Icons.Outlined.Widgets, texts(R.string.visible_on_your_home_screen), texts(R.string.compact_and_wide_layouts_that_adapt_to))
+        DetailRow(Icons.Outlined.Lock, texts(R.string.credentials_stay_on_your_device), texts(R.string.no_quodex_account_required))
+        DetailRow(Icons.Outlined.Schedule, texts(R.string.know_how_fresh_your_data_is), texts(R.string.background_updates_may_be_delayed_refresh_manually))
         return
     }
     Column(Modifier.testTag("dashboard")) {
@@ -189,14 +192,15 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
         TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage, prefs.compactTokens, model::compactTokens)
         if (state.demo) {
             Spacer(Modifier.height(18.dp))
-            ConnectButton("连接我的 Codex", model::startLogin, modifier = Modifier.fillMaxWidth())
+            ConnectButton(texts(R.string.connect_my_codex_account), model::startLogin, modifier = Modifier.fillMaxWidth())
         }
     }
 }
 
 @Composable
 fun QuotaStatusNotice(snapshot: UsageSnapshot) {
-    snapshot.quotaNotice()?.let { notice ->
+    val texts = localTextResources()
+    snapshot.quotaNotice(texts)?.let { notice ->
         Notice(notice.title, notice.description, Icons.Outlined.Info)
         if (snapshot.windows.isNotEmpty()) Spacer(Modifier.height(20.dp))
     }
@@ -204,19 +208,20 @@ fun QuotaStatusNotice(snapshot: UsageSnapshot) {
 
 @Composable
 fun QuotaWindowCard(window: QuotaWindow, remaining: Boolean, compact: Boolean = false, now: Long = Instant.now().epochSecond) {
+    val texts = localTextResources()
     val value = window.displayedPercent(remaining)
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val stack = maxWidth / LocalDensity.current.fontScale < 250.dp
         val details: @Composable () -> Unit = {
             Column {
-                Text(window.name, fontSize = if (compact) 14.sp else 15.sp, fontWeight = FontWeight.Medium)
+                Text(window.displayName(texts), fontSize = if (compact) 14.sp else 15.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(5.dp))
-                Text(resetLabel(window, now), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(resetLabel(window, texts, now), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         val percentage: @Composable () -> Unit = {
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(window.percentageLabel(remaining),
+                Text(window.percentageLabel(remaining, texts),
                     fontFamily = if (value == null) FontFamily.Default else FontFamily.Monospace,
                     fontSize = if (value == null) 16.sp else if (compact) 32.sp else 40.sp,
                     fontWeight = FontWeight.Normal, letterSpacing = if (value == null) 0.sp else (-1).sp,
@@ -232,11 +237,11 @@ fun QuotaWindowCard(window: QuotaWindow, remaining: Boolean, compact: Boolean = 
     }
     Spacer(Modifier.height(12.dp))
     if (value == null) {
-        Text("服务暂未提供有效的用量数据，请稍后刷新。", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(texts(R.string.the_service_has_not_provided_valid_usage), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     } else {
-        SegmentedBar(value, "${window.name}，${if (remaining) "剩余" else "已用"} ${window.percentageLabel(remaining)}%")
+        SegmentedBar(value, texts(R.string.quota_percentage_description, window.displayName(texts), if (remaining) texts(R.string.remaining) else texts(R.string.used), window.percentageLabel(remaining, texts)))
         Spacer(Modifier.height(6.dp))
-        Text(if (remaining) "剩余额度" else "已用额度", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(if (remaining) texts(R.string.remaining_quota) else texts(R.string.used_quota), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -280,41 +285,43 @@ private fun Notice(title: String, subtitle: String, icon: ImageVector) {
 
 @Composable
 private fun LoginDialog(login: LoginState, cancel: () -> Unit, retry: () -> Unit) {
+    val texts = localTextResources()
     val context = LocalContext.current
-    AlertDialog(onDismissRequest = cancel, title = { Text("连接 Codex") }, text = {
+    AlertDialog(onDismissRequest = cancel, title = { Text(texts(R.string.connect_codex)) }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("在 OpenAI 页面完成设备登录。不要在 Quodex 输入账号密码。", lineHeight = 22.sp)
-            Text("首次使用需在 ChatGPT 安全设置中启用设备码登录；工作区账号可能需要管理员开启。", fontSize = 12.sp,
+            Text(texts(R.string.complete_device_sign_in_on_openai_s), lineHeight = 22.sp)
+            Text(texts(R.string.first_enable_device_code_sign_in_in), fontSize = 12.sp,
                 lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (login.error != null) Text(login.error, color = MaterialTheme.colorScheme.error)
+            if (login.error != null) Text(login.error.resolve(texts), color = MaterialTheme.colorScheme.error)
             else if (login.challenge == null) CircularProgressIndicator(Modifier.size(24.dp))
             else {
-                Text("输入这次登录码", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(texts(R.string.enter_this_sign_in_code), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 SelectionContainer { Text(login.challenge.userCode, fontFamily = FontFamily.Monospace, fontSize = 26.sp, fontWeight = FontWeight.SemiBold) }
-                Text("等待授权完成 · 15 分钟内有效", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(texts(R.string.waiting_for_authorization_valid_for_15_minutes), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text("设备登录与额度接口为实验性兼容接入。凭据加密保存在本机，应用不执行模型请求或消耗重置次数。", fontSize = 12.sp,
+            Text(texts(R.string.device_sign_in_and_quota_access_use), fontSize = 12.sp,
                 lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             DiagnosticEntry()
     PrivacyNoticeEntry()
         }
     }, confirmButton = {
-        if (login.error != null) TextButton(onClick = retry) { Text("重新获取") }
+        if (login.error != null) TextButton(onClick = retry) { Text(texts(R.string.get_a_new_code)) }
         else TextButton(enabled = login.challenge != null, onClick = {
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(CodexApi.VERIFICATION_URL)))
-        }) { Text("打开 OpenAI 登录页") }
-    }, dismissButton = { TextButton(onClick = cancel) { Text("取消") } })
+        }) { Text(texts(R.string.open_openai_sign_in)) }
+    }, dismissButton = { TextButton(onClick = cancel) { Text(texts(R.string.cancel)) } })
 }
 
 @Composable
 internal fun DiagnosticEntry(compact: Boolean = false) {
+    val texts = localTextResources()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var report by remember { mutableStateOf<String?>(null) }
     var failed by remember { mutableStateOf(false) }
-    Text("问题排查", fontSize = if (compact) 14.sp else 16.sp, fontWeight = FontWeight.SemiBold,
+    Text(texts(R.string.troubleshooting), fontSize = if (compact) 14.sp else 16.sp, fontWeight = FontWeight.SemiBold,
         modifier = Modifier.padding(top = if (compact) 0.dp else 18.dp))
-    Text("本机保留最近 200 条事件和 7 天按小时统计，不自动上传。复现问题后可预览并分享给维护者。",
+    Text(texts(R.string.the_device_keeps_the_latest_200_events),
         fontSize = 12.sp, lineHeight = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 8.dp))
     TextButton(onClick = {
@@ -339,19 +346,19 @@ internal fun DiagnosticEntry(compact: Boolean = false) {
             }
             result.onSuccess { report = it }.onFailure { failed = true }
         }
-    }, modifier = Modifier.testTag("diagnostics-preview")) { Text("预览诊断报告") }
-    TextButton(onClick = { scope.launch(Dispatchers.Main.immediate) { val result = withContext(Dispatchers.IO) { runCatching { context.quotaApp.diagnostics.clear() } }; result.onFailure { failed = true } } }, modifier = Modifier.testTag("diagnostics-clear")) { Text("清除诊断记录") }
+    }, modifier = Modifier.testTag("diagnostics-preview")) { Text(texts(R.string.preview_diagnostic_report)) }
+    TextButton(onClick = { scope.launch(Dispatchers.Main.immediate) { val result = withContext(Dispatchers.IO) { runCatching { context.quotaApp.diagnostics.clear() } }; result.onFailure { failed = true } } }, modifier = Modifier.testTag("diagnostics-clear")) { Text(texts(R.string.clear_diagnostic_records)) }
     report?.let { text ->
-        AlertDialog(onDismissRequest = { report = null }, title = { Text("诊断报告") },
+        AlertDialog(onDismissRequest = { report = null }, title = { Text(texts(R.string.diagnostic_report)) },
             text = { SelectionContainer { Text(text, fontSize = 12.sp, modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()).testTag("diagnostics-report")) } },
             confirmButton = { TextButton(onClick = {
                 runCatching { context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text)
-                }, "分享诊断报告")) }.onFailure { failed = true }
-            }) { Text("分享") } },
-            dismissButton = { TextButton(onClick = { report = null }, modifier = Modifier.testTag("diagnostics-close")) { Text("关闭") } })
+                }, texts(R.string.share_diagnostic_report))) }.onFailure { failed = true }
+            }) { Text(texts(R.string.share)) } },
+            dismissButton = { TextButton(onClick = { report = null }, modifier = Modifier.testTag("diagnostics-close")) { Text(texts(R.string.close)) } })
     }
-    if (failed) AlertDialog(onDismissRequest = { failed = false }, title = { Text("诊断操作未完成") },
-        text = { Text("请检查存储空间或分享应用后重试。") },
-        confirmButton = { TextButton(onClick = { failed = false }) { Text("知道了") } })
+    if (failed) AlertDialog(onDismissRequest = { failed = false }, title = { Text(texts(R.string.diagnostic_action_incomplete)) },
+        text = { Text(texts(R.string.check_available_storage_or_the_sharing_app)) },
+        confirmButton = { TextButton(onClick = { failed = false }) { Text(texts(R.string.got_it)) } })
 }

@@ -63,7 +63,7 @@ class InAppUpdateDeviceTest {
             updater.start(candidate)
             updater.dismiss()
             withTimeout(10_000) { while (updater.state.value.busy) delay(20) }
-            assertEquals(updater.state.value.message, InstallStage.READY, updater.state.value.stage)
+            assertEquals(updater.state.value.message?.toString(), InstallStage.READY, updater.state.value.stage)
             assertFalse(updater.state.value.visible)
             updater.start(candidate)
             assertTrue(updater.state.value.visible)

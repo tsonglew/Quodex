@@ -1,5 +1,6 @@
 package com.tsonglew.quodex.launcher
 
+import com.tsonglew.quodex.i18n.AndroidTextResources
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -33,7 +34,7 @@ object QuotaIconRenderer {
         }
         paint.color = Color.rgb(175, 197, 198)
         paint.textSize = 8f
-        canvas.drawText(content.marker, 54f, 29f, paint)
+        canvas.drawText(content.marker(AndroidTextResources(context)), 54f, 29f, paint)
         paint.color = when {
             content.status == DesktopIconStatus.CACHED -> Color.rgb(255, 194, 91)
             content.status == DesktopIconStatus.RESTRICTED || (content.percent ?: 100) <= 10 -> Color.rgb(255, 139, 139)

@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.ui
 
+import com.tsonglew.quodex.i18n.*
+import com.tsonglew.quodex.R
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -41,6 +43,7 @@ import java.time.Instant
 /** Layout illustrations use the same window selection as the corresponding desktop widgets. */
 @Composable
 internal fun WidgetPage(state: AppState, prefs: PreferencesState) {
+    val texts = localTextResources()
     val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
     val example = remember { demoSnapshot(Instant.now().epochSecond) }
@@ -50,57 +53,57 @@ internal fun WidgetPage(state: AppState, prefs: PreferencesState) {
     var manualWidget by rememberSaveable { mutableStateOf<String?>(null) }
 
     Column(Modifier.fillMaxWidth().testTag("widget-page")) {
-        Text("桌面小组件", fontSize = 21.sp, fontWeight = FontWeight.SemiBold,
+        Text(texts(R.string.home_screen_widgets), fontSize = 21.sp, fontWeight = FontWeight.SemiBold,
             modifier = Modifier.semantics { heading() })
         Spacer(Modifier.height(8.dp))
-        Text("选择布局，直接添加到桌面。", fontSize = 12.sp, lineHeight = 19.sp,
+        Text(texts(R.string.choose_a_layout_and_add_it_to), fontSize = 12.sp, lineHeight = 19.sp,
             color = colors.onSurfaceVariant)
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(if (isExample) Icons.Outlined.Visibility else Icons.Outlined.Info, null,
                 Modifier.size(14.dp), tint = colors.onSurfaceVariant)
-            Text(if (isExample) "布局示意 · 示例数据，非真实额度" else "布局示意 · 最近成功更新的数据",
+            Text(if (isExample) texts(R.string.layout_preview_sample_data_not_your_quota) else texts(R.string.layout_preview_last_successful_update),
                 fontSize = 12.sp, lineHeight = 19.sp, color = colors.onSurfaceVariant)
         }
         if (state.snapshot == null) {
             Spacer(Modifier.height(6.dp))
-            Text("未连接时，桌面上的小组件会提示连接账号。", fontSize = 12.sp, lineHeight = 19.sp,
+            Text(texts(R.string.when_disconnected_home_screen_widgets_prompt_you), fontSize = 12.sp, lineHeight = 19.sp,
                 color = colors.onSurfaceVariant)
         }
         if (isOld) {
             Spacer(Modifier.height(6.dp))
-            Text("${state.failure?.userMessage()}。预览保留最后成功的数据。", fontSize = 12.sp, lineHeight = 19.sp,
+            Text(texts(R.string.value_the_preview_retains_the_last_successful, state.failure.userMessage().resolve(texts)), fontSize = 12.sp, lineHeight = 19.sp,
                 color = colors.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         }
         Spacer(Modifier.height(16.dp))
 
-        WidgetLayoutPanel("标准组件", "额度与重置时间，随大小调整。", "添加标准组件",
+        WidgetLayoutPanel(texts(R.string.standard_widget), texts(R.string.quota_and_reset_times_adapted_to_the), texts(R.string.add_standard_widget),
             "add-widget-button", onAdd = {
-                if (!requestWidgetPin(context, QuotaWidgetReceiver::class.java)) manualWidget = "Codex 额度"
+                if (!requestWidgetPin(context, QuotaWidgetReceiver::class.java)) manualWidget = texts(R.string.codex_quota)
             }) {
             StandardWidgetIllustration(snapshot, prefs.showRemaining, isExample, isOld)
         }
         Spacer(Modifier.height(18.dp))
-        WidgetLayoutPanel("紧凑组件 · 2×1", "主要额度与更新时间，占用更少空间。", "添加 2×1 紧凑组件",
+        WidgetLayoutPanel(texts(R.string.compact_widget_2_1), texts(R.string.main_quota_and_update_time_in_less), texts(R.string.add_compact_2_1_widget),
             "add-slim-widget-button", onAdd = {
-                if (!requestWidgetPin(context, SlimQuotaWidgetReceiver::class.java)) manualWidget = "Codex 额度 · 2×1"
+                if (!requestWidgetPin(context, SlimQuotaWidgetReceiver::class.java)) manualWidget = texts(R.string.codex_quota_2_1)
             }) {
             CompactWidgetIllustration(snapshot, prefs.showRemaining, isExample, isOld)
         }
         Spacer(Modifier.height(14.dp))
-        Text("实际布局随桌面尺寸与系统字号调整。长按小组件可调整大小和显示方式。",
+        Text(texts(R.string.the_layout_adapts_to_home_screen_size),
             fontSize = 12.sp, lineHeight = 19.sp, color = colors.onSurfaceVariant)
     }
 
     manualWidget?.let { widgetName ->
-        AlertDialog(onDismissRequest = { manualWidget = null }, title = { Text("从桌面添加") }, text = {
+        AlertDialog(onDismissRequest = { manualWidget = null }, title = { Text(texts(R.string.add_from_home_screen)) }, text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("当前桌面未接受直接添加，请手动选择小组件。")
-                Text("长按桌面空白处 → 小组件 → Quodex → $widgetName。")
+                Text(texts(R.string.your_launcher_did_not_accept_direct_adding))
+                Text(texts(R.string.press_and_hold_an_empty_area_of, widgetName))
             }
         }, confirmButton = {
             TextButton(onClick = { manualWidget = null }, modifier = Modifier.heightIn(min = 48.dp),
-                colors = ButtonDefaults.textButtonColors(contentColor = colors.primary)) { Text("知道了") }
+                colors = ButtonDefaults.textButtonColors(contentColor = colors.primary)) { Text(texts(R.string.got_it)) }
         })
     }
 }
@@ -143,9 +146,10 @@ private fun WidgetLayoutPanel(title: String, description: String, addLabel: Stri
 
 @Composable
 private fun StandardWidgetIllustration(snapshot: UsageSnapshot, remaining: Boolean, example: Boolean, old: Boolean) {
+    val texts = localTextResources()
     val colors = MaterialTheme.colorScheme
     val windows = snapshot.windows.take(2)
-    val notice = snapshot.quotaNotice()
+    val notice = snapshot.quotaNotice(texts)
     val restricted = snapshot.allowed == false || snapshot.limitReached == true
     val largeFont = LocalDensity.current.fontScale > 1.3f
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -164,40 +168,41 @@ private fun StandardWidgetIllustration(snapshot: UsageSnapshot, remaining: Boole
     windows.forEach { window ->
         Spacer(Modifier.height(12.dp))
         val showRestriction = restricted && largeFont
-        val value = if (showRestriction) "使用受限" else window.percentageLabel(remaining) +
+        val value = if (showRestriction) texts(R.string.usage_restricted) else window.percentageLabel(remaining, texts) +
             if (window.usedPercent != null) "%" else ""
-        WidgetPreviewValue(window.name, value, window.usedPercent != null && !showRestriction)
+        WidgetPreviewValue(window.displayName(texts), value, window.usedPercent != null && !showRestriction)
         Spacer(Modifier.height(6.dp))
         when {
             showRestriction -> Unit
             window.usedPercent != null -> WidgetPreviewSegments(window, remaining)
-            else -> Text("用量数据未返回", fontSize = 12.sp, lineHeight = 19.sp, color = colors.onSurfaceVariant)
+            else -> Text(texts(R.string.usage_data_unavailable), fontSize = 12.sp, lineHeight = 19.sp, color = colors.onSurfaceVariant)
         }
         Spacer(Modifier.height(6.dp))
-        Text("${if (remaining) "剩余" else "已用"} · ${resetLabel(window)}", fontSize = 12.sp,
+        Text("${if (remaining) texts(R.string.remaining) else texts(R.string.used)} · ${resetLabel(window, texts)}", fontSize = 12.sp,
             lineHeight = 19.sp, color = colors.onSurfaceVariant)
     }
     Spacer(Modifier.height(12.dp))
-    Text(widgetPreviewTimestamp(snapshot, example, old), fontSize = 12.sp, lineHeight = 19.sp,
+    Text(widgetPreviewTimestamp(snapshot, example, old, texts), fontSize = 12.sp, lineHeight = 19.sp,
         color = colors.onSurfaceVariant)
 }
 
 @Composable
 private fun CompactWidgetIllustration(snapshot: UsageSnapshot, remaining: Boolean, example: Boolean, old: Boolean) {
+    val texts = localTextResources()
     val colors = MaterialTheme.colorScheme
     // The single-row widget never promotes a Review or other extra limit to the main quota.
     val window = snapshot.windows.firstOrNull { it.id.startsWith("codex:") || it.id.startsWith("demo:") }
     val restricted = snapshot.allowed == false || snapshot.limitReached == true
     val metered = window?.usedPercent != null && !restricted
     val label = if (metered) when (window?.durationSeconds) {
-        604800L -> "Codex · 周"
-        86400L -> "Codex · 日"
+        604800L -> texts(R.string.codex_week)
+        86400L -> texts(R.string.codex_day)
         else -> "Codex"
     } else "Codex"
     val value = when {
-        restricted -> "使用受限"
-        window != null -> window.percentageLabel(remaining) + if (metered) "%" else ""
-        else -> snapshot.quotaNotice()?.title ?: "未提供周期额度"
+        restricted -> texts(R.string.usage_restricted)
+        window != null -> window.percentageLabel(remaining, texts) + if (metered) "%" else ""
+        else -> snapshot.quotaNotice(texts)?.title ?: texts(R.string.no_period_quota_provided)
     }
     WidgetPreviewValue(label, value, metered)
     if (metered) {
@@ -205,11 +210,11 @@ private fun CompactWidgetIllustration(snapshot: UsageSnapshot, remaining: Boolea
         WidgetPreviewSegments(requireNotNull(window), remaining)
     } else if (window != null && !restricted) {
         Spacer(Modifier.height(6.dp))
-        Text("用量数据未返回", fontSize = 12.sp, lineHeight = 19.sp, color = colors.onSurfaceVariant)
+        Text(texts(R.string.usage_data_unavailable), fontSize = 12.sp, lineHeight = 19.sp, color = colors.onSurfaceVariant)
     }
     Spacer(Modifier.height(10.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("${if (metered) "${if (remaining) "剩余" else "已用"} · " else ""}${widgetPreviewTimestamp(snapshot, example, old)}",
+        Text("${if (metered) "${if (remaining) texts(R.string.remaining) else texts(R.string.used)} · " else ""}${widgetPreviewTimestamp(snapshot, example, old, texts)}",
             Modifier.weight(1f), fontSize = 12.sp, lineHeight = 19.sp, color = colors.onSurfaceVariant)
         Icon(Icons.Outlined.Refresh, null, Modifier.size(18.dp), tint = colors.onSurfaceVariant)
     }
@@ -235,10 +240,11 @@ private fun WidgetPreviewValue(label: String, value: String, metered: Boolean) {
 
 @Composable
 private fun WidgetPreviewSegments(window: QuotaWindow, remaining: Boolean) {
+    val texts = localTextResources()
     val value = window.displayedPercent(remaining) ?: return
     val colors = MaterialTheme.colorScheme
     Canvas(Modifier.fillMaxWidth().height(6.dp).semantics {
-        contentDescription = "${window.name}，${if (remaining) "剩余" else "已用"} ${window.percentageLabel(remaining)}%"
+        contentDescription = texts(R.string.quota_percentage_description, window.displayName(texts), if (remaining) texts(R.string.remaining) else texts(R.string.used), window.percentageLabel(remaining, texts))
     }) {
         val gap = 2.dp.toPx()
         val segmentWidth = (size.width - gap * 27) / 28
@@ -249,5 +255,5 @@ private fun WidgetPreviewSegments(window: QuotaWindow, remaining: Boolean) {
     }
 }
 
-private fun widgetPreviewTimestamp(snapshot: UsageSnapshot, example: Boolean, old: Boolean): String =
-    "${when { example -> "示例"; old -> "旧数据"; else -> "更新" }} · ${absoluteTime(snapshot.fetchedAt, true)}"
+private fun widgetPreviewTimestamp(snapshot: UsageSnapshot, example: Boolean, old: Boolean, texts: TextResources): String =
+    texts(when { example -> R.string.demo_value; old -> R.string.cached_value; else -> R.string.updated_value }, absoluteTime(snapshot.fetchedAt, true))

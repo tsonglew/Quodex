@@ -12,9 +12,14 @@
         android:icon="@mipmap/ic_quodex"
         android:roundIcon="@mipmap/ic_quodex"
         android:label="Quodex"
+        android:localeConfig="@xml/locales_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.Quodex"
         android:usesCleartextTraffic="false">
+        <service android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false" android:exported="false">
+            <meta-data android:name="autoStoreLocales" android:value="true" />
+        </service>
         <provider android:name=".update.UpdateFileProvider"
             android:authorities="${applicationId}.updates" android:exported="false" android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/update_file_paths" />
@@ -35,11 +40,11 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".widget.QuotaWidgetReceiver" android:exported="false" android:label="Codex 额度">
+        <receiver android:name=".widget.QuotaWidgetReceiver" android:exported="false" android:label="@string/codex_quota">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/quota_widget_info" />
         </receiver>
-        <receiver android:name=".widget.SlimQuotaWidgetReceiver" android:exported="false" android:label="Codex 额度 · 2×1">
+        <receiver android:name=".widget.SlimQuotaWidgetReceiver" android:exported="false" android:label="@string/codex_quota_2_1">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/slim_quota_widget_info" />
         </receiver>

@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.update
 
+import com.tsonglew.quodex.i18n.*
+import com.tsonglew.quodex.R
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
@@ -20,7 +22,7 @@ data class InstallState(
     val update: AppUpdate? = null,
     val received: Long = 0,
     val total: Long = 0,
-    val message: String? = null,
+    val message: UiText? = null,
     val visible: Boolean = false,
 ) {
     val busy: Boolean get() = stage == InstallStage.DOWNLOADING || stage == InstallStage.VERIFYING
@@ -51,9 +53,9 @@ class InAppUpdate(
                 // Migrate metadata cached by old versions without guessing an APK URL or checksum.
                 val target = if (update.apkSha256 != null && trustedApkUrl(update) != null) update
                     else source.latest()?.takeIf { it.versionCode >= update.versionCode }
-                        ?: throw IOException("版本信息已变化，请重新检查更新。")
+                        ?: throw UserVisibleException(UiText(R.string.version_details_have_changed_check_for_updates))
                 val checksum = target.apkSha256?.takeIf { Regex("[0-9a-f]{64}").matches(it) }
-                    ?: throw IOException("此版本缺少安装包校验信息，请稍后重新检查更新。")
+                    ?: throw UserVisibleException(UiText(R.string.this_release_has_no_apk_checksum_check))
                 mutableState.update { it.copy(update = target, total = target.apkSize) }
                 directory.mkdirs()
                 val file = File(directory, "update-${target.versionCode}-${checksum.take(12)}.apk")
@@ -73,20 +75,20 @@ class InAppUpdate(
                 readyFile = file
                 mutableState.update { it.copy(stage = InstallStage.READY, received = target.apkSize, message = null) }
             } catch (cancel: CancellationException) {
-                mutableState.update { it.copy(stage = InstallStage.IDLE, received = 0, message = "下载已取消") }
+                mutableState.update { it.copy(stage = InstallStage.IDLE, received = 0, message = UiText(R.string.download_canceled)) }
                 throw cancel
             } catch (failure: Exception) {
                 mutableState.update { it.copy(stage = InstallStage.ERROR, message = when (failure) {
-                    is IOException -> failure.message?.takeIf { text -> text.any { char -> char.code in 0x4e00..0x9fff } }
+                    is UserVisibleException -> failure.text
                     else -> null
-                } ?: "下载未完成，请检查网络和存储空间后重试。") }
+                } ?: UiText(R.string.download_incomplete_check_your_network_and_storage)) }
             }
         }.also { it.start() }
     }
 
     fun dismiss() { mutableState.update { it.copy(visible = false) } }
     fun cancel() { job?.cancel() }
-    fun report(message: String) { mutableState.update { it.copy(message = message) } }
+    fun report(message: UiText) { mutableState.update { it.copy(message = message) } }
 
     suspend fun installIntent(): Intent? = withContext(Dispatchers.IO) {
         val file = readyFile ?: return@withContext null
@@ -97,31 +99,31 @@ class InAppUpdate(
         } catch (_: Exception) {
             file.delete()
             readyFile = null
-            mutableState.update { it.copy(stage = InstallStage.ERROR, message = "安装包已失效，请重新下载。") }
+            mutableState.update { it.copy(stage = InstallStage.ERROR, message = UiText(R.string.the_apk_is_no_longer_valid_download)) }
             null
         }
     }
 }
 
 internal fun validateDownloadedApk(context: Context, file: File, update: AppUpdate) {
-    if (file.length() != update.apkSize) throw IOException("安装包大小不匹配，请重新下载。")
+    if (file.length() != update.apkSize) throw UserVisibleException(UiText(R.string.the_apk_size_does_not_match_download))
     val digest = MessageDigest.getInstance("SHA-256")
     file.inputStream().use { input ->
         val buffer = ByteArray(64 * 1024)
         while (true) { val count = input.read(buffer); if (count == -1) break; digest.update(buffer, 0, count) }
     }
     if (update.apkSha256 == null || digest.digest().hex() != update.apkSha256)
-        throw IOException("安装包校验失败，请重新下载。")
+        throw UserVisibleException(UiText(R.string.apk_verification_failed_download_it_again))
     val manager = context.packageManager
     val archive = manager.getPackageArchiveInfo(file.absolutePath, PackageManager.GET_SIGNING_CERTIFICATES)
-        ?: throw IOException("无法读取安装包，请重新下载。")
+        ?: throw UserVisibleException(UiText(R.string.could_not_read_the_apk_download_it))
     val installed = manager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
     if (archive.packageName != context.packageName || archive.longVersionCode != update.versionCode ||
         archive.longVersionCode <= installed.longVersionCode)
-        throw IOException("安装包与当前应用或目标版本不匹配，请重新检查更新。")
+        throw UserVisibleException(UiText(R.string.the_apk_does_not_match_this_app))
     val signers = archive.signingInfo?.apkContentsSigners?.map { MessageDigest.getInstance("SHA-256").digest(it.toByteArray()).hex() }
     if (signers != listOf(installedSigningCertificate(context)))
-        throw IOException("安装包签名不匹配，无法覆盖当前应用。")
+        throw UserVisibleException(UiText(R.string.the_apk_signature_does_not_match_it))
 }
 
 internal fun apkInstallIntent(context: Context, file: File): Intent {

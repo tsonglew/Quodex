@@ -1,5 +1,7 @@
 package com.tsonglew.quodex
 
+import com.tsonglew.quodex.i18n.*
+import com.tsonglew.quodex.R
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,19 +12,19 @@ import kotlinx.coroutines.flow.*
 import java.time.Instant
 import com.tsonglew.quodex.update.AppUpdateScheduler
 
-data class LoginState(val challenge: DeviceChallenge? = null, val error: String? = null)
+data class LoginState(val challenge: DeviceChallenge? = null, val error: UiText? = null)
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val app = application as QuodexApplication
     val state = app.repository.state
     val updates = app.updates.state
     val desktopIconAvailability = app.desktopIcon.availability
-    private val mutableIconMessage = MutableStateFlow<String?>(null)
+    private val mutableIconMessage = MutableStateFlow<UiText?>(null)
     val desktopIconMessage = mutableIconMessage.asStateFlow()
-    private val mutableError = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = mutableError
+    private val mutableError = MutableStateFlow<UiText?>(null)
+    val error: StateFlow<UiText?> = mutableError
     fun dismissError() { mutableError.value = null }
-    private fun reportError() { app.scope.launch { app.diagnostics.record(com.tsonglew.quodex.diagnostics.DiagnosticEvent.UI_ERROR) }; mutableError.value = "操作未完成，请重试；若持续失败，请检查设备可用存储空间" }
+    private fun reportError() { app.scope.launch { app.diagnostics.record(com.tsonglew.quodex.diagnostics.DiagnosticEvent.UI_ERROR) }; mutableError.value = UiText(R.string.the_operation_could_not_be_completed_try) }
     private fun launchOperation(block: suspend () -> Unit) = viewModelScope.launch {
         runUiOperation(::reportError, block)
     }
@@ -60,10 +62,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun addDesktopIcon() {
         launchOperation {
             mutableIconMessage.value = when (app.desktopIcon.requestPin()) {
-                PinIconResult.REQUESTED -> "请在桌面提示中确认添加"
-                PinIconResult.UPDATED -> "桌面额度图标已更新"
-                PinIconResult.UNSUPPORTED -> "当前桌面不支持添加额度图标，可使用桌面小组件"
-                PinIconResult.FAILED -> "桌面图标暂时无法更新，请重试"
+                PinIconResult.REQUESTED -> UiText(R.string.confirm_adding_the_icon_in_the_home)
+                PinIconResult.UPDATED -> UiText(R.string.home_screen_quota_icon_updated)
+                PinIconResult.UNSUPPORTED -> UiText(R.string.your_launcher_does_not_support_this_icon)
+                PinIconResult.FAILED -> UiText(R.string.the_home_screen_icon_could_not_be)
             }
             app.reconcileSync()
         }
@@ -93,10 +95,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     loadTokenTrend(force = true)
                     return@launch
                 }
-                mutableLogin.update { it?.copy(error = "授权已超时，请重新获取登录码") }
+                mutableLogin.update { it?.copy(error = UiText(R.string.authorization_timed_out_get_a_new_sign)) }
             } catch (cancel: CancellationException) { throw cancel }
             catch (failure: ApiFailure) { mutableLogin.update { it?.copy(error = failure.kind.userMessage()) } }
-            catch (_: Exception) { mutableLogin.update { it?.copy(error = "连接未完成，请重试") } }
+            catch (_: Exception) { mutableLogin.update { it?.copy(error = UiText(R.string.connection_was_not_completed_try_again)) } }
         }
     }
     fun cancelLogin() {

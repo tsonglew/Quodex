@@ -7,7 +7,7 @@
 
 面向 Android 的 Codex 额度监控 App，支持桌面小组件、重置时间和 Token 使用趋势。Quodex 是独立第三方工具，与 OpenAI 无隶属关系。
 
-> 开发分支新增：参考 FlClash 安卓版的蓝色卡片界面与悬浮导航，以及 App 内下载、校验和安装更新。见[界面截图与验证说明](docs/ANDROID_DASHBOARD_UPDATE.md)。尚未发布，以下版本介绍与截图仍对应公开预发布。
+> alpha24 已发布：参考 FlClash 安卓版的蓝色卡片界面与悬浮导航，以及 App 内下载、校验和安装更新。见[界面截图与验证说明](docs/ANDROID_DASHBOARD_UPDATE.md)。alpha25 新增简体中文、English、日本語与跟随系统，见[多语言支持](docs/LOCALIZATION.md)。
 
 [官网](https://tsonglew.github.io/quodex/) · [观看动效](https://tsonglew.github.io/quodex/#motion) · [公开 APK 与预发布](https://github.com/tsonglew/Quodex/releases) · [支持范围](docs/SUPPORT.md)
 
@@ -17,7 +17,7 @@
 
 2026-10-23 在 API 31 模拟器直接截取的发布前界面，均为示例数据。流线 Q 标志、深海青主题和亮青深色模式已随 alpha22 发布。[查看 Token 图表、设置及真实组件截图](docs/SCREENSHOTS.md) · [品牌与素材规范](docs/BRANDING.md)。
 
-当前公开预发布为 [0.1.0-alpha22 · build-40285639293-1](https://github.com/tsonglew/Quodex/releases/tag/build-40285639293-1)，加入深海青界面、流线 Q 图标、额度概览与组件布局预览，以及页面淡入、按钮扫光和趋势图过渡。动画遵循系统动画缩放设置，额度数字始终显示实际值。
+当前已验证的公开预发布为 [0.1.0-alpha24 · build-40800667471-2](https://github.com/tsonglew/Quodex/releases/tag/build-40800667471-2)，加入蓝色卡片界面、悬浮导航和 App 内下载安装更新。以上截图保留 alpha22 的历史外观；当前界面见[alpha24 截图](docs/ANDROID_DASHBOARD_UPDATE.md)。动画遵循系统动画缩放设置，额度数字始终显示实际值。
 
 <a href="https://tsonglew.github.io/quodex/#motion"><img src="docs/assets/motion/poster.jpg" width="300" alt="Quodex 原生动效预览海报，点击前往官网播放" /></a>
 
@@ -28,9 +28,10 @@
 - **额度与重置时间**：按服务端实际返回的周期展示，支持剩余／已用切换；没有返回用量时明确说明，不补成零或无限额度。
 - **Token 趋势**：近 7／30 天日用量、累计用量和逐日明细；缺失日期与实际零值分别标记，统计失败保留上次数据。兼容接口仍待真实账号验收，不提供输入／输出／缓存细分或费用估算。
 - **桌面小组件**：标准与独立 2×1 额度组件共享快照，支持原地手动刷新和独立外观配置；后台刷新受 Android 网络、省电与厂商限制。
+- **多语言**：设置 → 应用语言，支持跟随系统、简体中文、English、日本語；页面、小组件、桌面额度图标和更新提示同步切换。
 - **显示与操作**：浅色／深色／跟随系统，固定刷新入口，各页独立浏览位置，整行可点的设置开关，大字体换行和宽屏侧边导航。设计依据与验收范围见 [UI/UX](docs/UI_UX.md)。
 
-同时包含 alpha20 的应用更新提醒：后台目标间隔 12 小时检查 GitHub，发现同签名、更高版本时通知一次，点击进入发布下载页。设置内可关闭自动检查、手动检查及开启系统通知。旧版需先手动安装支持该功能的签名版本，后续升级才会收到提醒。
+应用更新后台目标间隔为 12 小时，发现同签名、更高版本时通知一次。alpha24 起可在 App 内下载 APK、校验并调起系统安装确认，无需跳转 GitHub 手动下载。设置内可关闭自动检查、手动检查及开启系统通知。旧版需先安装支持该功能的签名版本。
 
 <details>
 <summary>历史版本验收与发布流程</summary>

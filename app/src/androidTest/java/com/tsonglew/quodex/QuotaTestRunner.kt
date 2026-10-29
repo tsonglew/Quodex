@@ -18,6 +18,16 @@ class QuotaTestRunner : AndroidJUnitRunner() {
 }
 
 class TestQuotaApplication : QuodexApplication() {
+    override fun onCreate() {
+        // Keep existing Chinese UI assertions deterministic without changing the emulator's system UI language.
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            getSystemService(android.app.LocaleManager::class.java).applicationLocales = android.os.LocaleList.forLanguageTags("zh-Hans")
+        } else {
+            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(androidx.core.os.LocaleListCompat.forLanguageTags("zh-Hans"))
+        }
+        super.onCreate()
+    }
+
     val updateRequests = AtomicInteger()
     @Volatile var availableUpdate: com.tsonglew.quodex.update.AppUpdate? = null
     override val updateSource = com.tsonglew.quodex.update.UpdateSource { updateRequests.incrementAndGet(); availableUpdate }

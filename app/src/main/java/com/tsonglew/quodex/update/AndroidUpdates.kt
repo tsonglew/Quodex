@@ -1,5 +1,6 @@
 package com.tsonglew.quodex.update
 
+import com.tsonglew.quodex.i18n.*
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -47,9 +48,10 @@ class AndroidUpdateNotifier(private val context: Context) : UpdateNotifier {
         manager.getNotificationChannel(CHANNEL)?.importance != NotificationManager.IMPORTANCE_NONE
 
     override fun show(update: AppUpdate): Boolean {
+        val texts = AndroidTextResources(context)
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return false
-        manager.createNotificationChannel(NotificationChannel(CHANNEL, "版本更新", NotificationManager.IMPORTANCE_DEFAULT).apply {
-            description = "发现可安装的 Quodex 新版本时提醒"
+        manager.createNotificationChannel(NotificationChannel(CHANNEL, texts(R.string.version_updates), NotificationManager.IMPORTANCE_DEFAULT).apply {
+            description = texts(R.string.alerts_when_a_compatible_quodex_update_is)
         })
         if (!enabled()) return false
         val intent = Intent(context, com.tsonglew.quodex.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -57,12 +59,16 @@ class AndroidUpdateNotifier(private val context: Context) : UpdateNotifier {
         return try {
             manager.notify(NOTIFICATION_ID, NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_update_notification)
-                .setContentTitle("Quodex ${update.versionName} 可更新")
-                .setContentText("点击在 App 内下载并安装更新")
+                .setContentTitle(texts(R.string.quodex_value_is_available, update.versionName))
+                .setContentText(texts(R.string.tap_to_download_and_install_the_update))
                 .setContentIntent(pending).setAutoCancel(true).setOnlyAlertOnce(true)
                 .build())
             true
         } catch (_: SecurityException) { false }
+    }
+
+    fun refreshIfVisible(update: AppUpdate) {
+        if (manager.activeNotifications.any { it.id == NOTIFICATION_ID }) show(update)
     }
 
     override fun clear() { manager.cancel(NOTIFICATION_ID) }

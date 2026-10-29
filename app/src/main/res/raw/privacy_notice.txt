@@ -1,30 +1,32 @@
-Quodex 隐私说明
-更新日期：2026-10-29
+Quodex Privacy Notice
+Updated: October 29, 2026
 
-Quodex 是独立第三方 Android 工具，用于查看 Codex 额度和展示桌面小组件，与 OpenAI 无隶属关系。目前接入处于实验阶段。
+Quodex is an independent third-party Android tool for viewing Codex quota and home screen widgets. It is not affiliated with OpenAI. Connectivity is currently experimental.
 
-连接与网络请求
-登录在 OpenAI 页面完成，Quodex 不要求你输入账号密码。应用向 auth.openai.com 发起设备授权、交换和续期请求；向 chatgpt.com 请求额度及账号 token 用量汇总。请求包含对应的登录码、授权码或令牌、账号标识，以及通常的网络信息（例如 IP 地址）。浏览器登录页面的数据处理由提供该页面的服务方负责。
-应用仅使用连接获取额度和账号 token 用量统计，不发送聊天或模型生成请求。登录凭据的权限可能覆盖更多能力，不能视为专用只读凭据。不要向他人提供登录码或令牌。
+Connection and network requests
+Sign-in takes place on OpenAI's website. Quodex does not ask you to enter your account password. The app sends device authorization, token exchange, and renewal requests to auth.openai.com, and requests quota and account token usage statistics from chatgpt.com. Requests include the relevant device code, authorization code or token, account identifier, and ordinary network information such as your IP address. The provider of the browser sign-in page is responsible for processing data on that page.
+The app uses the connection only to retrieve quota and account token usage statistics. It does not send chat or model generation requests. Sign-in credentials may grant broader access and must not be treated as dedicated read-only credentials. Do not share sign-in codes or tokens.
 
-版本检查与通知
-默认启用自动检查版本更新，前台打开时按间隔检查，后台目标间隔为 12 小时，实际时间受系统调度、网络和省电影响。应用向 api.github.com 请求 Quodex 的公开发布信息，GitHub 会收到 IP 地址与通用客户端请求头；请求不含 Codex 凭据、账号、额度或设备标识。安装包签名和版本的比较在本机完成，安装证书不会上传。设置 → 应用更新可关闭自动检查，关闭后只在主动点击“检查更新”时请求。允许系统通知后，新版本会在本机发出通知；点击通知会打开应用。主动点击“下载并安装更新”后，应用从 github.com 及其发布文件域名 release-assets.githubusercontent.com、objects.githubusercontent.com 下载公开 APK；这些请求不包含 Codex 凭据、账号、额度或设备标识。APK 临时保存在本机私有缓存中，校验文件哈希、包名、版本和签名后，交给 Android 系统安装界面。首次使用可能需要允许应用安装来源；安装必须由你在系统界面确认，不静默安装。下载失败或取消会删除未完成文件，完整缓存会在后续下载或系统清理缓存时移除。
-本机另存更新开关、上次尝试和成功检查时间、已发现的公开版本信息及已提醒版本号。每个更高版本只提醒一次，拒绝通知不影响 App 内查看更新。
+Update checks and notifications
+Automatic update checks are enabled by default. Checks run at intervals when the app is opened and aim to run every 12 hours in the background. Timing depends on system scheduling, connectivity, and battery settings. The app requests public Quodex release information from api.github.com. GitHub receives your IP address and generic client headers; these requests contain no Codex credentials, account information, quota, or device identifiers. Signature and version comparisons happen locally; the installation certificate is not uploaded. You can disable automatic checks in Settings → App updates. When disabled, requests are made only when you select Check for updates. If notifications are allowed, new versions generate a local notification that opens the app.
+When you select Download and install update, the app downloads a public APK from github.com and its release file domains, release-assets.githubusercontent.com and objects.githubusercontent.com. These requests contain no Codex credentials, account information, quota, or device identifiers. The APK is temporarily stored in private local cache. After verifying its hash, package name, version, and signature, the app opens Android's installer. You may first need to allow installation from this source. Installation always requires your confirmation in Android; it is never silent. Failed or canceled downloads delete incomplete files. Completed cached APKs are removed by later downloads or system cache cleanup.
+The app also stores update preferences, the times of the last attempt and successful check, public release details, and the version last notified. Each newer version is announced once. Denying notifications does not prevent viewing updates in the app.
 
-本机保存
-访问及续期令牌、账号标识与到期时间使用 Android Keystore 密钥和 AES-GCM 加密保存在应用私有目录。额度快照、窗口、重置时间、账号标识及成功时间保存在本机数据库；显示偏好、小组件配置、最近尝试和错误类别保存在本机设置中。额度与 token 用量缓存本身不是加密数据库。
-Token 趋势通过 chatgpt.com/backend-api/wham/profiles/me 获取服务端按日用量、累计用量及单日峰值，仅解析需要的统计和数据时间，不保存接口返回的姓名、用户名、个人资料或原始错误文本。统计与当前账号额度快照一起保存在本机，保留上次成功获取的日期与数值；切换账号、退出连接或进入示例模式会清理或隔离真实统计。缺失日不推算为零，不从额度百分比反推 token、费用或输入／输出明细。
-应用关闭 Android 备份与设备迁移备份，不提供跨设备同步。数据会持续保留供下次打开和后台更新使用，直到被后续快照替换或执行清除。
+Local storage
+Access and refresh tokens, account identifiers, and expiry times are encrypted with an Android Keystore key and AES-GCM in private app storage. Quota snapshots, windows, reset times, account identifiers, and successful fetch times are stored in a local database. Display preferences, widget configuration, last attempts, and error categories are stored in local settings. Android or AndroidX stores the language preference locally for the app, widgets, and notifications; the language preference is not sent to account services. The quota and token usage cache is not an encrypted database.
+Token trends use chatgpt.com/backend-api/wham/profiles/me to retrieve daily usage, lifetime totals, and daily peaks. The app parses only the required statistics and data timestamps. It does not store names, usernames, profiles, or raw error text returned by that endpoint. Statistics are saved locally with the current account's quota snapshot, retaining the last successfully fetched dates and values. Changing accounts, disconnecting, or entering demo mode clears or isolates real statistics. Missing days are not assumed to be zero. The app does not infer token counts, costs, or input/output breakdowns from quota percentages.
+Android backup and device-transfer backup are disabled, and there is no cross-device sync. Local data remains available for the next launch and background updates until replaced by a later snapshot or cleared.
 
-桌面展示
-小组件会向桌面 Launcher 提供额度、状态和更新时间。能看到桌面的人可能读到这些信息，请按你的隐私需要决定是否添加组件。
-主动添加桌面额度图标后，应用会向系统桌面提供带剩余百分比的图像、周期与状态说明，并随额度刷新更新；不包含账号标识或凭据。系统桌面会保存该快捷方式和图标缓存。关闭百分比会请求恢复普通 logo，退出后会请求显示未连接；Launcher 的显示与缓存由系统桌面管理。请按你的隐私需要决定是否添加图标。
+Home screen display
+Widgets share quota, status, and update times with your home screen launcher. Anyone who can see your home screen may read this information. Decide whether to add widgets according to your privacy needs.
+If you add a quota icon, the app supplies the launcher with an image showing the remaining percentage and a period/status description, updating them with quota refreshes. They contain no account identifiers or credentials. The launcher stores the shortcut and icon cache. Disabling percentages requests restoration of the regular logo; disconnecting requests a disconnected display. The launcher controls its own display and cache. Decide whether to add an icon according to your privacy needs.
 
-分析与分享
-应用没有内置广告、远程使用分析或自动崩溃上报，也没有 Quodex 自建数据服务器。本机私有目录循环保留最近 200 条诊断事件及最近 7 天按小时统计，包括请求类别与次数、HTTP 状态、网络失败、未捕获异常的类别及是否主线程（不含异常消息和堆栈）、成功快照写入次数与最大成功间隔、刷新结果、跳过原因、耗时、缓存年龄、后台调度、组件更新、页面状态及屏幕尺寸和字体比例，不记录令牌、账号标识、额度数值或接口响应正文。设置中可清除记录，并预览后主动通过系统分享诊断报告；报告另含应用版本、Android 版本、网络可用性、省电状态、系统后台受限标记及后台任务状态。分享接收方由你选择，记录不自动上传。不读取联系人、位置或聊天内容，不自动将凭据、账号或额度上传到 GitHub。若你主动提交截图或问题，请先遮挡个人信息，切勿附带登录码、令牌或原始授权响应。
+Diagnostics and sharing
+The app has no built-in advertising, remote usage analytics, automatic crash reporting, or Quodex-operated data server. Private local storage keeps the latest 200 diagnostic events and 7 days of hourly statistics. These include request types and counts, HTTP status, network failures, uncaught exception types and whether they occurred on the main thread (without messages or stack traces), successful snapshot writes and maximum gaps between successful updates, refresh results, skip reasons, duration, cache age, scheduling, widget updates, page state, screen dimensions, and font scale. Tokens, account identifiers, quota values, and response bodies are not recorded.
+In Settings, you can clear these records, preview them, and choose to share a diagnostic report using Android's share sheet. Reports also include app and Android versions, network availability, battery saving status, background restriction flags, and background task status. You choose the recipient; records are never uploaded automatically. The app does not read contacts, location, or chat content, and does not automatically upload credentials, accounts, or quota to GitHub. Before submitting a screenshot or issue, hide personal information and never include sign-in codes, tokens, or raw authorization responses.
 
-清除与撤销
-设置中的“退出并清除本机数据”会删除本机登录文件、额度记录和 token 用量缓存、取消额度同步任务，并将组件恢复为未连接；显示偏好、组件布局、更新偏好与公开版本缓存会保留。版本检查独立于账号，可单独关闭自动检查；清除应用数据或卸载可删除其本机记录。此操作不撤销远程授权，也不承诺对存储介质进行物理安全擦除。需要撤销远程连接时，请使用账号服务方提供的管理方式。
+Clearing data and revoking access
+Sign out and clear local data removes local sign-in files, quota records, and token usage cache, cancels quota sync tasks, and returns widgets to a disconnected state. Display preferences, widget layouts, update preferences, and public release cache are retained. Update checks are independent of the account and can be disabled separately. Clearing app data or uninstalling removes local records. Disconnecting does not revoke remote authorization or guarantee physical secure erasure of the storage medium. To revoke a remote connection, use the account provider's controls.
 
-反馈与变更
-可通过 github.com/tsonglew/Quodex/issues 反馈问题，不要在公开问题中提交凭据。若未来新增服务器、分析或数据用途，会先更新本说明与应用实现。
+Feedback and changes
+Report issues at github.com/tsonglew/Quodex/issues without posting credentials in public. If servers, analytics, or new data uses are added in the future, this notice and the app will be updated first.

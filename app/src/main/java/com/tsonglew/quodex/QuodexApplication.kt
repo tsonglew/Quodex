@@ -2,6 +2,8 @@ package com.tsonglew.quodex
 
 import com.tsonglew.quodex.diagnostics.*
 import java.io.File
+import com.tsonglew.quodex.i18n.AppLanguages
+import android.content.res.Configuration
 import android.app.Application
 import android.content.Context
 import android.content.ComponentName
@@ -24,6 +26,27 @@ import com.tsonglew.quodex.update.*
 open class QuodexApplication : Application() {
     val diagnostics by lazy { Diagnostics(File(noBackupFilesDir, "diagnostics/events.log")) }
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val mutableLocaleRevision = MutableStateFlow(0L)
+    val localeRevision = mutableLocaleRevision.asStateFlow()
+    @Volatile private var lastRenderedLanguage: String? = null
+    @Synchronized fun languageChanged() {
+        val tags = AppLanguages.contextForResources(this).resources.configuration.locales.toLanguageTags()
+        if (tags == lastRenderedLanguage) return
+        lastRenderedLanguage = tags
+        mutableLocaleRevision.update { it + 1 }
+        scope.launch {
+            try {
+                repository.initialize()
+                updateWidgets()
+                updates.state.value.saved.available?.let { AndroidUpdateNotifier(this@QuodexApplication).refreshIfVisible(it) }
+            } catch (cancel: CancellationException) { throw cancel }
+            catch (_: Exception) { diagnostics.record(DiagnosticEvent.UI_ERROR) }
+        }
+    }
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        languageChanged()
+    }
     private val mutableWallClockRevision = MutableStateFlow(0L)
     val wallClockRevision = mutableWallClockRevision.asStateFlow()
     fun wallClockChanged() { mutableWallClockRevision.update { it + 1 } }

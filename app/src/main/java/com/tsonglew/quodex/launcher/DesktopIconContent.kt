@@ -1,5 +1,8 @@
 package com.tsonglew.quodex.launcher
 
+import com.tsonglew.quodex.i18n.*
+import com.tsonglew.quodex.R
+import com.tsonglew.quodex.data.displayName
 import com.tsonglew.quodex.data.AppState
 import com.tsonglew.quodex.data.PreferencesState
 import java.time.Instant
@@ -15,13 +18,13 @@ data class DesktopIconContent(
     val showPercentage: Boolean = true,
 ) {
     val percentageLabel: String get() = percent?.let { "$it%" } ?: "—"
-    val marker: String get() = when (status) {
+    fun marker(texts: TextResources): String = when (status) {
         DesktopIconStatus.CURRENT -> period
-        DesktopIconStatus.CACHED -> "旧数据"
-        DesktopIconStatus.DEMO -> "示例"
-        DesktopIconStatus.UNAVAILABLE -> "暂无"
-        DesktopIconStatus.RESTRICTED -> "受限"
-        DesktopIconStatus.DISCONNECTED -> "未连接"
+        DesktopIconStatus.CACHED -> texts(R.string.cached)
+        DesktopIconStatus.DEMO -> texts(R.string.demo)
+        DesktopIconStatus.UNAVAILABLE -> texts(R.string.n_a)
+        DesktopIconStatus.RESTRICTED -> texts(R.string.restricted)
+        DesktopIconStatus.DISCONNECTED -> texts(R.string.icon_disconnected)
     }
 }
 
@@ -29,6 +32,7 @@ data class DesktopIconContent(
 fun desktopIconContent(
     state: AppState,
     preferences: PreferencesState,
+    texts: TextResources,
     now: Long = Instant.now().epochSecond,
 ): DesktopIconContent {
     if (!preferences.desktopIconEnabled) {
@@ -36,18 +40,18 @@ fun desktopIconContent(
     }
     val snapshot = state.snapshot
     if (snapshot == null || (!state.connected && !state.demo)) {
-        return DesktopIconContent(null, "", DesktopIconStatus.DISCONNECTED, "Quodex · 尚未连接账号")
+        return DesktopIconContent(null, "", DesktopIconStatus.DISCONNECTED, texts(R.string.quodex_no_account_connected))
     }
     val mainWindows = snapshot.windows.filter { it.id.startsWith("codex:") || it.id.startsWith("demo:") }
     val weekly = preferences.desktopIconWindow == "weekly"
     val window = if (weekly) mainWindows.firstOrNull { it.durationSeconds == 604800L }
     else mainWindows.filter { (it.durationSeconds ?: 0) in 1L until 86400L }.minByOrNull { it.durationSeconds!! }
-    val name = window?.name ?: if (weekly) "每周额度" else "短周期额度"
-    val period = if (weekly) "周" else window?.durationSeconds?.let {
-        if (it % 3600L == 0L) "${it / 3600}h" else "短周期"
-    } ?: "短周期"
+    val name = window?.displayName(texts) ?: if (weekly) texts(R.string.weekly_quota) else texts(R.string.short_period_quota)
+    val period = if (weekly) texts(R.string.wk) else window?.durationSeconds?.let {
+        if (it % 3600L == 0L) "${it / 3600}h" else texts(R.string.short_period)
+    } ?: texts(R.string.short_period)
     if (snapshot.allowed == false || snapshot.limitReached == true) {
-        return DesktopIconContent(null, period, DesktopIconStatus.RESTRICTED, "Quodex · 当前使用受限")
+        return DesktopIconContent(null, period, DesktopIconStatus.RESTRICTED, texts(R.string.quodex_usage_restricted))
     }
     val percent = window?.usedPercent?.takeIf { it.isFinite() && it in 0.0..100.0 }
         ?.let { (100 - it).roundToInt() }
@@ -60,9 +64,9 @@ fun desktopIconContent(
     }
     val description = buildString {
         append("Quodex · ")
-        if (state.demo) append("示例 · ")
-        append(if (percent == null) "$name 暂不可用" else "$name 剩余 $percent%")
-        if (status == DesktopIconStatus.CACHED) append(" · 上次数据，请刷新")
+        if (state.demo) append(texts(R.string.demo_239))
+        append(if (percent == null) texts(R.string.value_unavailable, name) else texts(R.string.value_remaining_value, name, percent))
+        if (status == DesktopIconStatus.CACHED) append(texts(R.string.cached_data_please_refresh))
     }
     return DesktopIconContent(percent, period, status, description)
 }

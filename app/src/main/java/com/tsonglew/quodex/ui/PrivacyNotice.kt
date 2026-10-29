@@ -1,5 +1,6 @@
 package com.tsonglew.quodex.ui
 
+import com.tsonglew.quodex.i18n.*
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -19,18 +20,19 @@ import com.tsonglew.quodex.R
 /** The bundled policy is available offline before connecting an account. */
 @Composable
 internal fun PrivacyNoticeEntry() {
+    val texts = localTextResources()
     var visible by rememberSaveable { mutableStateOf(false) }
-    TextButton(onClick = { visible = true }, modifier = Modifier.testTag("privacy-notice-button")) { Text("隐私与数据说明") }
+    TextButton(onClick = { visible = true }, modifier = Modifier.testTag("privacy-notice-button")) { Text(texts(R.string.privacy_and_data)) }
     if (visible) {
         val context = LocalContext.current
         val notice = remember(context) {
             context.resources.openRawResource(R.raw.privacy_notice).bufferedReader().use { it.readText() }
         }
-        AlertDialog(onDismissRequest = { visible = false }, title = { Text("隐私与数据说明") }, text = {
+        AlertDialog(onDismissRequest = { visible = false }, title = { Text(texts(R.string.privacy_and_data)) }, text = {
             SelectionContainer {
                 Text(notice, fontSize = 13.sp, lineHeight = 22.sp,
                     modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()).testTag("privacy-notice-text"))
             }
-        }, confirmButton = { TextButton(onClick = { visible = false }, modifier = Modifier.testTag("privacy-notice-close")) { Text("关闭") } })
+        }, confirmButton = { TextButton(onClick = { visible = false }, modifier = Modifier.testTag("privacy-notice-close")) { Text(texts(R.string.close)) } })
     }
 }

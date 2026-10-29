@@ -1,5 +1,6 @@
 package com.tsonglew.quodex.launcher
 
+import com.tsonglew.quodex.i18n.testTexts
 import com.tsonglew.quodex.data.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -10,7 +11,7 @@ class DesktopIconContentTest {
     private fun state(snapshot: UsageSnapshot = demoSnapshot(now)) = AppState(
         initialized = true, connected = true, snapshot = snapshot.copy(accountId = "test-account",
             windows = snapshot.windows.map { it.copy(id = it.id.replace("demo:", "codex:")) }))
-    private fun content(state: AppState = state(), prefs: PreferencesState = preferences) = desktopIconContent(state, prefs, now)
+    private fun content(state: AppState = state(), prefs: PreferencesState = preferences) = desktopIconContent(state, prefs, testTexts, now)
 
     @Test fun shortWindowIsSelectedEvenWhenWeeklyWindowIsFirst() {
         val icon = content()
@@ -66,9 +67,9 @@ class DesktopIconContentTest {
         val failed = content(state().copy(failure = FailureKind.NETWORK))
         assertEquals(36, failed.percent)
         assertEquals(DesktopIconStatus.CACHED, failed.status)
-        assertEquals("旧数据", failed.marker)
+        assertEquals("旧数据", failed.marker(testTexts))
         assertTrue(failed.description.contains("上次数据"))
-        val old = desktopIconContent(state(), preferences, now + preferences.refreshMinutes * 120 + 1)
+        val old = desktopIconContent(state(), preferences, testTexts, now + preferences.refreshMinutes * 120 + 1)
         assertEquals(36, old.percent)
         assertEquals(DesktopIconStatus.CACHED, old.status)
     }
@@ -89,7 +90,7 @@ class DesktopIconContentTest {
         }
         val demo = content(AppState(initialized = true, snapshot = demoSnapshot(now), demo = true))
         assertEquals(36, demo.percent)
-        assertEquals("示例", demo.marker)
+        assertEquals("示例", demo.marker(testTexts))
         assertTrue(demo.description.contains("示例"))
     }
 

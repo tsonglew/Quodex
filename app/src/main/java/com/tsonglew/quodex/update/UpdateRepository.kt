@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.update
 
+import com.tsonglew.quodex.i18n.*
+import com.tsonglew.quodex.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -24,7 +26,7 @@ data class UpdateState(
     val saved: SavedUpdates = SavedUpdates(),
     val initialized: Boolean = false,
     val checking: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
 )
 
 interface UpdateStore {
@@ -109,7 +111,7 @@ class UpdateRepository(
                 }
                 throw cancel
             } catch (_: Exception) {
-                mutableState.value = state.value.copy(error = "暂时无法检查更新，请检查网络或稍后重试。")
+                mutableState.value = state.value.copy(error = UiText(R.string.could_not_check_for_updates_check_your))
                 false
             } finally {
                 mutableState.value = state.value.copy(checking = false)
