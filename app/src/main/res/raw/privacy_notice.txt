@@ -1,5 +1,5 @@
 Quodex Privacy Notice
-Updated: October 29, 2026
+Updated: October 30, 2026
 
 Quodex is an independent third-party Android tool for viewing Codex quota and home screen widgets. It is not affiliated with OpenAI. Connectivity is currently experimental.
 
