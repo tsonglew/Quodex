@@ -8,6 +8,8 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -41,6 +43,7 @@ fun TokenUsageCard(
     onRefresh: () -> Unit,
     compact: Boolean = false,
     onCompactChange: (Boolean) -> Unit = {},
+    heatmapLaunch: String? = null,
 ) {
     val texts = localTextResources()
     var period by rememberSaveable { mutableIntStateOf(7) }
@@ -48,6 +51,23 @@ fun TokenUsageCard(
     val sample = remember { demoTokenUsage() }
     val displayed = if (demo) sample else usage
     val trend = remember(displayed, period) { tokenTrend(displayed?.dailyBuckets, period) }
+    var handledLaunch by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingScroll by rememberSaveable { mutableStateOf<String?>(null) }
+    val chartFocus = remember { BringIntoViewRequester() }
+    LaunchedEffect(heatmapLaunch) {
+        if (heatmapLaunch != null && heatmapLaunch != handledLaunch) {
+            period = 30
+            handledLaunch = heatmapLaunch
+            pendingScroll = heatmapLaunch
+        }
+    }
+    LaunchedEffect(pendingScroll, trend != null, loading) {
+        if (pendingScroll != null) {
+            withFrameNanos { }
+            chartFocus.bringIntoView()
+            if (trend != null || !loading) pendingScroll = null
+        }
+    }
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
 
     Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
@@ -56,7 +76,7 @@ fun TokenUsageCard(
             Text(if (demo) texts(R.string.sample_data_preview_only) else texts(R.string.account_wide_token_totals_service_dates), fontSize = 12.sp, color = secondary)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(7, 30).forEach { days ->
-                    FilterChip(shape = RoundedCornerShape(50), selected = period == days, onClick = { period = days },
+                    FilterChip(shape = RoundedCornerShape(50), selected = period == days, onClick = { pendingScroll = null; period = days },
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer),
                         label = { Text(texts(R.string.last_value_days, days)) }, modifier = Modifier.testTag("token-trend-$days"))
@@ -67,13 +87,13 @@ fun TokenUsageCard(
                 Text(formatTokenCount(trend.total, compact), fontSize = 32.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
                     lineHeight = 40.sp, modifier = Modifier.testTag("token-trend-total"))
                 Text(texts(R.string.total_reported_daily_usage_value_value_days, trend.knownDays, trend.days.size), fontSize = 12.sp, color = secondary)
-                TokenBars(trend, compact)
+                if (period == 30) TokenHeatmapChart(trend, compact, Modifier.bringIntoViewRequester(chartFocus)) { details = true } else TokenBars(trend, compact)
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                     verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(trend.startDate.toString(), fontSize = 12.sp, color = secondary)
                     Text(trend.endDate.toString(), fontSize = 12.sp, color = secondary)
                 }
-                Text(texts(R.string.dash_no_data_dot_recorded_as_0), fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
+                if (period == 7) Text(texts(R.string.dash_no_data_dot_recorded_as_0), fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
                 TextButton(onClick = { details = true }, modifier = Modifier.testTag("token-trend-details")) { Text(texts(R.string.daily_details)) }
             } else {
                 val message = when {
@@ -81,7 +101,7 @@ fun TokenUsageCard(
                     displayed?.dailyBuckets == null -> texts(R.string.the_service_has_not_provided_daily_token)
                     else -> texts(R.string.no_displayable_daily_usage_records_were_returned)
                 }
-                Text(message, fontSize = 13.sp, lineHeight = 21.sp, color = secondary)
+                Text(message, fontSize = 13.sp, lineHeight = 21.sp, color = secondary, modifier = Modifier.bringIntoViewRequester(chartFocus))
                 Text(texts(R.string.missing_data_does_not_mean_no_usage), fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
             }
             if (displayed?.lifetimeTokens != null || displayed?.peakDailyTokens != null) {

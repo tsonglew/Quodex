@@ -16,6 +16,8 @@ import com.tsonglew.quodex.widget.QuotaWidget
 import com.tsonglew.quodex.widget.QuotaWidgetReceiver
 import com.tsonglew.quodex.widget.SlimQuotaWidget
 import com.tsonglew.quodex.widget.SlimQuotaWidgetReceiver
+import com.tsonglew.quodex.widget.TokenHeatmapWidget
+import com.tsonglew.quodex.widget.TokenHeatmapWidgetReceiver
 import androidx.glance.appwidget.updateAll
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -84,6 +86,7 @@ open class QuodexApplication : Application() {
         diagnostics.record(DiagnosticEvent.WIDGET_START)
         try {
             QuotaWidget().updateAll(this@QuodexApplication); SlimQuotaWidget().updateAll(this@QuodexApplication)
+            TokenHeatmapWidget().updateAll(this@QuodexApplication)
             diagnostics.record(DiagnosticEvent.WIDGET_END)
         } catch (failure: Exception) {
             diagnostics.record(DiagnosticEvent.WIDGET_ERROR)
@@ -99,13 +102,15 @@ open class QuodexApplication : Application() {
         val state = repository.state.value
         if (!state.connected || state.demo) return false
         val manager = AppWidgetManager.getInstance(this)
-        val hasWidget = listOf(QuotaWidgetReceiver::class.java, SlimQuotaWidgetReceiver::class.java).any {
+        val hasWidget = listOf(QuotaWidgetReceiver::class.java, SlimQuotaWidgetReceiver::class.java, TokenHeatmapWidgetReceiver::class.java).any {
             manager.getAppWidgetIds(ComponentName(this, it)).isNotEmpty()
         }
         val preferences = settings.read()
         val hasIcon = preferences.desktopIconEnabled && desktopIcon.refreshAvailability().pinned
         return hasWidget || hasIcon
     }
+    fun hasTokenHeatmapWidgets(): Boolean = AppWidgetManager.getInstance(this)
+        .getAppWidgetIds(ComponentName(this, TokenHeatmapWidgetReceiver::class.java)).isNotEmpty()
 }
 
 val Context.quotaApp: QuodexApplication get() = applicationContext as QuodexApplication

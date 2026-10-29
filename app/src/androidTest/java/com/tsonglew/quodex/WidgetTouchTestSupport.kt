@@ -16,7 +16,7 @@ import org.junit.Assert.assertFalse
 import kotlin.math.abs
 
 /** Inspect the real action leaves after RemoteViews and their layout have settled. */
-internal fun assertWidgetActionLayout(widget: View) {
+internal fun assertWidgetActionLayout(widget: View, refreshDescription: String = "刷新额度", openSuffix: String = "打开 Quodex") {
     // API29/30 use Glance's separate emulated-Button path, exercised by the
     // same real touch tests without requiring the API31+ resource replacement.
     if (Build.VERSION.SDK_INT < 31) return
@@ -25,8 +25,8 @@ internal fun assertWidgetActionLayout(widget: View) {
     } else emptyList()
     val views = descendants(widget)
     val targets = views.filter { it.isShown && it.hasOnClickListeners() }
-    val open = targets.filter { it.contentDescription?.toString()?.endsWith("打开 Quodex") == true }
-    val refresh = targets.filter { it.contentDescription?.toString() == "刷新额度" }
+    val open = targets.filter { it.contentDescription?.toString()?.endsWith(openSuffix) == true }
+    val refresh = targets.filter { it.contentDescription?.toString() == refreshDescription }
     val description = targets.joinToString("\n") {
         "${it.javaClass.simpleName}: id=${it.id}, description=${it.contentDescription}, size=${it.width}x${it.height}"
     }

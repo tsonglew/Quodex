@@ -78,7 +78,8 @@ class WidgetTestHostActivity : Activity() {
         }
         val id = host.allocateAppWidgetId()
         val manager = AppWidgetManager.getInstance(this)
-        val provider = if (slim) SlimQuotaWidgetReceiver::class.java else QuotaWidgetReceiver::class.java
+        val provider = if (intent.getBooleanExtra("heatmap", false)) com.tsonglew.quodex.widget.TokenHeatmapWidgetReceiver::class.java
+            else if (slim) SlimQuotaWidgetReceiver::class.java else QuotaWidgetReceiver::class.java
         check(manager.bindAppWidgetIdIfAllowed(id, ComponentName(this, provider), options))
         return id to host.createView(this, id, manager.getAppWidgetInfo(id))
     }

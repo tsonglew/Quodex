@@ -21,7 +21,7 @@ import com.tsonglew.quodex.R
 import com.tsonglew.quodex.i18n.AndroidTextResources
 import com.tsonglew.quodex.i18n.localTextResources
 
-internal enum class HomePinTarget { ICON, STANDARD_WIDGET, COMPACT_WIDGET }
+internal enum class HomePinTarget { ICON, STANDARD_WIDGET, COMPACT_WIDGET, TOKEN_HEATMAP }
 
 internal val LocalHomePinGuideRequired = staticCompositionLocalOf {
     BackgroundBrand.detect(Build.MANUFACTURER, Build.BRAND) == BackgroundBrand.XIAOMI

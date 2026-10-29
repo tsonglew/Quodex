@@ -48,5 +48,9 @@
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/slim_quota_widget_info" />
         </receiver>
+        <receiver android:name=".widget.TokenHeatmapWidgetReceiver" android:exported="false" android:label="@string/token_heatmap_widget_name">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/token_heatmap_widget_info" />
+        </receiver>
     </application>
 </manifest>

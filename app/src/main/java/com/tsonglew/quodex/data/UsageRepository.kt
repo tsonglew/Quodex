@@ -239,7 +239,7 @@ class UsageRepository(
         outcome
     }
 
-    /** Foreground token activity is optional and must not delay quota/widget requests. */
+    /** Optional token statistics keep their own cache, throttling and failure state. */
     suspend fun refreshTokenUsage(force: Boolean = false) = withContext(Dispatchers.IO) {
         initialize()
         val ticket = generation.get()
