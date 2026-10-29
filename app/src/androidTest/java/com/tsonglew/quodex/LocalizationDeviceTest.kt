@@ -79,6 +79,8 @@ class LocalizationDeviceTest {
                         // Closing it first can make moveToFront a denied background launch.
                         val deadline = android.os.SystemClock.uptimeMillis() + 20_000
                         var matched = false
+                        var focused = false
+                        var recoveredSystemDialog = false
                         var actual = emptyList<String>()
                         while (!matched && android.os.SystemClock.uptimeMillis() < deadline) {
                             host.onActivity { activity ->
@@ -87,11 +89,16 @@ class LocalizationDeviceTest {
                                 assertEquals("The original host must survive app language changes", ids.first(), activity.widgetId)
                                 actual = listOf(activity.widgetView, checkNotNull(activity.secondaryWidgetView), checkNotNull(activity.thirdWidgetView))
                                     .map { labels(it).joinToString(" | ") }
-                                matched = activity.widgetView.hasWindowFocus() && actual.all { label in it && "62%" in it }
+                                focused = activity.widgetView.hasWindowFocus()
+                                matched = focused && actual.all { label in it && "62%" in it }
+                            }
+                            if (!focused && !recoveredSystemDialog) {
+                                recoveredSystemDialog = dismissLauncherAnrOnEmulator(instrumentation)
                             }
                             if (!matched) Thread.sleep(100)
                         }
-                        assertTrue("Every existing widget must use $tag without a test-triggered repaint: $actual", matched)
+                        assertTrue("Every existing widget must use $tag without a test-triggered repaint; " +
+                            "focused=$focused, recoveredSystemDialog=$recoveredSystemDialog: $actual", matched)
                         assertEquals(requests, app.usageRequests.get())
                         instrumentation.waitForIdleSync()
                         saveDeviceScreenshot(context, "language-widgets-$tag", checkNotNull(instrumentation.uiAutomation.takeScreenshot()))
