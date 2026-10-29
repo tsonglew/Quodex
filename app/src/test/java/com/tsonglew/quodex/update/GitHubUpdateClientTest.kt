@@ -35,7 +35,7 @@ class GitHubUpdateClientTest {
         releaseUrl: String = "https://github.com/tsonglew/Quodex/releases/tag/$tag",
         assetUrl: String = "https://github.com/tsonglew/Quodex/releases/download/$tag/Quodex-$version.apk",
         assetState: String = "uploaded", assetSize: Long = 1000, includeAsset: Boolean = true,
-        metadataOverride: String? = null, productName: String = "Quodex", metadataMarker: String = "quodex",
+        digest: String? = null, metadataOverride: String? = null, productName: String = "Quodex", metadataMarker: String = "quodex",
     ): JsonObject {
         val apk = "$productName-$version.apk"
         val metadata = buildJsonObject {
@@ -49,6 +49,7 @@ class GitHubUpdateClientTest {
                 if (includeAsset) addJsonObject {
                     put("name", apk); put("state", assetState); put("size", assetSize)
                     put("browser_download_url", assetUrl)
+                    digest?.let { put("digest", it) }
                 }
             }
         }
@@ -66,6 +67,16 @@ class GitHubUpdateClientTest {
         assertEquals(24L, update.versionCode)
         assertEquals("https://github.com/tsonglew/Quodex/releases/tag/v0.1.0-alpha24", update.releaseUrl)
         assertEquals(source, update.sourceSha)
+    }
+
+    @Test fun carriesTheExactAssetSizeUrlAndDigestForInAppInstallation() = runBlocking {
+        enqueue(release(digest = "sha256:" + "cd".repeat(32)))
+        val update = api.latest()!!
+        assertEquals(1000L, update.apkSize)
+        assertEquals("cd".repeat(32), update.apkSha256)
+        assertEquals("https://github.com/tsonglew/Quodex/releases/download/build-123-1/Quodex-0.1.0-alpha21.apk", update.apkUrl)
+        enqueue(release(digest = "sha256:broken"), release(assetSize = GitHubUpdateClient.MAX_APK_BYTES + 1))
+        assertNull(api.latest())
     }
 
     @Test fun acceptsSignedQuotaPalReleaseAssetsDuringTheRenameTransition() = runBlocking {

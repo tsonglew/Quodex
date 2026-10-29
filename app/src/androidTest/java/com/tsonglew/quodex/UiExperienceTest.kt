@@ -150,6 +150,21 @@ class UiExperienceTest {
         }
     }
 
+    @Test fun floatingDockKeepsItsLastContentAndActionsReachable() {
+        ActivityScenario.launch(MainActivity::class.java).use {
+            awaitWelcome()
+            compose.onNodeWithTag("tab-settings").performClick()
+            val dock = compose.onNodeWithTag("floating-navigation").assertIsDisplayed().getUnclippedBoundsInRoot()
+            val page = compose.onNodeWithTag("page-settings").getUnclippedBoundsInRoot()
+            assertTrue("Dock floats inside the content width", dock.left > page.left && dock.right < page.right)
+            assertTrue("Scroll viewport avoids obscured touch targets", page.bottom <= dock.top)
+            compose.onNodeWithTag("page-settings").performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 100000f) }
+            val footer = compose.onNodeWithText("独立第三方工具", substring = true).getUnclippedBoundsInRoot()
+            assertTrue("Bottom padding keeps the last content above the dock", footer.bottom <= dock.top)
+            compose.onNodeWithTag("tab-quota").performClick().assertIsSelected()
+        }
+    }
+
     @Test fun wideWindowUsesSideNavigationAndKeepsContentWidthReadable() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             var sufficientlyWide = false

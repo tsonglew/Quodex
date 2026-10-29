@@ -2,10 +2,10 @@
 <resources>
     <color name="quodex_icon_background">#112B30</color>
     <color name="quodex_icon_foreground">#5CD8CD</color>
-    <color name="quodex_primary">#007C83</color>
+    <color name="quodex_primary">#0065D0</color>
     <color name="quodex_accent">@color/quodex_primary</color>
-    <color name="quodex_background">#EEF8F7</color>
-    <color name="quodex_on_background">@color/quodex_icon_background</color>
-    <color name="quodex_on_surface_variant">#4B6265</color>
+    <color name="quodex_background">#F1EFF2</color>
+    <color name="quodex_on_background">#1B1C20</color>
+    <color name="quodex_on_surface_variant">#464B59</color>
     <bool name="quodex_light_system_bars">true</bool>
 </resources>

@@ -1,7 +1,7 @@
 <resources>
-    <color name="quodex_accent">@color/quodex_icon_foreground</color>
-    <color name="quodex_background">#0B1C20</color>
-    <color name="quodex_on_background">#EEF8F7</color>
-    <color name="quodex_on_surface_variant">#BCCFCC</color>
+    <color name="quodex_accent">#9EC5FF</color>
+    <color name="quodex_background">#121316</color>
+    <color name="quodex_on_background">#F1EFF2</color>
+    <color name="quodex_on_surface_variant">#C5C6D0</color>
     <bool name="quodex_light_system_bars">false</bool>
 </resources>

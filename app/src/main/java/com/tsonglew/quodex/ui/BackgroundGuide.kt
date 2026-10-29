@@ -81,8 +81,8 @@ internal fun BackgroundGuide() {
         onDispose { lifecycle.removeObserver(observer) }
     }
     val guide = BackgroundBrand.valueOf(selected)
-    Surface(shape = RoundedCornerShape(28.dp), color = colors.surface) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp)) {
+    Surface(shape = RoundedCornerShape(24.dp), color = colors.surface) {
+        Column(Modifier.fillMaxWidth().padding(20.dp)) {
             Text("后台更新保障", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.semantics { heading() })
             Spacer(Modifier.height(8.dp))

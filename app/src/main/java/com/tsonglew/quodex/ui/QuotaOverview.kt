@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Visibility
@@ -55,34 +56,57 @@ fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long, onReconne
                 Text("示例数据 · 非真实额度", fontSize = 12.sp, color = colors.onSurfaceVariant)
             }
         }
-        Spacer(Modifier.height(18.dp))
-        Surface(shape = RoundedCornerShape(28.dp), color = colors.surface) {
-            Column(Modifier.fillMaxWidth().padding(24.dp)) {
-                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Codex", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                    snapshot.plan?.let { plan ->
-                        Surface(color = colors.surfaceContainerHigh, shape = RoundedCornerShape(6.dp)) {
-                            Text(plan.uppercase(), Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                fontSize = 12.sp, fontWeight = FontWeight.Medium, color = colors.onSurfaceVariant)
+        Spacer(Modifier.height(16.dp))
+        Surface(shape = RoundedCornerShape(24.dp), color = colors.surfaceContainerHigh) {
+            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Surface(shape = RoundedCornerShape(16.dp), color = colors.primaryContainer) {
+                        Icon(Icons.Outlined.Code, null, Modifier.padding(14.dp).size(26.dp), tint = colors.onPrimaryContainer)
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Codex", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                            snapshot.plan?.let { plan ->
+                                Surface(color = colors.surface, shape = RoundedCornerShape(50)) {
+                                    Text(plan.uppercase(), Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                        fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = colors.primary)
+                                }
+                            }
                         }
+                        Text(when {
+                            state.demo -> "示例模式"
+                            state.failure != null -> "保留上次额度"
+                            state.connected -> "账号已连接"
+                            else -> "尚未连接"
+                        }, fontSize = 12.sp, color = colors.onSurfaceVariant)
                     }
                 }
                 snapshot.quotaNotice()?.let { notice ->
-                    Spacer(Modifier.height(18.dp))
                     QuotaInlineNotice(notice.title, notice.description,
                         important = snapshot.limitReached == true || snapshot.allowed == false)
                 }
-                primary?.let { window -> key(window.id) {
-                    Spacer(Modifier.height(22.dp))
-                    PrimaryQuotaWindow(window, prefs.showRemaining, now)
-                } }
-                secondary.forEach { window -> key(window.id) {
-                    Spacer(Modifier.height(22.dp))
-                    HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.55f))
-                    Spacer(Modifier.height(18.dp))
-                    SecondaryQuotaWindow(window, prefs.showRemaining, now)
-                } }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        // Equal-width dashboard tiles at normal phone widths; stack for narrow windows or large text.
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val windows = listOfNotNull(primary) + secondary
+            val columns = if (windows.size > 1 && maxWidth >= 320.dp && LocalDensity.current.fontScale <= 1.15f) 2 else 1
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                windows.chunked(columns).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        row.forEach { window -> key(window.id) {
+                            Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(24.dp),
+                                color = colors.surface) {
+                                Column(Modifier.padding(18.dp)) {
+                                    if (window === primary) PrimaryQuotaWindow(window, prefs.showRemaining, now)
+                                    else SecondaryQuotaWindow(window, prefs.showRemaining, now)
+                                }
+                            }
+                        } }
+                        if (row.size < columns) Spacer(Modifier.weight(1f))
+                    }
+                }
             }
         }
         FlowRow(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.SpaceBetween,
@@ -136,11 +160,11 @@ private fun PrimaryQuotaWindow(window: QuotaWindow, remaining: Boolean, now: Lon
         Spacer(Modifier.height(8.dp))
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             // Leave room for three digits, the percent sign and large system fonts.
-            val numberSize = (maxWidth.value / LocalDensity.current.fontScale / 3.4f).coerceIn(28f, 68f).sp
+            val numberSize = (maxWidth.value / LocalDensity.current.fontScale / 2.8f).coerceIn(28f, 48f).sp
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(window.percentageLabel(remaining), fontSize = if (value == null) 24.sp else numberSize,
                     lineHeight = if (value == null) 32.sp else numberSize * 1.12f,
-                    fontWeight = FontWeight.Medium, letterSpacing = if (value == null) 0.sp else (-2).sp,
+                    fontWeight = FontWeight.SemiBold, color = colors.primary, letterSpacing = if (value == null) 0.sp else (-1).sp,
                     style = TextStyle(fontFeatureSettings = "tnum"),
                     modifier = Modifier.weight(1f, fill = false).alignByBaseline().testTag("quota-primary-value"))
                 if (value != null) Text("%", fontSize = 24.sp, color = colors.onSurfaceVariant,
@@ -164,33 +188,33 @@ private fun PrimaryQuotaWindow(window: QuotaWindow, remaining: Boolean, now: Lon
 private fun SecondaryQuotaWindow(window: QuotaWindow, remaining: Boolean, now: Long) {
     val colors = MaterialTheme.colorScheme
     val value = window.displayedPercent(remaining)
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val label: @Composable () -> Unit = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(window.name, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                if (value != null) Text(if (remaining) "剩余额度" else "已用额度", fontSize = 12.sp, color = colors.onSurfaceVariant)
+    Column(Modifier.fillMaxWidth()) {
+        Text(window.name, fontSize = 15.sp, color = colors.onSurfaceVariant)
+        Spacer(Modifier.height(8.dp))
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val numberSize = (maxWidth.value / LocalDensity.current.fontScale / 2.8f).coerceIn(28f, 48f).sp
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(window.percentageLabel(remaining), fontSize = if (value == null) 24.sp else numberSize,
+                    lineHeight = if (value == null) 32.sp else numberSize * 1.12f,
+                    fontWeight = FontWeight.SemiBold, color = colors.primary,
+                    letterSpacing = if (value == null) 0.sp else (-1).sp,
+                    style = TextStyle(fontFeatureSettings = "tnum"),
+                    modifier = Modifier.weight(1f, fill = false).alignByBaseline())
+                if (value != null) Text("%", fontSize = 24.sp, color = colors.onSurfaceVariant,
+                    modifier = Modifier.alignByBaseline())
             }
         }
-        val percentage: @Composable () -> Unit = {
-            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(window.percentageLabel(remaining), fontSize = if (value == null) 16.sp else 30.sp,
-                    fontWeight = FontWeight.Medium, style = TextStyle(fontFeatureSettings = "tnum"),
-                    modifier = Modifier.alignByBaseline())
-                if (value != null) Text("%", fontSize = 14.sp, color = colors.onSurfaceVariant,
-                    modifier = Modifier.alignByBaseline())
-            }
+        if (value != null) {
+            Text(if (remaining) "剩余额度" else "已用额度", fontSize = 12.sp, color = colors.onSurfaceVariant)
+            Spacer(Modifier.height(18.dp))
+            QuotaMeter(window, remaining, height = 8)
+        } else {
+            Spacer(Modifier.height(8.dp))
+            UnknownQuotaExplanation()
         }
-        if (maxWidth / LocalDensity.current.fontScale < 220.dp) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { label(); percentage() }
-        } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.weight(1f)) { label() }
-            percentage()
-        }
+        Spacer(Modifier.height(12.dp))
+        ResetTime(window, now)
     }
-    Spacer(Modifier.height(12.dp))
-    if (value != null) QuotaMeter(window, remaining, height = 5) else UnknownQuotaExplanation()
-    Spacer(Modifier.height(10.dp))
-    ResetTime(window, now)
 }
 
 @Composable
