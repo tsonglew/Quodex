@@ -27,6 +27,7 @@ Android 官方依据：[应用语言](https://developer.android.com/guide/topics
 
 - 176 项 JVM 测试通过，包含翻译完整性、占位符、旧缓存兼容、错误和桌面图标文案测试。
 - Debug / Release Lint、Debug / AndroidTest / R8 Release 构建通过；46 项交付脚本测试与 ShellCheck 通过。
-- API 37 原有 63 项设备测试通过；新增 2 项设备测试验证实际点击语言选择器、Activity 重建、跟随系统，以及三个已有组件自动重绘和示例数据不联网。旧额度页测试已改为匹配翻译后的周期名，专项 9 项复测全部通过。
+- API 37 全新安装的 65 项设备测试全部通过；其中新增 2 项设备测试验证实际点击语言选择器、Activity 重建、跟随系统，以及三个已有组件自动重绘和示例数据不联网。旧额度页测试已改为匹配翻译后的周期名，专项 9 项复测全部通过。
 - 实际安装经 R8 处理的 Release APK，通过系统 UI 操作切换日语、强制停止后冷启动、确认日语及示例状态保留，再切换中英、深色模式、隐私和退出流程；结果 `RELEASE_SMOKE_OK`。
-- PR 的六组设备 CI 和合并后的签名发布结果以对应 GitHub Actions 记录为准。
+- 全新安装 CI 曾暴露测试预设中文与 AndroidX 首次迁移的竞态，以及旧 Android 独立组件测试的语言初始化遗漏，已修正测试初始化；没有放宽断言。
+- API 36 再次出现系统级 “System UI isn’t responding” 弹窗，遮挡后续设备测试；为该组分配 4 GB 模拟器内存，并保留 ActivityManager / WindowManager / InputDispatcher / lmkd 诊断日志。六组设备 CI 和合并后的签名发布结果以对应 GitHub Actions 记录为准。
