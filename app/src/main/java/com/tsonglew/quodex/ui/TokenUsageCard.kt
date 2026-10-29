@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.ui
 
+import com.tsonglew.quodex.i18n.*
+import com.tsonglew.quodex.R
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -40,6 +42,7 @@ fun TokenUsageCard(
     compact: Boolean = false,
     onCompactChange: (Boolean) -> Unit = {},
 ) {
+    val texts = localTextResources()
     var period by rememberSaveable { mutableIntStateOf(7) }
     var details by rememberSaveable { mutableStateOf(false) }
     val sample = remember { demoTokenUsage() }
@@ -49,91 +52,91 @@ fun TokenUsageCard(
 
     Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().padding(20.dp).testTag("token-usage-card"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            PanelHeading("Token 使用趋势", Icons.Outlined.BarChart)
-            Text(if (demo) "示例数据 · 仅用于预览" else "账号级 token 总量 · 按服务端日期统计", fontSize = 12.sp, color = secondary)
+            PanelHeading(texts(R.string.token_usage_trend), Icons.Outlined.BarChart)
+            Text(if (demo) texts(R.string.sample_data_preview_only) else texts(R.string.account_wide_token_totals_service_dates), fontSize = 12.sp, color = secondary)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(7, 30).forEach { days ->
                     FilterChip(shape = RoundedCornerShape(50), selected = period == days, onClick = { period = days },
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer),
-                        label = { Text("近 $days 天") }, modifier = Modifier.testTag("token-trend-$days"))
+                        label = { Text(texts(R.string.last_value_days, days)) }, modifier = Modifier.testTag("token-trend-$days"))
                 }
             }
             if (trend != null) {
-                Text("截至 ${trend.endDate} · 近 $period 天", fontSize = 12.sp, color = secondary)
+                Text(texts(R.string.through_value_last_value_days, trend.endDate, period), fontSize = 12.sp, color = secondary)
                 Text(formatTokenCount(trend.total, compact), fontSize = 32.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
                     lineHeight = 40.sp, modifier = Modifier.testTag("token-trend-total"))
-                Text("已返回日用量合计 · ${trend.knownDays}/${trend.days.size} 天有数据", fontSize = 12.sp, color = secondary)
+                Text(texts(R.string.total_reported_daily_usage_value_value_days, trend.knownDays, trend.days.size), fontSize = 12.sp, color = secondary)
                 TokenBars(trend, compact)
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                     verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(trend.startDate.toString(), fontSize = 12.sp, color = secondary)
                     Text(trend.endDate.toString(), fontSize = 12.sp, color = secondary)
                 }
-                Text("短线：未提供数据 · 圆点：已记录为 0", fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
-                TextButton(onClick = { details = true }, modifier = Modifier.testTag("token-trend-details")) { Text("逐日明细") }
+                Text(texts(R.string.dash_no_data_dot_recorded_as_0), fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
+                TextButton(onClick = { details = true }, modifier = Modifier.testTag("token-trend-details")) { Text(texts(R.string.daily_details)) }
             } else {
                 val message = when {
-                    loading && !demo -> "正在获取 token 统计…"
-                    displayed?.dailyBuckets == null -> "服务端尚未提供按日 token 数据。"
-                    else -> "服务端暂未返回可展示的日用量记录。"
+                    loading && !demo -> texts(R.string.loading_token_statistics)
+                    displayed?.dailyBuckets == null -> texts(R.string.the_service_has_not_provided_daily_token)
+                    else -> texts(R.string.no_displayable_daily_usage_records_were_returned)
                 }
                 Text(message, fontSize = 13.sp, lineHeight = 21.sp, color = secondary)
-                Text("缺失数据不代表没有使用，也不会用额度百分比估算 token。", fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
+                Text(texts(R.string.missing_data_does_not_mean_no_usage), fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
             }
             if (displayed?.lifetimeTokens != null || displayed?.peakDailyTokens != null) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                displayed?.lifetimeTokens?.let { TokenMetric("累计 token", it, compact) }
-                displayed?.peakDailyTokens?.let { TokenMetric("历史单日峰值", it, compact) }
+                displayed?.lifetimeTokens?.let { TokenMetric(texts(R.string.lifetime_tokens), it, compact) }
+                displayed?.peakDailyTokens?.let { TokenMetric(texts(R.string.all_time_daily_peak), it, compact) }
             }
             if (displayed?.partial == true) {
                 Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
-                    Text("服务端返回的数据可能不完整，仅展示可用统计。", fontSize = 12.sp, lineHeight = 20.sp,
+                    Text(texts(R.string.service_data_may_be_incomplete_only_available), fontSize = 12.sp, lineHeight = 20.sp,
                         modifier = Modifier.fillMaxWidth().padding(12.dp))
                 }
             }
             if (!demo) {
                 failure?.let {
-                    Text(tokenFailureMessage(it, usage != null), fontSize = 12.sp, lineHeight = 20.sp, color = MaterialTheme.colorScheme.error)
+                    Text(tokenFailureMessage(it, usage != null, texts), fontSize = 12.sp, lineHeight = 20.sp, color = MaterialTheme.colorScheme.error)
                 }
                 if (displayed != null) {
-                    Text("获取于 ${absoluteTime(displayed.fetchedAt, true)}", fontSize = 12.sp, color = secondary)
-                    displayed.statsAsOf?.let { Text("服务端统计时间：$it", fontSize = 12.sp, color = secondary) }
+                    Text(texts(R.string.fetched_at_value, absoluteTime(displayed.fetchedAt, true)), fontSize = 12.sp, color = secondary)
+                    displayed.statsAsOf?.let { Text(texts(R.string.service_statistics_timestamp_value, it), fontSize = 12.sp, color = secondary) }
                 }
                 TextButton(onClick = onRefresh, enabled = !loading, modifier = Modifier.testTag("token-trend-refresh")) {
                     if (loading) {
                         CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
                         Spacer(Modifier.width(8.dp))
                     }
-                    Text(if (loading) "正在更新统计" else "刷新 token 统计")
+                    Text(if (loading) texts(R.string.updating_statistics) else texts(R.string.refresh_token_statistics))
                 }
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            PreferenceToggle("易读单位（K / M / B / T）", compact, onCompactChange,
+            PreferenceToggle(texts(R.string.compact_units_k_m_b_t), compact, onCompactChange,
                 modifier = Modifier.testTag("compact-token-toggle"))
-            Text("统计可能延迟；该接口不提供输入、输出或缓存 token 拆分。", fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
+            Text(texts(R.string.statistics_may_be_delayed_this_interface_does), fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
         }
     }
     if (details && trend != null) {
-        AlertDialog(onDismissRequest = { details = false }, title = { Text(if (demo) "示例 · 逐日 token" else "逐日 token") },
+        AlertDialog(onDismissRequest = { details = false }, title = { Text(if (demo) texts(R.string.demo_daily_tokens) else texts(R.string.daily_tokens)) },
             text = {
                 LazyColumn(Modifier.fillMaxWidth().heightIn(max = 360.dp).testTag("token-trend-day-list")) {
                     itemsIndexed(trend.days.asReversed(), key = { _, day -> day.date.toString() }) { index, day ->
                         // Keep the explanation scrollable with the data at large font sizes.
                         // Including it in the first day preserves one list item per date.
                         if (index == 0) {
-                            Text("${trend.startDate} — ${trend.endDate}\n日期沿用服务端，不换算手机时区。", fontSize = 12.sp, lineHeight = 20.sp)
+                            Text(texts(R.string.value_value_ndates_come_from_the_service, trend.startDate, trend.endDate), fontSize = 12.sp, lineHeight = 20.sp)
                             Spacer(Modifier.height(12.dp))
                         }
                         Column(Modifier.fillMaxWidth().padding(vertical = 9.dp).semantics(mergeDescendants = true) {}) {
                             Text(day.date.toString(), fontSize = 12.sp, color = secondary)
-                            Text(day.tokens?.let { "${formatTokenCount(it, compact)} tokens" } ?: "未提供数据", fontSize = 15.sp,
+                            Text(day.tokens?.let { texts(R.string.count_tokens, formatTokenCount(it, compact)) } ?: texts(R.string.no_data_provided), fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium)
                         }
                     }
                 }
-            }, confirmButton = { TextButton(onClick = { details = false }, modifier = Modifier.testTag("token-trend-details-close")) { Text("关闭") } })
+            }, confirmButton = { TextButton(onClick = { details = false }, modifier = Modifier.testTag("token-trend-details-close")) { Text(texts(R.string.close)) } })
     }
 }
 
@@ -147,6 +150,7 @@ private fun TokenMetric(label: String, value: Long, compact: Boolean) {
 
 @Composable
 private fun TokenBars(trend: TokenTrend, compact: Boolean) {
+    val texts = localTextResources()
     val bar = MaterialTheme.colorScheme.primary
     val grid = MaterialTheme.colorScheme.outlineVariant
     val missing = MaterialTheme.colorScheme.onSurfaceVariant
@@ -168,12 +172,12 @@ private fun TokenBars(trend: TokenTrend, compact: Boolean) {
             }
         }
     }
-    val description = "${trend.startDate} 至 ${trend.endDate}，${trend.knownDays} 天有记录，" +
-        "已返回日用量合计 ${formatTokenCount(trend.total, compact)} tokens，" +
-        "${trend.days.size - trend.knownDays} 天未提供数据，" +
-        "${trend.days.count { it.tokens == BigInteger.ZERO }} 天记录为 0。具体数值可打开逐日明细。"
+    val description = texts(R.string.value_to_value_value_days_with_records, trend.startDate, trend.endDate, trend.knownDays) +
+        texts(R.string.total_reported_daily_usage_value_tokens, formatTokenCount(trend.total, compact)) +
+        texts(R.string.value_days_without_data, trend.days.size - trend.knownDays) +
+        texts(R.string.value_days_recorded_as_0_open_daily, trend.days.count { it.tokens == BigInteger.ZERO })
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("日用量最高 ${formatTokenCount(trend.peak, compact)} tokens", fontSize = 12.sp,
+        Text(texts(R.string.peak_daily_usage_value_tokens, formatTokenCount(trend.peak, compact)), fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Canvas(Modifier.fillMaxWidth().height(140.dp).testTag("token-trend-chart").semantics { contentDescription = description }) {
             val baseline = size.height - 4.dp.toPx()
@@ -211,15 +215,15 @@ private fun TokenBars(trend: TokenTrend, compact: Boolean) {
     }
 }
 
-private fun tokenFailureMessage(failure: FailureKind, cached: Boolean): String {
+private fun tokenFailureMessage(failure: FailureKind, cached: Boolean, texts: TextResources): String {
     val reason = when (failure) {
-        FailureKind.AUTH -> "token 统计授权暂不可用，请刷新或重新连接。"
-        FailureKind.FORBIDDEN -> "当前账号暂不允许读取 token 统计。"
-        FailureKind.LIMITED -> "token 统计请求过于频繁，请稍后再试。"
-        FailureKind.NETWORK -> "网络连接失败，暂时无法更新 token 统计。"
-        FailureKind.SERVER -> "token 统计服务暂不可用，请稍后再试。"
-        FailureKind.PROTOCOL -> "token 统计格式暂不兼容，请检查应用更新。"
-        FailureKind.STORAGE -> "token 统计无法保存，请检查设备存储空间。"
+        FailureKind.AUTH -> texts(R.string.token_statistics_authorization_is_unavailable_refresh_or)
+        FailureKind.FORBIDDEN -> texts(R.string.this_account_cannot_access_token_statistics_right)
+        FailureKind.LIMITED -> texts(R.string.too_many_token_statistics_requests_try_again)
+        FailureKind.NETWORK -> texts(R.string.network_connection_failed_token_statistics_could_not)
+        FailureKind.SERVER -> texts(R.string.the_token_statistics_service_is_temporarily_unavailable)
+        FailureKind.PROTOCOL -> texts(R.string.the_token_statistics_format_is_not_supported)
+        FailureKind.STORAGE -> texts(R.string.token_statistics_could_not_be_saved_check)
     }
-    return reason + if (cached) " 仍显示上次获取的数据。" else " 额度显示不受影响。"
+    return reason + if (cached) texts(R.string.showing_previously_fetched_data) else texts(R.string.quota_display_is_unaffected)
 }

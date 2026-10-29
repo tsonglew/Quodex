@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.data
 
+import com.tsonglew.quodex.R
+import com.tsonglew.quodex.i18n.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import java.time.Instant
@@ -16,9 +18,10 @@ data class QuotaWindow(
     val usedPercent: Double?,
     val durationSeconds: Long?,
     val resetsAt: Long?,
+    val sourceLabel: String? = null,
 ) {
     fun displayedPercent(remaining: Boolean): Double? = usedPercent?.let { if (remaining) 100 - it else it }
-    fun percentageLabel(remaining: Boolean): String = displayedPercent(remaining)?.let { String.format(Locale.ROOT, "%.0f", it) } ?: "暂不可用"
+    fun percentageLabel(remaining: Boolean, texts: TextResources): String = displayedPercent(remaining)?.let { String.format(Locale.ROOT, "%.0f", it) } ?: texts(R.string.unavailable)
 }
 
 @Serializable
@@ -32,13 +35,13 @@ data class UsageSnapshot(
     val limitReached: Boolean? = null,
     val tokenUsage: TokenUsageSnapshot? = null,
 ) {
-    fun quotaNotice(): QuotaNotice? {
+    fun quotaNotice(texts: TextResources): QuotaNotice? {
         val mainWindows = windows.filter { it.id.startsWith("codex:") || it.id.startsWith("demo:") }
         return when {
-            limitReached == true || allowed == false -> QuotaNotice("当前使用受限", "服务端暂不允许使用 Codex，请以账号实际权益与限制为准。", "当前使用受限")
-            mainWindows.isEmpty() && allowed == true -> QuotaNotice("当前可用", "账号未提供周期额度，无需显示百分比。实际使用仍以账号权益为准。", "未提供周期额度")
-            mainWindows.isEmpty() -> QuotaNotice("未提供周期额度", "当前账号未返回按周期计算的额度，请以账号实际权益为准。", "未提供周期额度")
-            mainWindows.all { (it.durationSeconds ?: 0) >= 86400 } -> QuotaNotice("未提供短周期额度", "当前账号未提供按小时计算的额度；已返回的长期额度仍正常显示。", "无短周期数据")
+            limitReached == true || allowed == false -> QuotaNotice(texts(R.string.usage_is_currently_restricted), texts(R.string.the_service_currently_does_not_allow_codex), texts(R.string.usage_is_currently_restricted))
+            mainWindows.isEmpty() && allowed == true -> QuotaNotice(texts(R.string.available), texts(R.string.no_period_quota_was_provided_so_no), texts(R.string.no_period_quota_provided))
+            mainWindows.isEmpty() -> QuotaNotice(texts(R.string.no_period_quota_provided), texts(R.string.this_account_did_not_return_period_based), texts(R.string.no_period_quota_provided))
+            mainWindows.all { (it.durationSeconds ?: 0) >= 86400 } -> QuotaNotice(texts(R.string.no_short_period_quota_provided), texts(R.string.this_account_did_not_provide_hourly_quota), texts(R.string.no_short_period_data))
             else -> null
         }
     }
@@ -60,14 +63,14 @@ data class Session(
 enum class FailureKind { AUTH, FORBIDDEN, LIMITED, NETWORK, SERVER, PROTOCOL, STORAGE }
 class ApiFailure(val kind: FailureKind, val retryAt: Long? = null) : Exception(kind.name)
 
-fun FailureKind.userMessage(): String = when (this) {
-    FailureKind.AUTH -> "连接已失效，请重新登录"
-    FailureKind.FORBIDDEN -> "当前账号或工作区暂不允许访问"
-    FailureKind.LIMITED -> "请求过于频繁，请稍后刷新"
-    FailureKind.NETWORK -> "网络连接失败，已保留上次数据"
-    FailureKind.SERVER -> "服务暂时不可用，已保留上次数据"
-    FailureKind.PROTOCOL -> "额度格式暂不兼容，请检查更新"
-    FailureKind.STORAGE -> "无法读取安全凭据，请重新连接账号"
+fun FailureKind.userMessage(): UiText = when (this) {
+    FailureKind.AUTH -> UiText(R.string.connection_expired_sign_in_again)
+    FailureKind.FORBIDDEN -> UiText(R.string.this_account_or_workspace_does_not_currently)
+    FailureKind.LIMITED -> UiText(R.string.too_many_requests_refresh_later)
+    FailureKind.NETWORK -> UiText(R.string.network_connection_failed_previous_data_has_been)
+    FailureKind.SERVER -> UiText(R.string.service_temporarily_unavailable_previous_data_has_been)
+    FailureKind.PROTOCOL -> UiText(R.string.quota_format_not_yet_supported_check_for)
+    FailureKind.STORAGE -> UiText(R.string.could_not_read_secure_credentials_reconnect_your)
 }
 
 fun JsonObject.obj(key: String): JsonObject? = this[key] as? JsonObject
@@ -93,13 +96,13 @@ object UsageParser {
                 val used = (window["used_percent"] as? JsonPrimitive)?.doubleOrNull?.takeIf { it.isFinite() && it in 0.0..100.0 }
                 val duration = window.long("limit_window_seconds")?.takeIf { it > 0 }
                 val name = when (duration) {
-                    604800L -> "每周额度"
-                    86400L -> "每日额度"
-                    null -> "额度窗口"
-                    else -> if (duration % 3600L == 0L) "${duration / 3600} 小时额度" else "${duration / 60} 分钟额度"
+                    604800L -> "Weekly quota"
+                    86400L -> "Daily quota"
+                    null -> "Quota window"
+                    else -> if (duration % 3600L == 0L) "${duration / 3600}-hour quota" else "${duration / 60}-minute quota"
                 }
                 windows += QuotaWindow("$prefix:$key", if (label.isNullOrBlank()) name else "$label · $name", used, duration,
-                    window.long("reset_at")?.takeIf { it > 0 } ?: window.long("reset_after_seconds")?.takeIf { it >= 0 }?.let { now + it })
+                    window.long("reset_at")?.takeIf { it > 0 } ?: window.long("reset_after_seconds")?.takeIf { it >= 0 }?.let { now + it }, label)
             }
         }
         addBucket(mainBucket, "codex")
@@ -118,18 +121,32 @@ object UsageParser {
 }
 
 fun absoluteTime(epoch: Long?, includeDate: Boolean = false): String {
-    if (epoch == null) return "暂不可用"
+    if (epoch == null) return "—"
     val format = if (includeDate) "MM/dd HH:mm" else "HH:mm"
-    return DateTimeFormatter.ofPattern(format, Locale.CHINA).withZone(ZoneId.systemDefault()).format(Instant.ofEpochSecond(epoch))
+    return DateTimeFormatter.ofPattern(format, Locale.ROOT).withZone(ZoneId.systemDefault()).format(Instant.ofEpochSecond(epoch))
 }
 
-fun resetLabel(window: QuotaWindow, now: Long = Instant.now().epochSecond): String = when {
-    window.resetsAt == null -> "重置时间暂不可用"
-    window.resetsAt <= now -> "重置待确认 · 请刷新"
-    else -> "${absoluteTime(window.resetsAt, true)} 重置"
+fun resetLabel(window: QuotaWindow, texts: TextResources, now: Long = Instant.now().epochSecond): String = when {
+    window.resetsAt == null -> texts(R.string.reset_time_unavailable)
+    window.resetsAt <= now -> texts(R.string.reset_unconfirmed_refresh_to_check)
+    else -> texts(R.string.resets_value, absoluteTime(window.resetsAt, true))
 }
 
 fun demoSnapshot(now: Long) = UsageSnapshot("demo", "plus", listOf(
-    QuotaWindow("demo:weekly", "每周额度", 38.0, 604800, now + 3 * 86400 + 18 * 3600),
-    QuotaWindow("demo:session", "5 小时额度", 64.0, 18000, now + 2 * 3600 + 14 * 60),
+    QuotaWindow("demo:weekly", "Weekly quota", 38.0, 604800, now + 3 * 86400 + 18 * 3600),
+    QuotaWindow("demo:session", "5-hour quota", 64.0, 18000, now + 2 * 3600 + 14 * 60),
 ), now, 2)
+
+/** Reconstruct built-in labels so old snapshots follow the newly selected language. */
+fun QuotaWindow.displayName(texts: TextResources): String {
+    val period = when (durationSeconds) {
+        604800L -> texts(R.string.weekly_quota)
+        86400L -> texts(R.string.daily_quota)
+        null -> texts(R.string.quota_window)
+        else -> if (durationSeconds % 3600L == 0L) texts(R.string.value_hour_quota, durationSeconds / 3600)
+            else texts(R.string.value_minute_quota, durationSeconds / 60)
+    }
+    val label = sourceLabel ?: if (!id.startsWith("codex:") && !id.startsWith("demo:") && " · " in name)
+        name.substringBeforeLast(" · ") else null
+    return if (label.isNullOrBlank()) period else "$label · $period"
+}

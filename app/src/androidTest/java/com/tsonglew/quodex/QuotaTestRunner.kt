@@ -18,6 +18,24 @@ class QuotaTestRunner : AndroidJUnitRunner() {
 }
 
 class TestQuotaApplication : QuodexApplication() {
+    override fun onCreate() {
+        // Keep existing Chinese UI assertions deterministic without changing the emulator's system UI language.
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            // The fixture starts with framework locales, so skip AndroidX's one-time
+            // legacy-file migration; it can otherwise clear the injected locale on first launch.
+            packageManager.setComponentEnabledSetting(android.content.ComponentName(this,
+                "androidx.appcompat.app.AppLocalesMetadataHolderService"),
+                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                android.content.pm.PackageManager.DONT_KILL_APP)
+            getSystemService(android.app.LocaleManager::class.java).applicationLocales = android.os.LocaleList.forLanguageTags("zh-Hans")
+        } else {
+            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(androidx.core.os.LocaleListCompat.forLanguageTags("zh-Hans"))
+            // Standalone widget smoke tests do not create an AppCompat Activity first.
+            com.tsonglew.quodex.i18n.AppLanguages.delegateInitialized()
+        }
+        super.onCreate()
+    }
+
     val updateRequests = AtomicInteger()
     @Volatile var availableUpdate: com.tsonglew.quodex.update.AppUpdate? = null
     override val updateSource = com.tsonglew.quodex.update.UpdateSource { updateRequests.incrementAndGet(); availableUpdate }

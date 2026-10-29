@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.Quodex" parent="android:style/Theme.Material.Light.NoActionBar">
+    <style name="Theme.Quodex" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">@bool/quodex_light_system_bars</item>
         <item name="android:windowLightNavigationBar">@bool/quodex_light_system_bars</item>
@@ -7,6 +7,4 @@
         <item name="android:colorAccent">@color/quodex_accent</item>
         <item name="android:windowBackground">@color/quodex_background</item>
     </style>
-    <string name="widget_description">在桌面查看 Codex 剩余额度、重置时间与最后更新时间</string>
-    <string name="slim_widget_description">2×1 横向紧凑组件，查看主要额度或账号状态与最后更新时间</string>
 </resources>

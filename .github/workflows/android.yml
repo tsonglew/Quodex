@@ -125,6 +125,8 @@ jobs:
       matrix:
         api-level: [29, 31, 35, 36, '37.0', '37.2']
         include:
+          - api-level: 36
+            ram-size: 4096M
           - api-level: '37.0'
             target: google_apis
             ram-size: 4096M

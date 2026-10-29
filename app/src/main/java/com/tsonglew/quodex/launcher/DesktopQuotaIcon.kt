@@ -1,5 +1,6 @@
 package com.tsonglew.quodex.launcher
 
+import com.tsonglew.quodex.i18n.AndroidTextResources
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -54,7 +55,7 @@ class DesktopQuotaIcon(private val app: QuodexApplication) {
                     return@withLock true
                 }
                 app.repository.initialize()
-                val content = desktopIconContent(app.repository.state.value, app.settings.read())
+                val content = desktopIconContent(app.repository.state.value, app.settings.read(), AndroidTextResources(app))
                 if (lastPublished == content) return@withLock true
                 val shortcuts = manager ?: return@withLock false
                 // Restored shortcuts may be disabled. They should still open the app after logout.
@@ -80,7 +81,7 @@ class DesktopQuotaIcon(private val app: QuodexApplication) {
             if (!status.supported) return PinIconResult.UNSUPPORTED
             val shortcut = withContext(Dispatchers.IO) {
                 app.repository.initialize()
-                shortcut(desktopIconContent(app.repository.state.value, app.settings.read()))
+                shortcut(desktopIconContent(app.repository.state.value, app.settings.read(), AndroidTextResources(app)))
             }
             val callback = PendingIntent.getBroadcast(app, 0,
                 Intent(app, DesktopIconPinnedReceiver::class.java).setAction(ACTION_PINNED),

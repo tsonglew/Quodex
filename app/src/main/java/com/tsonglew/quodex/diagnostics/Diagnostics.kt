@@ -29,7 +29,7 @@ class Diagnostics(private val file: File) {
     }
     fun report(): String = synchronized(monitor) {
         observations.report(Instant.now().epochSecond) + "\nRecent events\n" +
-            (if (file.exists()) file.readText() else "暂无诊断事件\n")
+            (if (file.exists()) file.readText() else "No diagnostic events\n")
     }
     fun clear() = synchronized(monitor) {
         observations.clear()

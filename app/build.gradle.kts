@@ -17,8 +17,9 @@ android {
         applicationId = "com.tsonglew.quodex"
         minSdk = 29
         targetSdk = 36
-        versionCode = 24
-        versionName = "0.1.0-alpha24"
+        versionCode = 25
+        versionName = "0.1.0-alpha25"
+        resourceConfigurations += listOf("en", "zh", "ja")
         testInstrumentationRunner = "com.tsonglew.quodex.QuotaTestRunner"
     }
     buildTypes {
@@ -39,6 +40,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.appcompat:appcompat:1.7.0")
     val composeBom = platform("androidx.compose:compose-bom:2025.05.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)

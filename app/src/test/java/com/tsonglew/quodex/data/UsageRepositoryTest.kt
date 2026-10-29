@@ -1,5 +1,6 @@
 package com.tsonglew.quodex.data
 
+import com.tsonglew.quodex.i18n.testTexts
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
@@ -266,7 +267,7 @@ class UsageRepositoryTest {
         val outcomes = coroutineScope { listOf(async { repository.refresh(true) }, async { repository.refresh(true) }).awaitAll() }
         assertEquals(listOf(SyncResult.SUCCESS, SyncResult.SUCCESS), outcomes)
         assertEquals(1, server.requestCount)
-        assertEquals("88", repository.state.value.snapshot!!.windows.single().percentageLabel(true))
+        assertEquals("88", repository.state.value.snapshot!!.windows.single().percentageLabel(true, testTexts))
     }
     @Test fun renderingAnInitializedSnapshotDoesNotWaitForSlowRefresh() = runBlocking {
         dao.record = SnapshotRecord(accountId = "test-account", json = AppJson.encodeToString(demoSnapshot(500).copy(accountId = "test-account")))
@@ -324,7 +325,7 @@ class UsageRepositoryTest {
         val snapshot = repository.state.value.snapshot!!
         assertTrue(snapshot.windows.isEmpty())
         assertNull(repository.state.value.failure)
-        assertEquals("当前可用", snapshot.quotaNotice()!!.title)
+        assertEquals("当前可用", snapshot.quotaNotice(testTexts)!!.title)
         assertEquals(snapshot, AppJson.decodeFromString<UsageSnapshot>(dao.record!!.json))
     }
     @Test fun logoutRejectsAnInflightResponse() = runBlocking {

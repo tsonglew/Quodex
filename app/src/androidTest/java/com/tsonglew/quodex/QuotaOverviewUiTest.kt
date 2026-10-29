@@ -94,8 +94,10 @@ class QuotaOverviewUiTest {
             compose.onNodeWithText("未提供周期额度").performScrollTo().assertIsDisplayed()
             compose.onNodeWithTag("quota-primary").assertDoesNotExist()
             compose.onNodeWithTag("quota-primary-value").assertDoesNotExist()
+            val expectedLabels = mapOf("review:primary_window" to "Review · 5 小时额度",
+                "review:secondary_window" to "Review · 每周额度", "research:primary_window" to "Research · 每日额度")
             for (window in snapshot.windows) {
-                compose.onNodeWithText(window.name).performScrollTo().assertIsDisplayed()
+                compose.onNodeWithText(expectedLabels.getValue(window.id)).performScrollTo().assertIsDisplayed()
                 compose.onNodeWithTag("quota-meter-${window.id}").performScrollTo().assertIsDisplayed()
             }
             capture("arc-review-only")

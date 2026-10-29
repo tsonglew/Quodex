@@ -1,8 +1,9 @@
 package com.tsonglew.quodex
 
+import com.tsonglew.quodex.i18n.AppLanguages
 import android.os.Bundle
 import android.content.Intent
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -15,10 +16,12 @@ import com.tsonglew.quodex.diagnostics.DiagnosticEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private val model by viewModels<MainViewModel>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppLanguages.delegateInitialized()
+        quotaApp.languageChanged()
         recordWidgetLaunch(intent)
         enableEdgeToEdge()
         setContent {

@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.ui
 
+import com.tsonglew.quodex.i18n.*
+import com.tsonglew.quodex.R
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -37,6 +39,7 @@ import com.tsonglew.quodex.data.*
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long, onReconnect: () -> Unit) {
+    val texts = localTextResources()
     val snapshot = state.snapshot ?: return
     val colors = MaterialTheme.colorScheme
     var showUpdateInfo by rememberSaveable { mutableStateOf(false) }
@@ -48,12 +51,12 @@ fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long, onReconne
     Column(Modifier.fillMaxWidth().testTag("quota-overview")) {
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("额度概览", fontSize = 21.sp, fontWeight = FontWeight.SemiBold,
+            Text(texts(R.string.quota_overview), fontSize = 21.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.semantics { heading() })
             if (state.demo) Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Visibility, null, Modifier.size(14.dp), tint = colors.onSurfaceVariant)
                 Spacer(Modifier.width(6.dp))
-                Text("示例数据 · 非真实额度", fontSize = 12.sp, color = colors.onSurfaceVariant)
+                Text(texts(R.string.sample_data_not_your_actual_quota), fontSize = 12.sp, color = colors.onSurfaceVariant)
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -74,14 +77,14 @@ fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long, onReconne
                             }
                         }
                         Text(when {
-                            state.demo -> "示例模式"
-                            state.failure != null -> "保留上次额度"
-                            state.connected -> "账号已连接"
-                            else -> "尚未连接"
+                            state.demo -> texts(R.string.demo_mode)
+                            state.failure != null -> texts(R.string.showing_last_quota)
+                            state.connected -> texts(R.string.account_connected)
+                            else -> texts(R.string.not_connected)
                         }, fontSize = 12.sp, color = colors.onSurfaceVariant)
                     }
                 }
-                snapshot.quotaNotice()?.let { notice ->
+                snapshot.quotaNotice(texts)?.let { notice ->
                     QuotaInlineNotice(notice.title, notice.description,
                         important = snapshot.limitReached == true || snapshot.allowed == false)
                 }
@@ -112,57 +115,58 @@ fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long, onReconne
         FlowRow(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.SpaceBetween,
             verticalArrangement = Arrangement.spacedBy(0.dp)) {
             Column(Modifier.padding(top = 13.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("${if (state.demo) "示例更新于" else "更新于"} ${absoluteTime(snapshot.fetchedAt, true)}",
+                Text(texts(if (state.demo) R.string.demo_updated_at else R.string.quota_updated_at, absoluteTime(snapshot.fetchedAt, true)),
                     fontSize = 12.sp, color = colors.onSurfaceVariant)
                 snapshot.resetCredits?.let {
-                    Text("$it 次重置可用", fontSize = 12.sp, color = colors.onSurfaceVariant)
+                    Text(texts(R.string.value_resets_available, it), fontSize = 12.sp, color = colors.onSurfaceVariant)
                 }
             }
             TextButton(onClick = { showUpdateInfo = true }, modifier = Modifier.testTag("quota-update-info"),
                 colors = ButtonDefaults.textButtonColors(contentColor = colors.onSurfaceVariant)) {
                 Icon(Icons.Outlined.Info, null, Modifier.size(15.dp))
                 Spacer(Modifier.width(5.dp))
-                Text("更新说明", fontSize = 12.sp)
+                Text(texts(R.string.update_details), fontSize = 12.sp)
             }
         }
         if (state.failure != null || stale) {
             Spacer(Modifier.height(8.dp))
-            QuotaInlineNotice(state.failure?.userMessage() ?: "数据较旧", "仍显示最后成功获取的额度。",
+            QuotaInlineNotice(state.failure?.userMessage()?.resolve(texts) ?: texts(R.string.older_data), texts(R.string.showing_the_last_successfully_retrieved_quota),
                 important = state.failure != null, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
             if (state.failure == FailureKind.AUTH || state.failure == FailureKind.STORAGE) {
                 TextButton(onClick = onReconnect, modifier = Modifier.testTag("quota-reconnect"),
-                    colors = ButtonDefaults.textButtonColors(contentColor = colors.primary)) { Text("重新连接") }
+                    colors = ButtonDefaults.textButtonColors(contentColor = colors.primary)) { Text(texts(R.string.reconnect)) }
             }
         }
     }
     if (showUpdateInfo) AlertDialog(onDismissRequest = { showUpdateInfo = false },
-        title = { Text("额度更新说明") },
+        title = { Text(texts(R.string.about_quota_updates)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()).testTag("quota-update-info-content"),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(if (state.demo) "当前仅用于预览，不代表你的真实额度。示例模式不会请求账号额度。"
-                    else "后台目标间隔 ${prefs.refreshMinutes} 分钟。实际刷新受系统省电与网络影响，可能延迟。")
-                Text(if (state.demo) "连接账号后，这里会显示真实额度。"
-                    else "右上角可手动刷新。更新失败时保留最后成功的数据，超过重置时间的额度需刷新确认。")
+                Text(if (state.demo) texts(R.string.this_is_a_preview_not_your_actual)
+                    else texts(R.string.target_background_interval_value_minutes_battery_settings, prefs.refreshMinutes))
+                Text(if (state.demo) texts(R.string.connect_an_account_to_see_your_actual)
+                    else texts(R.string.refresh_manually_from_the_top_right_corner))
             }
         }, confirmButton = {
             TextButton(onClick = { showUpdateInfo = false },
-                colors = ButtonDefaults.textButtonColors(contentColor = colors.primary)) { Text("知道了") }
+                colors = ButtonDefaults.textButtonColors(contentColor = colors.primary)) { Text(texts(R.string.got_it)) }
         })
 }
 
 @Composable
 private fun PrimaryQuotaWindow(window: QuotaWindow, remaining: Boolean, now: Long) {
+    val texts = localTextResources()
     val colors = MaterialTheme.colorScheme
     val value = window.displayedPercent(remaining)
     Column(Modifier.fillMaxWidth().testTag("quota-primary")) {
-        Text(window.name, fontSize = 15.sp, color = colors.onSurfaceVariant)
+        Text(window.displayName(texts), fontSize = 15.sp, color = colors.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             // Leave room for three digits, the percent sign and large system fonts.
             val numberSize = (maxWidth.value / LocalDensity.current.fontScale / 2.8f).coerceIn(28f, 48f).sp
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(window.percentageLabel(remaining), fontSize = if (value == null) 24.sp else numberSize,
+                Text(window.percentageLabel(remaining, texts), fontSize = if (value == null) 24.sp else numberSize,
                     lineHeight = if (value == null) 32.sp else numberSize * 1.12f,
                     fontWeight = FontWeight.SemiBold, color = colors.primary, letterSpacing = if (value == null) 0.sp else (-1).sp,
                     style = TextStyle(fontFeatureSettings = "tnum"),
@@ -172,7 +176,7 @@ private fun PrimaryQuotaWindow(window: QuotaWindow, remaining: Boolean, now: Lon
             }
         }
         if (value != null) {
-            Text(if (remaining) "剩余额度" else "已用额度", fontSize = 12.sp, color = colors.onSurfaceVariant)
+            Text(if (remaining) texts(R.string.remaining_quota) else texts(R.string.used_quota), fontSize = 12.sp, color = colors.onSurfaceVariant)
             Spacer(Modifier.height(18.dp))
             QuotaMeter(window, remaining, height = 8)
         } else {
@@ -186,15 +190,16 @@ private fun PrimaryQuotaWindow(window: QuotaWindow, remaining: Boolean, now: Lon
 
 @Composable
 private fun SecondaryQuotaWindow(window: QuotaWindow, remaining: Boolean, now: Long) {
+    val texts = localTextResources()
     val colors = MaterialTheme.colorScheme
     val value = window.displayedPercent(remaining)
     Column(Modifier.fillMaxWidth()) {
-        Text(window.name, fontSize = 15.sp, color = colors.onSurfaceVariant)
+        Text(window.displayName(texts), fontSize = 15.sp, color = colors.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val numberSize = (maxWidth.value / LocalDensity.current.fontScale / 2.8f).coerceIn(28f, 48f).sp
             Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(window.percentageLabel(remaining), fontSize = if (value == null) 24.sp else numberSize,
+                Text(window.percentageLabel(remaining, texts), fontSize = if (value == null) 24.sp else numberSize,
                     lineHeight = if (value == null) 32.sp else numberSize * 1.12f,
                     fontWeight = FontWeight.SemiBold, color = colors.primary,
                     letterSpacing = if (value == null) 0.sp else (-1).sp,
@@ -205,7 +210,7 @@ private fun SecondaryQuotaWindow(window: QuotaWindow, remaining: Boolean, now: L
             }
         }
         if (value != null) {
-            Text(if (remaining) "剩余额度" else "已用额度", fontSize = 12.sp, color = colors.onSurfaceVariant)
+            Text(if (remaining) texts(R.string.remaining_quota) else texts(R.string.used_quota), fontSize = 12.sp, color = colors.onSurfaceVariant)
             Spacer(Modifier.height(18.dp))
             QuotaMeter(window, remaining, height = 8)
         } else {
@@ -219,20 +224,23 @@ private fun SecondaryQuotaWindow(window: QuotaWindow, remaining: Boolean, now: L
 
 @Composable
 private fun ResetTime(window: QuotaWindow, now: Long) {
+    val texts = localTextResources()
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Icon(Icons.Outlined.Schedule, null, Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(resetLabel(window, now), fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(resetLabel(window, texts, now), fontSize = 12.sp, lineHeight = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun UnknownQuotaExplanation() {
-    Text("服务暂未提供有效的用量数据，请稍后刷新。", fontSize = 12.sp, lineHeight = 19.sp,
+    val texts = localTextResources()
+    Text(texts(R.string.the_service_has_not_provided_valid_usage), fontSize = 12.sp, lineHeight = 19.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
 private fun QuotaMeter(window: QuotaWindow, remaining: Boolean, height: Int) {
+    val texts = localTextResources()
     val value = window.displayedPercent(remaining) ?: return
     val fill = MaterialTheme.colorScheme.primary
     val track = MaterialTheme.colorScheme.surfaceVariant
@@ -242,7 +250,7 @@ private fun QuotaMeter(window: QuotaWindow, remaining: Boolean, height: Int) {
         progress.animateTo(target, tween(520, easing = FastOutSlowInEasing))
     }
     Canvas(Modifier.fillMaxWidth().height(height.dp).testTag("quota-meter-${window.id}").semantics {
-        contentDescription = "${window.name}，${if (remaining) "剩余" else "已用"} ${window.percentageLabel(remaining)}%"
+        contentDescription = texts(R.string.quota_percentage_description, window.displayName(texts), if (remaining) texts(R.string.remaining) else texts(R.string.used), window.percentageLabel(remaining, texts))
     }) {
         val radius = CornerRadius(size.height / 2)
         drawRoundRect(track, cornerRadius = radius)

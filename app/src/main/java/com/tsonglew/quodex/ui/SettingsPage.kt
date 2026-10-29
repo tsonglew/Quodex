@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.ui
 
+import com.tsonglew.quodex.i18n.*
+import com.tsonglew.quodex.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,21 +30,24 @@ import com.tsonglew.quodex.data.userMessage
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainViewModel, now: Long = java.time.Instant.now().epochSecond) {
+    val texts = localTextResources()
     val colors = MaterialTheme.colorScheme
     val updates by model.updates.collectAsStateWithLifecycle()
     var confirmLogout by rememberSaveable { mutableStateOf(false) }
     var showRefreshInfo by rememberSaveable { mutableStateOf(false) }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("设置", fontSize = 21.sp, fontWeight = FontWeight.SemiBold,
+        Text(texts(R.string.settings), fontSize = 21.sp, fontWeight = FontWeight.SemiBold,
             modifier = Modifier.semantics { heading() })
 
+        SettingsPanel { LanguageSettings() }
+
         SettingsPanel {
-            SettingsLabel("外观", Icons.Outlined.Palette)
+            SettingsLabel(texts(R.string.appearance), Icons.Outlined.Palette)
             Spacer(Modifier.height(8.dp))
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("system" to "跟随系统", "light" to "浅色", "dark" to "深色").forEach { (id, label) ->
+                listOf("system" to texts(R.string.follow_system), "light" to texts(R.string.light), "dark" to texts(R.string.dark)).forEach { (id, label) ->
                     FilterChip(shape = RoundedCornerShape(50), selected = prefs.theme == id, onClick = { model.theme(id) },
                         label = { Text(label, fontSize = 14.sp, lineHeight = 20.sp) },
                         colors = FilterChipDefaults.filterChipColors(
@@ -54,20 +59,20 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
             Spacer(Modifier.height(14.dp))
             HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.55f))
             Spacer(Modifier.height(18.dp))
-            SettingsLabel("显示方式", Icons.Outlined.Visibility)
-            PreferenceToggle("显示剩余额度", prefs.showRemaining, model::showRemaining,
+            SettingsLabel(texts(R.string.display), Icons.Outlined.Visibility)
+            PreferenceToggle(texts(R.string.show_remaining_quota), prefs.showRemaining, model::showRemaining,
                 modifier = Modifier.testTag("show-remaining-toggle"),
-                supportingText = "同步更新所有桌面小组件。")
+                supportingText = texts(R.string.updates_all_home_screen_widgets))
         }
 
         SettingsPanel {
-            SettingsLabel("后台目标间隔", Icons.Outlined.Schedule)
+            SettingsLabel(texts(R.string.target_background_interval), Icons.Outlined.Schedule)
             Spacer(Modifier.height(8.dp))
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(15L, 30L, 60L).forEach { minutes ->
                     FilterChip(shape = RoundedCornerShape(50), selected = prefs.refreshMinutes == minutes, onClick = { model.refreshMinutes(minutes) },
-                        label = { Text("$minutes 分钟", fontSize = 14.sp, lineHeight = 20.sp) },
+                        label = { Text(texts(R.string.value_min, minutes), fontSize = 14.sp, lineHeight = 20.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = colors.primaryContainer,
                             selectedLabelColor = colors.onPrimaryContainer),
@@ -75,11 +80,11 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
                 }
             }
             Spacer(Modifier.height(4.dp))
-            Text("省电或断网可能延迟刷新。", fontSize = 12.sp, lineHeight = 20.sp,
+            Text(texts(R.string.battery_saving_or_lost_connectivity_may_delay), fontSize = 12.sp, lineHeight = 20.sp,
                 color = colors.onSurfaceVariant)
             TextButton(onClick = { showRefreshInfo = true }, modifier = Modifier.heightIn(min = 48.dp)
                 .testTag("background-refresh-info"), contentPadding = PaddingValues(vertical = 10.dp)) {
-                Text("查看刷新说明", fontSize = 13.sp)
+                Text(texts(R.string.about_refresh_timing), fontSize = 13.sp)
             }
         }
 
@@ -88,24 +93,24 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
         AppUpdatesCard(updates, model::checkForUpdates, model::automaticUpdates, model::updateNotificationPermissionChanged)
 
         SettingsPanel {
-            SettingsLabel("Codex 连接", Icons.Outlined.AccountCircle)
+            SettingsLabel(texts(R.string.codex_connection), Icons.Outlined.AccountCircle)
             Spacer(Modifier.height(10.dp))
-            Text(if (state.demo) "示例模式" else if (state.connected) "已连接 · 凭据在本机加密保存" else "尚未连接",
+            Text(if (state.demo) texts(R.string.demo_mode) else if (state.connected) texts(R.string.connected_credentials_encrypted_on_device) else texts(R.string.not_connected),
                 fontSize = 13.sp, lineHeight = 20.sp, color = colors.onSurfaceVariant)
             state.failure?.let {
                 Spacer(Modifier.height(8.dp))
-                Text(it.userMessage(), fontSize = 12.sp, lineHeight = 20.sp, color = colors.error)
+                Text(it.userMessage().resolve(texts), fontSize = 12.sp, lineHeight = 20.sp, color = colors.error)
             }
             Spacer(Modifier.height(4.dp))
             TextButton(onClick = model::startLogin, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 contentPadding = PaddingValues(vertical = 10.dp)) {
-                Text(if (state.connected) "重新连接" else "连接账号", Modifier.fillMaxWidth(), fontSize = 14.sp)
+                Text(if (state.connected) texts(R.string.reconnect) else texts(R.string.connect_account), Modifier.fillMaxWidth(), fontSize = 14.sp)
             }
             if (state.connected || state.demo) TextButton(onClick = { confirmLogout = true },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("logout-button"),
                 contentPadding = PaddingValues(vertical = 10.dp),
                 colors = ButtonDefaults.textButtonColors(contentColor = colors.error)) {
-                Text(if (state.demo) "退出示例模式" else "退出并清除本机数据", Modifier.fillMaxWidth(),
+                Text(if (state.demo) texts(R.string.exit_demo_mode) else texts(R.string.sign_out_and_clear_local_data), Modifier.fillMaxWidth(),
                     fontSize = 14.sp, lineHeight = 21.sp)
             }
         }
@@ -117,26 +122,26 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
             Spacer(Modifier.height(8.dp))
             PrivacyNoticeEntry()
         }
-        Text("Quodex ${BuildConfig.VERSION_NAME}\n独立第三方工具 · 连接能力处于实验阶段\n应用仅读取额度与用量统计；登录凭据的权限可能覆盖更多能力。",
+        Text(texts(R.string.quodex_value_nindependent_third_party_tool_experimental, BuildConfig.VERSION_NAME),
             Modifier.padding(horizontal = 4.dp, vertical = 4.dp), fontSize = 12.sp,
             lineHeight = 20.sp, color = colors.onSurfaceVariant)
     }
 
     if (showRefreshInfo) AlertDialog(onDismissRequest = { showRefreshInfo = false },
-        title = { Text("后台刷新说明") },
+        title = { Text(texts(R.string.background_refresh_details)) },
         text = {
-            Text("后台刷新受系统省电与网络影响，可能延迟。持续失败时每轮最多尝试 3 次，之后等待下一周期或手动刷新。",
+            Text(texts(R.string.battery_and_network_conditions_may_delay_background),
                 modifier = Modifier.verticalScroll(rememberScrollState()), lineHeight = 24.sp)
-        }, confirmButton = { TextButton(onClick = { showRefreshInfo = false }) { Text("知道了") } })
+        }, confirmButton = { TextButton(onClick = { showRefreshInfo = false }) { Text(texts(R.string.got_it)) } })
 
     if (confirmLogout) AlertDialog(onDismissRequest = { confirmLogout = false },
-        title = { Text("清除本机连接？") },
+        title = { Text(texts(R.string.clear_local_connection)) },
         text = {
-            Text("本机凭据、额度缓存与额度后台任务将被清除，桌面小组件恢复为未连接。显示与应用更新偏好会保留。远程授权不会在此操作中撤销。",
+            Text(texts(R.string.local_credentials_quota_cache_and_background_quota),
                 modifier = Modifier.verticalScroll(rememberScrollState()))
         }, confirmButton = {
-            TextButton(onClick = { confirmLogout = false; model.logout() }, modifier = Modifier.testTag("confirm-logout")) { Text("清除") }
-        }, dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("取消") } })
+            TextButton(onClick = { confirmLogout = false; model.logout() }, modifier = Modifier.testTag("confirm-logout")) { Text(texts(R.string.clear)) }
+        }, dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text(texts(R.string.cancel)) } })
 }
 
 @Composable

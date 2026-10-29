@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.ui
 
+import com.tsonglew.quodex.i18n.*
+import com.tsonglew.quodex.R
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -27,12 +29,13 @@ import java.util.Locale
 
 @Composable
 internal fun InAppUpdateDialog(updater: InAppUpdate = LocalContext.current.quotaApp.inAppUpdate) {
+    val texts = localTextResources()
     val context = LocalContext.current
     val state by updater.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var preparing by remember { mutableStateOf(false) }
     val installer = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        updater.report("若未完成安装，可再次点击安装。")
+        updater.report(UiText(R.string.if_installation_was_not_completed_tap_install))
     }
     fun install() {
         if (preparing) return
@@ -41,63 +44,63 @@ internal fun InAppUpdateDialog(updater: InAppUpdate = LocalContext.current.quota
             try {
                 updater.installIntent()?.let { intent ->
                     try { installer.launch(intent) }
-                    catch (_: Exception) { updater.report("无法打开系统安装界面，请稍后重试。") }
+                    catch (_: Exception) { updater.report(UiText(R.string.could_not_open_the_system_installer_try)) }
                 }
             } finally { preparing = false }
         }
     }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (context.packageManager.canRequestPackageInstalls()) install()
-        else updater.report("尚未允许安装。点击安装可重新授权，已下载的安装包会保留。")
+        else updater.report(UiText(R.string.installation_is_not_yet_allowed_tap_install))
     }
     if (!state.visible) return
     AlertDialog(onDismissRequest = updater::dismiss,
-        title = { Text("更新 Quodex") },
+        title = { Text(texts(R.string.update_quodex)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()).testTag("in-app-update-dialog"),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                state.update?.let { Text("新版本 ${it.versionName}") }
+                state.update?.let { Text(texts(R.string.new_version_value, it.versionName)) }
                 when (state.stage) {
                     InstallStage.DOWNLOADING -> {
                         if (state.total > 0) {
                             val fraction = (state.received.toFloat() / state.total).coerceIn(0f, 1f)
                             LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth().testTag("update-download-progress"))
-                            Text("正在下载 ${(fraction * 100).toInt()}% · ${megabytes(state.received)} / ${megabytes(state.total)} MB")
+                            Text(texts(R.string.downloading_value_value_value_mb, (fraction * 100).toInt(), megabytes(state.received), megabytes(state.total)))
                         } else {
                             LinearProgressIndicator(Modifier.fillMaxWidth())
-                            Text("正在准备下载…")
+                            Text(texts(R.string.preparing_download))
                         }
-                        Text("可先关闭此窗口，稍后从更新入口查看进度。", fontSize = 12.sp)
+                        Text(texts(R.string.you_can_close_this_dialog_and_check), fontSize = 12.sp)
                     }
-                    InstallStage.VERIFYING -> { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("正在校验安装包…") }
+                    InstallStage.VERIFYING -> { LinearProgressIndicator(Modifier.fillMaxWidth()); Text(texts(R.string.verifying_apk)) }
                     InstallStage.READY -> {
-                        Text("安装包已下载并通过校验。")
-                        Text("点击安装后由 Android 确认更新，应用数据会保留。首次使用可能需要允许 Quodex 安装应用。", fontSize = 13.sp, lineHeight = 21.sp)
+                        Text(texts(R.string.the_apk_has_been_downloaded_and_verified))
+                        Text(texts(R.string.android_will_ask_you_to_confirm_the), fontSize = 13.sp, lineHeight = 21.sp)
                     }
                     else -> Unit
                 }
                 state.message?.let {
-                    Text(it, color = if (state.stage == InstallStage.ERROR) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    Text(it.resolve(texts), color = if (state.stage == InstallStage.ERROR) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 }
             }
         },
         confirmButton = {
             when {
-                state.busy -> TextButton(onClick = updater::dismiss) { Text("稍后查看") }
+                state.busy -> TextButton(onClick = updater::dismiss) { Text(texts(R.string.check_later)) }
                 state.stage == InstallStage.READY -> TextButton(enabled = !preparing,
                     modifier = Modifier.testTag("install-app-update"), onClick = {
                         if (context.packageManager.canRequestPackageInstalls()) install()
                         else try {
                             permission.launch(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, "package:${context.packageName}".toUri()))
-                        } catch (_: Exception) { updater.report("无法打开授权页面，请在系统设置中允许 Quodex 安装应用后重试。") }
-                    }) { Text(if (preparing) "正在准备…" else "立即安装") }
-                else -> TextButton(onClick = { state.update?.let(updater::start) }, modifier = Modifier.testTag("retry-app-update")) { Text("重新下载") }
+                        } catch (_: Exception) { updater.report(UiText(R.string.could_not_open_permission_settings_allow_quodex)) }
+                    }) { Text(if (preparing) texts(R.string.preparing) else texts(R.string.install_now)) }
+                else -> TextButton(onClick = { state.update?.let(updater::start) }, modifier = Modifier.testTag("retry-app-update")) { Text(texts(R.string.download_again)) }
             }
         },
         dismissButton = {
-            if (state.busy) TextButton(onClick = updater::cancel, modifier = Modifier.testTag("cancel-app-update")) { Text("取消下载") }
-            else TextButton(onClick = updater::dismiss) { Text("稍后") }
+            if (state.busy) TextButton(onClick = updater::cancel, modifier = Modifier.testTag("cancel-app-update")) { Text(texts(R.string.cancel_download)) }
+            else TextButton(onClick = updater::dismiss) { Text(texts(R.string.later)) }
         })
 }
 
