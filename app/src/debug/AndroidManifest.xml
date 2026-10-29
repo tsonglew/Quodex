@@ -2,6 +2,7 @@
     <queries>
         <package android:name="com.android.launcher3" />
         <package android:name="com.google.android.apps.nexuslauncher" />
+        <package android:name="com.android.systemui" />
     </queries>
     <application>
         <activity android:name=".WidgetTestHostActivity" android:exported="false" android:configChanges="locale|layoutDirection" />

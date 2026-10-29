@@ -54,8 +54,7 @@ class LocalizationDeviceTest {
                 waitForText("App language")
                 assertEquals("Weekly quota", AndroidTextResources(app)(R.string.weekly_quota))
             } finally {
-                instrumentation.runOnMainSync { AppLanguages.select("zh-Hans") }
-                instrumentation.waitForIdleSync()
+                restoreTestLanguage()
             }
         }
     }
@@ -79,29 +78,60 @@ class LocalizationDeviceTest {
                     }
                     val deadline = android.os.SystemClock.uptimeMillis() + 20_000
                     var matched = false
+                    var focused = false
+                    var requestedFocus = false
+                    var recoveredSystemDialog = false
                     var actual = emptyList<String>()
                     while (!matched && android.os.SystemClock.uptimeMillis() < deadline) {
                         host.onActivity { activity ->
-                            activity.getSystemService(android.app.ActivityManager::class.java).appTasks
-                                .firstOrNull { it.taskInfo.taskId == activity.taskId }?.moveToFront()
+                            // Request foreground once, then allow the window focus transition to settle.
+                            if (!requestedFocus) {
+                                activity.getSystemService(android.app.ActivityManager::class.java).appTasks
+                                    .firstOrNull { it.taskInfo.taskId == activity.taskId }?.let {
+                                        it.moveToFront()
+                                        requestedFocus = true
+                                    }
+                            }
                             assertEquals("The original host must survive app language changes", ids.first(), activity.widgetId)
                             actual = listOf(activity.widgetView, checkNotNull(activity.secondaryWidgetView), checkNotNull(activity.thirdWidgetView))
                                 .map { labels(it).joinToString(" | ") }
-                            matched = activity.widgetView.hasWindowFocus() && actual.all { label in it && "62%" in it }
+                            focused = activity.widgetView.hasWindowFocus()
+                            matched = focused && actual.all { label in it && "62%" in it }
+                        }
+                        if (!focused && !recoveredSystemDialog) {
+                            recoveredSystemDialog = dismissLauncherAnrOnEmulator(instrumentation)
+                            if (recoveredSystemDialog) requestedFocus = false
                         }
                         if (!matched) Thread.sleep(100)
                     }
-                    assertTrue("Every existing widget must use $tag without a test-triggered repaint: $actual", matched)
+                    if (!matched) instrumentation.uiAutomation.takeScreenshot()?.let {
+                        saveDeviceScreenshot(context, "language-widget-timeout", it)
+                    }
+                    assertTrue("Every existing widget must use $tag without a test-triggered repaint; " +
+                        "focused=$focused, recoveredSystemDialog=$recoveredSystemDialog: $actual", matched)
                     assertEquals(requests, app.usageRequests.get())
                     instrumentation.waitForIdleSync()
                     saveDeviceScreenshot(context, "language-widgets-$tag", checkNotNull(instrumentation.uiAutomation.takeScreenshot()))
                 }
             }
         } finally {
-            instrumentation.runOnMainSync { AppLanguages.select("zh-Hans"); app.languageChanged() }
+            restoreTestLanguage()
             runBlocking { ids.forEach { app.settings.deleteWidget(it) } }
             instrumentation.uiAutomation.dropShellPermissionIdentity()
         }
+    }
+
+    private fun restoreTestLanguage() {
+        instrumentation.runOnMainSync {
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                // AppCompat cannot resolve a LocaleManager after its last Activity is gone.
+                app.getSystemService(android.app.LocaleManager::class.java).applicationLocales =
+                    android.os.LocaleList.forLanguageTags("zh-Hans")
+            } else AppLanguages.select("zh-Hans")
+            app.languageChanged()
+        }
+        instrumentation.waitForIdleSync()
+        assertEquals("zh-Hans", AppLanguages.selectedTag(app))
     }
 
     private fun labels(view: android.view.View): List<String> = when (view) {
