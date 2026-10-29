@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 class WidgetConfigurationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AppLanguages.activityCreated()
+        AppLanguages.delegateInitialized()
         quotaApp.languageChanged()
         val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
         setResult(RESULT_CANCELED)

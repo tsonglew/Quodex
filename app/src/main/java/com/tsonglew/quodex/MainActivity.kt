@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     private val model by viewModels<MainViewModel>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AppLanguages.activityCreated()
+        AppLanguages.delegateInitialized()
         quotaApp.languageChanged()
         recordWidgetLaunch(intent)
         enableEdgeToEdge()

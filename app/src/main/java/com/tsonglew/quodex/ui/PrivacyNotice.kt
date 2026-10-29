@@ -25,8 +25,8 @@ internal fun PrivacyNoticeEntry() {
     TextButton(onClick = { visible = true }, modifier = Modifier.testTag("privacy-notice-button")) { Text(texts(R.string.privacy_and_data)) }
     if (visible) {
         val context = LocalContext.current
-        val notice = remember(context) {
-            context.resources.openRawResource(R.raw.privacy_notice).bufferedReader().use { it.readText() }
+        val notice = remember(context, texts.locale) {
+            AppLanguages.contextForResources(context).resources.openRawResource(R.raw.privacy_notice).bufferedReader().use { it.readText() }
         }
         AlertDialog(onDismissRequest = { visible = false }, title = { Text(texts(R.string.privacy_and_data)) }, text = {
             SelectionContainer {

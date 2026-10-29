@@ -13,7 +13,7 @@ object AppLanguages {
     val supportedTags = listOf("", "zh-Hans", "en", "ja")
     @Volatile private var delegateReady = false
 
-    fun activityCreated() { delegateReady = true }
+    fun delegateInitialized() { delegateReady = true }
 
     fun selectedTag(context: Context): String = requestedLocales(context).get(0)?.toLanguageTag().orEmpty()
 
