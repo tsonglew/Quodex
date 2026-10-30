@@ -14,6 +14,29 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 
 class SyncWorkerDeviceTest {
+    @Test fun terminalTransportAndHttpFailuresDoNotScheduleWorkerRetries() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val app = context.quotaApp as TestQuotaApplication
+        try {
+            app.repository.logout()
+            app.repository.connect(Session("test-access", "test-refresh", "test-account", Long.MAX_VALUE))
+            val cached = app.repository.state.value.snapshot
+            for ((status, transport) in listOf(404 to null, 200 to javax.net.ssl.SSLHandshakeException("Invalid test certificate"))) {
+                app.usageStatusCode = status
+                app.usageTransportFailure = transport
+                app.settings.syncResult(null, lastAttemptAt = 0)
+                val before = app.usageRequests.get()
+                val worker = TestListenableWorkerBuilder<UsageSyncWorker>(context).setInputData(workDataOf("force" to true)).build()
+                assertEquals(Result.failure(), worker.doWork())
+                assertEquals(before + 1, app.usageRequests.get())
+                assertEquals(cached, app.repository.state.value.snapshot)
+            }
+        } finally {
+            app.usageStatusCode = 200
+            app.usageTransportFailure = null
+            app.repository.logout(); app.reconcileSync()
+        }
+    }
     @Test fun transientFailuresKeepCacheStopAfterThreeAttemptsAndRecover() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val app = context.quotaApp as TestQuotaApplication

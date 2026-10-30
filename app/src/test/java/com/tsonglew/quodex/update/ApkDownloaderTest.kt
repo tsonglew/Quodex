@@ -12,6 +12,7 @@ import java.io.IOException
 import java.nio.file.Files
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
+import com.tsonglew.quodex.network.RequestRetry
 
 class ApkDownloaderTest {
     private val server = MockWebServer()
@@ -22,15 +23,17 @@ class ApkDownloaderTest {
         "https://github.com/tsonglew/Quodex/releases/download/build-42-1/Quodex-0.1.0-alpha24.apk",
         payload.length.toLong(), MessageDigest.getInstance("SHA-256").digest(payload.toByteArray()).hex())
     private lateinit var downloader: ApkDownloader
+    private lateinit var client: OkHttpClient
     private val destination get() = File(directory, "update.apk")
 
     @Before fun prepare() {
-        server.start()
+        server.start(java.net.InetAddress.getByName("127.0.0.1"), 0)
         directory = Files.createTempDirectory("quodex-download-test").toFile()
         // Keep production URL validation intact, redirect only the test transport to localhost.
-        downloader = ApkDownloader(OkHttpClient.Builder().addInterceptor { chain ->
-            chain.proceed(chain.request().newBuilder().url(server.url(chain.request().url.encodedPath)).build())
-        }.build())
+        client = OkHttpClient.Builder().addInterceptor { chain ->
+            chain.proceed(chain.request().newBuilder().url(server.url(chain.request().url.encodedPath).newBuilder().host("127.0.0.1").build()).build())
+        }.build()
+        downloader = ApkDownloader(client, requestRetry = RequestRetry(pause = {}))
     }
     @After fun cleanup() { server.shutdown(); directory.deleteRecursively() }
 
@@ -85,6 +88,72 @@ class ApkDownloaderTest {
         server.enqueue(MockResponse().setBody(payload))
         downloader.download(update, destination) { _, _ -> }
         assertEquals(payload, destination.readText())
+    }
+
+    @Test fun interruptedDownloadRestartsFromPublicUrlAndNeverAppendsPartialBytes() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(302).setHeader("Location", "https://release-assets.githubusercontent.com/old"))
+        server.enqueue(MockResponse().setBody(payload).setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY))
+        server.enqueue(MockResponse().setResponseCode(302).setHeader("Location", "https://release-assets.githubusercontent.com/fresh"))
+        server.enqueue(MockResponse().setBody(payload))
+        val progress = mutableListOf<Long>()
+        val retries = mutableListOf<Pair<Int, Long>>()
+        downloader.download(update, destination, onRetry = { attempt, wait -> retries += attempt to wait }) { bytes, _ -> progress += bytes }
+        assertEquals(payload, destination.readText())
+        assertEquals(listOf(2 to 1000L), retries)
+        assertEquals(2, progress.count { it == 0L })
+        assertEquals(4, server.requestCount)
+        val requests = List(4) { server.takeRequest() }
+        assertEquals(requests[0].path, requests[2].path)
+        assertEquals("/old", requests[1].path)
+        assertEquals("/fresh", requests[3].path)
+        requests.forEach { assertNull(it.getHeader("Range")); assertNull(it.getHeader("Authorization")) }
+        assertFalse(File(directory, "update.apk.part").exists())
+    }
+
+    @Test fun httpRetriesAreBoundedAndLeaveNoPartialFile() = runBlocking {
+        repeat(3) { server.enqueue(MockResponse().setResponseCode(503)) }
+        expectFailure { downloader.download(update, destination) { _, _ -> } }
+        assertEquals(3, server.requestCount)
+        assertTrue(directory.listFiles()!!.isEmpty())
+        server.enqueue(MockResponse().setResponseCode(502))
+        server.enqueue(MockResponse().setBody(payload))
+        downloader.download(update, destination) { _, _ -> }
+        assertEquals(payload, destination.readText())
+        assertEquals(5, server.requestCount)
+    }
+
+    @Test fun cancellingDuringBackoffStopsRetriesAndRemovesPartialFile() = runBlocking {
+        val entered = CompletableDeferred<Unit>()
+        val retrying = ApkDownloader(client, requestRetry = RequestRetry(pause = { entered.complete(Unit); awaitCancellation() }))
+        server.enqueue(MockResponse().setBody(payload).setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY))
+        val job = launch { retrying.download(update, destination) { _, _ -> } }
+        withTimeout(5000) { entered.await() }
+        job.cancelAndJoin()
+        assertEquals(1, server.requestCount)
+        assertTrue(directory.listFiles()!!.isEmpty())
+    }
+
+    @Test fun longRetryAfterBlocksNewDownloadsUntilDeadline() = runBlocking {
+        var time = 1000L
+        val retrying = ApkDownloader(client, now = { time }, requestRetry = RequestRetry(now = { time }, pause = {}))
+        server.enqueue(MockResponse().setResponseCode(429).setHeader("Retry-After", "120"))
+        repeat(2) { expectFailure { retrying.download(update, destination) { _, _ -> } } }
+        assertEquals(1, server.requestCount)
+        assertTrue(directory.listFiles()!!.isEmpty())
+        time += 120
+        server.enqueue(MockResponse().setBody(payload))
+        retrying.download(update, destination) { _, _ -> }
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test fun diskWriteFailureIsNotMistakenForNetworkInterruption() = runBlocking {
+        val partial = File(directory, "update.apk.part")
+        partial.mkdirs()
+        File(partial, "block-removal").writeText("fixture")
+        server.enqueue(MockResponse().setBody(payload))
+        expectFailure { downloader.download(update, destination) { _, _ -> } }
+        assertEquals(1, server.requestCount)
+        assertFalse(destination.exists())
     }
 
     private suspend fun expectFailure(block: suspend () -> Unit) {

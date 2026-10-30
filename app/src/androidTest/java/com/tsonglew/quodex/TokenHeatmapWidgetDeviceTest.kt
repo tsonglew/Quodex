@@ -145,6 +145,7 @@ class TokenHeatmapWidgetDeviceTest {
             app.repository.refreshTokenUsage(force = true)
             val cached = app.repository.state.value.snapshot
             val quotaRequests = app.usageRequests.get()
+            val tokenRequests = app.tokenUsageRequests.get()
             app.tokenUsageStatusCode = 503
             for (attempt in 0..2) {
                 val worker = TestListenableWorkerBuilder<TokenWidgetSyncWorker>(context)
@@ -152,6 +153,7 @@ class TokenHeatmapWidgetDeviceTest {
                 assertEquals(if (attempt < 2) Result.retry() else Result.failure(), worker.doWork())
                 assertEquals(cached, app.repository.state.value.snapshot)
                 assertEquals(quotaRequests, app.usageRequests.get())
+                assertEquals("One token request per worker attempt", tokenRequests + attempt + 1, app.tokenUsageRequests.get())
             }
         }
     }

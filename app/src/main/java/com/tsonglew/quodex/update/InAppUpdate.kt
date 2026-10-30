@@ -64,8 +64,10 @@ class InAppUpdate(
                 val cached = file.isFile && runCatching { validateDownloadedApk(context, file, target) }.isSuccess
                 if (!cached) {
                     file.delete()
-                    downloader.download(target, file) { received, total ->
-                        mutableState.update { it.copy(received = received, total = total) }
+                    downloader.download(target, file, onRetry = { attempt, wait ->
+                        mutableState.update { it.copy(received = 0, message = UiText(R.string.download_retrying, (wait + 999) / 1000, attempt, 3)) }
+                    }) { received, total ->
+                        mutableState.update { it.copy(received = received, total = total, message = if (received > 0) null else it.message) }
                     }
                 }
                 mutableState.update { it.copy(stage = InstallStage.VERIFYING) }

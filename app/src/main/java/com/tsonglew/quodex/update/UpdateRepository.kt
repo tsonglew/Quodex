@@ -2,6 +2,7 @@ package com.tsonglew.quodex.update
 
 import com.tsonglew.quodex.i18n.*
 import com.tsonglew.quodex.R
+import com.tsonglew.quodex.network.HttpFailure
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -20,6 +21,7 @@ data class SavedUpdates(
     val lastAttemptAt: Long = 0,
     val lastCheckedAt: Long = 0,
     val notifiedVersionCode: Long = 0,
+    val retryAt: Long = 0,
 )
 
 data class UpdateState(
@@ -81,6 +83,11 @@ class UpdateRepository(
                 var saved = state.value.saved
                 if (!force && !saved.enabled) return@withLock true
                 val time = now()
+                // A manual tap must also respect a server-provided cooldown.
+                if (time < saved.retryAt) {
+                    mutableState.value = state.value.copy(error = UiText(R.string.network_retry_after))
+                    return@withLock false
+                }
                 val age = time - saved.lastAttemptAt
                 if (!force && saved.lastAttemptAt > 0 && age in 0 until CHECK_INTERVAL_SECONDS) {
                     notifyAvailable(saved)
@@ -92,7 +99,7 @@ class UpdateRepository(
                 store.write(saved)
                 mutableState.value = state.value.copy(saved = saved)
                 val available = source.latest()?.takeIf { it.versionCode > installedVersionCode }
-                saved = saved.copy(available = available, lastCheckedAt = now())
+                saved = saved.copy(available = available, lastCheckedAt = now(), retryAt = 0)
                 store.write(saved)
                 mutableState.value = state.value.copy(saved = saved)
                 if (available == null) notifier.clear()
@@ -110,8 +117,15 @@ class UpdateRepository(
                     }
                 }
                 throw cancel
-            } catch (_: Exception) {
-                mutableState.value = state.value.copy(error = UiText(R.string.could_not_check_for_updates_check_your))
+            } catch (failure: Exception) {
+                val deadline = (failure as? HttpFailure)?.retryAt?.takeIf { it > now() }
+                if (deadline != null) {
+                    val saved = state.value.saved.copy(retryAt = deadline)
+                    // Keep the in-memory guard even if persisting settings fails.
+                    mutableState.value = state.value.copy(saved = saved)
+                    try { store.write(saved) } catch (cancel: CancellationException) { throw cancel } catch (_: Exception) { }
+                }
+                mutableState.value = state.value.copy(error = UiText(if (deadline != null) R.string.network_retry_after else R.string.could_not_check_for_updates_check_your))
                 false
             } finally {
                 mutableState.value = state.value.copy(checking = false)

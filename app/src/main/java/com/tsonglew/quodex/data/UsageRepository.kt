@@ -25,9 +25,10 @@ data class AppState(
     val demo: Boolean = false,
     val tokenLoading: Boolean = false,
     val tokenFailure: FailureKind? = null,
+    val tokenFailureRetryable: Boolean = false,
 )
 
-enum class SyncResult { SUCCESS, RETRY, AUTH_REQUIRED, DEFERRED, NO_ACCOUNT }
+enum class SyncResult { SUCCESS, RETRY, AUTH_REQUIRED, DEFERRED, NO_ACCOUNT, PERMANENT_FAILURE }
 
 class UsageRepository(
     private val api: CodexApi,
@@ -44,7 +45,7 @@ class UsageRepository(
     private var retryGuard: Pair<Long, Long>? = null
     // Token statistics have independent throttling and never change quota retry state.
     private data class TokenAttempt(val accountId: String, val attemptedAt: Long, val retryAt: Long = 0)
-    private data class TokenRequest(val session: Session, val previousAttempt: TokenAttempt?, val previousFailure: FailureKind?)
+    private data class TokenRequest(val session: Session, val previousAttempt: TokenAttempt?, val previousFailure: FailureKind?, val previousRetryable: Boolean)
     private var tokenAttempt: TokenAttempt? = null
     private val mutableState = MutableStateFlow(AppState())
     val state: StateFlow<AppState> = mutableState
@@ -146,7 +147,7 @@ class UsageRepository(
         }
     }
 
-    suspend fun refresh(force: Boolean = false): SyncResult = withContext(Dispatchers.IO) {
+    suspend fun refresh(force: Boolean = false, retryNetwork: Boolean = true): SyncResult = withContext(Dispatchers.IO) {
         val started = System.nanoTime()
         diagnostics?.record(DiagnosticEvent.REFRESH_START, if (force) 1 else 0)
         initialize()
@@ -188,13 +189,13 @@ class UsageRepository(
                     if (ticket != generation.get()) return@withLock SyncResult.NO_ACCOUNT
                     vault.write(active)
                 }
-                val fetched = try { api.usage(active) } catch (failure: ApiFailure) {
+                val fetched = try { api.usage(active, retryNetwork) } catch (failure: ApiFailure) {
                     if (failure.kind != FailureKind.AUTH) throw failure
                     diagnostics?.record(DiagnosticEvent.RENEW)
                     active = api.renew(active)
                     if (ticket != generation.get()) return@withLock SyncResult.NO_ACCOUNT
                     vault.write(active)
-                    api.usage(active)
+                    api.usage(active, retryNetwork)
                 }
                 if (ticket != generation.get()) return@withLock SyncResult.NO_ACCOUNT
                 val snapshot = fetched.copy(tokenUsage = mutableState.value.snapshot
@@ -227,7 +228,11 @@ class UsageRepository(
                     }
                     mutableState.update { it.copy(failure = failure.kind) }
                 }
-                if (failure.kind in listOf(FailureKind.AUTH, FailureKind.FORBIDDEN, FailureKind.PROTOCOL)) SyncResult.AUTH_REQUIRED else SyncResult.RETRY
+                when {
+                    failure.kind in listOf(FailureKind.AUTH, FailureKind.FORBIDDEN, FailureKind.PROTOCOL) -> SyncResult.AUTH_REQUIRED
+                    failure.retryable -> SyncResult.RETRY
+                    else -> SyncResult.PERMANENT_FAILURE
+                }
             } catch (_: Exception) {
                 if (ticket == generation.get()) mutableState.update { it.copy(failure = FailureKind.STORAGE) }
                 SyncResult.RETRY
@@ -240,7 +245,7 @@ class UsageRepository(
     }
 
     /** Optional token statistics keep their own cache, throttling and failure state. */
-    suspend fun refreshTokenUsage(force: Boolean = false) = withContext(Dispatchers.IO) {
+    suspend fun refreshTokenUsage(force: Boolean = false, retryNetwork: Boolean = true) = withContext(Dispatchers.IO) {
         initialize()
         val ticket = generation.get()
         tokenLock.withLock tokenRefresh@ {
@@ -251,7 +256,7 @@ class UsageRepository(
                 val session = try { vault.read() } catch (cancel: CancellationException) {
                     throw cancel
                 } catch (_: Exception) {
-                    mutableState.update { it.copy(tokenFailure = FailureKind.STORAGE) }
+                    mutableState.update { it.copy(tokenFailure = FailureKind.STORAGE, tokenFailureRetryable = true) }
                     return@prepare null
                 }
                 if (session == null || session.accountId != snapshot.accountId) return@prepare null
@@ -259,7 +264,7 @@ class UsageRepository(
                 val previous = tokenAttempt?.takeIf { it.accountId == session.accountId }
                 // Even explicit retries obey a token service Retry-After deadline.
                 if (previous != null && time < previous.retryAt) {
-                    mutableState.update { it.copy(tokenFailure = FailureKind.LIMITED) }
+                    mutableState.update { it.copy(tokenFailure = FailureKind.LIMITED, tokenFailureRetryable = true) }
                     return@prepare null
                 }
                 if (!force) {
@@ -267,27 +272,27 @@ class UsageRepository(
                     if (previous != null && time - previous.attemptedAt in 0L until 60L) return@prepare null
                 }
                 tokenAttempt = TokenAttempt(session.accountId, time)
-                mutableState.update { it.copy(tokenLoading = true, tokenFailure = null) }
-                TokenRequest(session, previous, state.tokenFailure)
+                mutableState.update { it.copy(tokenLoading = true, tokenFailure = null, tokenFailureRetryable = false) }
+                TokenRequest(session, previous, state.tokenFailure, state.tokenFailureRetryable)
             } ?: return@tokenRefresh
             fun isCurrent() = ticket == generation.get() && mutableState.value.connected && !mutableState.value.demo &&
                 mutableState.value.snapshot?.accountId == request.session.accountId
             try {
                 // Do not independently rotate refresh credentials alongside the quota request.
-                val tokens = api.tokenUsage(request.session)
+                val tokens = api.tokenUsage(request.session, retryNetwork)
                 lock.withLock commit@ {
                     if (!isCurrent()) return@commit
                     // A quota request may have completed while the token request was in flight.
                     val snapshot = mutableState.value.snapshot!!.copy(tokenUsage = tokens)
                     dao.write(SnapshotRecord(accountId = snapshot.accountId, json = AppJson.encodeToString(snapshot)))
-                    if (isCurrent()) mutableState.update { it.copy(snapshot = snapshot, tokenFailure = null) }
+                    if (isCurrent()) mutableState.update { it.copy(snapshot = snapshot, tokenFailure = null, tokenFailureRetryable = false) }
                 }
             } catch (cancel: CancellationException) {
                 withContext(NonCancellable) {
                     lock.withLock {
                         if (isCurrent()) {
                             tokenAttempt = request.previousAttempt
-                            mutableState.update { it.copy(tokenFailure = request.previousFailure) }
+                            mutableState.update { it.copy(tokenFailure = request.previousFailure, tokenFailureRetryable = request.previousRetryable) }
                         }
                     }
                 }
@@ -295,13 +300,13 @@ class UsageRepository(
             } catch (failure: ApiFailure) {
                 lock.withLock {
                     if (isCurrent()) {
-                        if (failure.kind == FailureKind.LIMITED) tokenAttempt = tokenAttempt?.copy(retryAt = failure.retryAt ?: now() + 60)
-                        mutableState.update { it.copy(tokenFailure = failure.kind) }
+                        failure.retryAt?.let { tokenAttempt = tokenAttempt?.copy(retryAt = it) }
+                        mutableState.update { it.copy(tokenFailure = failure.kind, tokenFailureRetryable = failure.retryable) }
                     }
                 }
             } catch (_: Exception) {
                 lock.withLock {
-                    if (isCurrent()) mutableState.update { it.copy(tokenFailure = FailureKind.STORAGE) }
+                    if (isCurrent()) mutableState.update { it.copy(tokenFailure = FailureKind.STORAGE, tokenFailureRetryable = true) }
                 }
             } finally {
                 withContext(NonCancellable) {

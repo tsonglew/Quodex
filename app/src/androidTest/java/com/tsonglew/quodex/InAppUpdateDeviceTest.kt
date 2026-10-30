@@ -28,6 +28,37 @@ class InAppUpdateDeviceTest {
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
 
+    @Test fun downloadRetryShowsAttemptAndCanBeCancelledDuringBackoff() = runBlocking {
+        val fixture = File(context.applicationInfo.sourceDir)
+        val candidate = metadata(fixture, BuildConfig.VERSION_CODE + 1L)
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val entered = CompletableDeferred<Unit>()
+        val requests = java.util.concurrent.atomic.AtomicInteger()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            requests.incrementAndGet()
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(503).message("Transient fixture")
+                .body("".toResponseBody()).build()
+        }.build()
+        val updater = InAppUpdate(context, scope, UpdateSource { candidate }, ApkDownloader(client,
+            requestRetry = com.tsonglew.quodex.network.RequestRetry(pause = { entered.complete(Unit); awaitCancellation() })))
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                scenario.onActivity { it.setContent { QuotaTheme { InAppUpdateDialog(updater) } } }
+                updater.start(candidate)
+                withTimeout(5000) { entered.await() }
+                compose.onNodeWithTag("download-retry-message").assertIsDisplayed().assertTextContains("2/3", substring = true)
+                saveDeviceScreenshot(context, "in-app-update-retry", compose.onNode(isDialog()).captureToImage().asAndroidBitmap())
+                compose.onNodeWithTag("cancel-app-update").performClick()
+                withTimeout(5000) { while (updater.state.value.busy) delay(20) }
+                assertEquals(InstallStage.IDLE, updater.state.value.stage)
+                compose.onNodeWithTag("download-retry-message").assertDoesNotExist()
+                assertEquals(1, requests.get())
+                assertTrue(File(context.cacheDir, "updates").listFiles().orEmpty().none { it.extension == "part" })
+            }
+        } finally { updater.cancel(); scope.cancel() }
+        Unit
+    }
+
     @Test fun providerSharesOnlyTheUpdateDirectoryAndVerifierRejectsExistingVersion() {
         val installed = File(context.applicationInfo.sourceDir)
         val copy = File(context.cacheDir, "updates/provider-test.apk").apply { parentFile!!.mkdirs(); installed.copyTo(this, true) }
@@ -54,7 +85,10 @@ class InAppUpdateDeviceTest {
         val fixture = File(requireNotNull(path))
         val candidate = metadata(fixture, BuildConfig.VERSION_CODE + 1L)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val requests = java.util.concurrent.atomic.AtomicInteger()
         val client = OkHttpClient.Builder().addInterceptor { chain ->
+            if (requests.incrementAndGet() == 1) return@addInterceptor Response.Builder().request(chain.request())
+                .protocol(Protocol.HTTP_1_1).code(503).message("Transient fixture").body("".toResponseBody()).build()
             Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("Fixture")
                 .body(fixture.readBytes().toResponseBody("application/vnd.android.package-archive".toMediaType())).build()
         }.build()
@@ -64,6 +98,7 @@ class InAppUpdateDeviceTest {
             updater.dismiss()
             withTimeout(10_000) { while (updater.state.value.busy) delay(20) }
             assertEquals(updater.state.value.message?.toString(), InstallStage.READY, updater.state.value.stage)
+            assertEquals("Transient failure retries before APK verification", 2, requests.get())
             assertFalse(updater.state.value.visible)
             updater.start(candidate)
             assertTrue(updater.state.value.visible)

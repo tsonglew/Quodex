@@ -19,18 +19,21 @@ class UsageSyncWorker(context: Context, params: WorkerParameters) : CoroutineWor
             }
         }
         app.diagnostics.record(DiagnosticEvent.WORK_START, runAttemptCount.toLong())
-        val outcome = app.repository.refresh(inputData.getBoolean("force", false))
+        // WorkManager owns this operation's retry budget; do not nest HTTP retries.
+        val outcome = app.repository.refresh(inputData.getBoolean("force", false), retryNetwork = false)
         app.diagnostics.record(DiagnosticEvent.WORK_END, outcome.ordinal.toLong())
         app.updateWidgets()
-        if (app.hasTokenHeatmapWidgets()) {
+        if (app.hasTokenHeatmapWidgets() && app.repository.state.value.snapshot != null) {
             // The token repository has its own hourly cache and Retry-After policy.
             // Render quota first so an optional statistics request cannot hold it up.
-            app.repository.refreshTokenUsage()
+            val tokenOutcome = com.tsonglew.quodex.widget.refreshTokenWidget(applicationContext, force = false)
+            if (tokenOutcome == SyncResult.RETRY || tokenOutcome == SyncResult.DEFERRED) SyncScheduler.refreshTokens(applicationContext, force = false)
             app.updateWidgets()
         }
         val retry = outcome == SyncResult.RETRY || outcome == SyncResult.DEFERRED && inputData.getBoolean("force", false)
         // Bound this work cycle; a later periodic cycle or explicit user action can try again.
         return when {
+            outcome == SyncResult.PERMANENT_FAILURE -> Result.failure()
             !retry -> Result.success()
             runAttemptCount < 2 -> Result.retry()
             else -> Result.failure()
@@ -42,6 +45,7 @@ class TokenWidgetSyncWorker(context: Context, params: WorkerParameters) : Corout
     override suspend fun doWork(): Result {
         val outcome = com.tsonglew.quodex.widget.refreshTokenWidget(applicationContext, inputData.getBoolean("force", false))
         applicationContext.quotaApp.updateWidgets()
+        if (outcome == SyncResult.PERMANENT_FAILURE) return Result.failure()
         return if (outcome == SyncResult.RETRY || outcome == SyncResult.DEFERRED) {
             if (runAttemptCount < 2) Result.retry() else Result.failure()
         } else Result.success()

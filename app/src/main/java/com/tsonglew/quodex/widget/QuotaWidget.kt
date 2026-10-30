@@ -411,7 +411,7 @@ class RefreshWidgetAction : ActionCallback {
         val app = context.quotaApp
         app.repository.initialize()
         refreshFromWidget(
-            refresh = { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.diagnostics.record(com.tsonglew.quodex.diagnostics.DiagnosticEvent.WIDGET_CLICK) }; app.repository.refresh(force = true) },
+            refresh = { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.diagnostics.record(com.tsonglew.quodex.diagnostics.DiagnosticEvent.WIDGET_CLICK) }; app.repository.refresh(force = true, retryNetwork = false) },
             enqueue = { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { SyncScheduler.refresh(context).result.get() } },
             update = { app.updateWidgets() },
         )

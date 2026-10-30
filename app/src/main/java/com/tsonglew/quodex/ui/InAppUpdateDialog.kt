@@ -81,7 +81,8 @@ internal fun InAppUpdateDialog(updater: InAppUpdate = LocalContext.current.quota
                 }
                 state.message?.let {
                     Text(it.resolve(texts), color = if (state.stage == InstallStage.ERROR) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+                        modifier = Modifier.testTag(if (state.stage == InstallStage.DOWNLOADING) "download-retry-message" else "update-message")
+                            .semantics { liveRegion = LiveRegionMode.Polite })
                 }
             }
         },

@@ -61,7 +61,7 @@ data class Session(
 }
 
 enum class FailureKind { AUTH, FORBIDDEN, LIMITED, NETWORK, SERVER, PROTOCOL, STORAGE }
-class ApiFailure(val kind: FailureKind, val retryAt: Long? = null) : Exception(kind.name)
+class ApiFailure(val kind: FailureKind, val retryAt: Long? = null, val retryable: Boolean = kind == FailureKind.NETWORK) : Exception(kind.name)
 
 fun FailureKind.userMessage(): UiText = when (this) {
     FailureKind.AUTH -> UiText(R.string.connection_expired_sign_in_again)

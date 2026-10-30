@@ -14,7 +14,7 @@ class CodexApiTest {
     private val server = MockWebServer()
     private lateinit var api: CodexApi
     private val session = Session("access", "refresh", "test-account", 2000)
-    @Before fun start() { server.start(); api = CodexApi(authBase = server.url("/").toString().trimEnd('/'), usageUrl = server.url("/usage").toString(), now = { 1000 }) }
+    @Before fun start() { server.start(); api = CodexApi(requestRetry = com.tsonglew.quodex.network.RequestRetry(maxAttempts = 1), authBase = server.url("/").toString().trimEnd('/'), usageUrl = server.url("/usage").toString(), now = { 1000 }) }
     @After fun stop() { server.shutdown() }
     @Test fun usageSendsCredentialsOnlyInHeaders() = runBlocking {
         server.enqueue(MockResponse().setBody("""{"rate_limit":{"primary_window":{"used_percent":12}}}"""))
@@ -28,7 +28,7 @@ class CodexApiTest {
         val directory = java.nio.file.Files.createTempDirectory("quota-api-diagnostics").toFile()
         try {
             val diagnostics = com.tsonglew.quodex.diagnostics.Diagnostics(java.io.File(directory, "events.log"))
-            val instrumented = CodexApi(usageUrl = server.url("/private-usage-path").toString(), diagnostics = diagnostics)
+            val instrumented = CodexApi(requestRetry = com.tsonglew.quodex.network.RequestRetry(maxAttempts = 1), usageUrl = server.url("/private-usage-path").toString(), diagnostics = diagnostics)
             server.enqueue(MockResponse().setResponseCode(503).setBody("sensitive-response-body"))
             try { instrumented.usage(Session("secret-access", "secret-refresh", "secret-account", 2000)); fail() }
             catch (error: ApiFailure) { assertEquals(FailureKind.SERVER, error.kind) }

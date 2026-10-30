@@ -346,4 +346,6 @@
     <string name="token_heatmap_widget_description">"サービス側の日付で 30 日分を GitHub のコントリビューショングラフ風に表示。4×3 でサイズ変更と更新に対応し、グラフをタップすると 30 日表示が開きます。"</string>
     <string name="add_token_heatmap_widget">"ヒートマップを追加"</string>
     <string name="token_heatmap_known_days_short">"%1$s/%2$s 日"</string>
+    <string name="download_retrying">"ダウンロードが中断されました。%1$s 秒後に再試行します（%2$s/%3$s 回目）…"</string>
+    <string name="network_retry_after">"サーバーから待機を求められました。しばらくしてから再試行してください。"</string>
 </resources>

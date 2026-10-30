@@ -12,6 +12,8 @@ import org.junit.Before
 import org.junit.Test
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import com.tsonglew.quodex.network.RequestRetry
+import com.tsonglew.quodex.network.HttpFailure
 
 class GitHubUpdateClientTest {
     private val server = MockWebServer()
@@ -20,12 +22,13 @@ class GitHubUpdateClientTest {
     private lateinit var api: GitHubUpdateClient
 
     @Before fun start() {
-        server.start()
+        server.start(java.net.InetAddress.getByName("127.0.0.1"), 0)
         api = checker()
     }
     @After fun stop() { server.shutdown() }
 
     private fun checker(client: OkHttpClient = OkHttpClient()) = GitHubUpdateClient(
+        requestRetry = com.tsonglew.quodex.network.RequestRetry(maxAttempts = 1),
         installedVersionCode = 20, signingCertificateSha256 = certificate.uppercase().chunked(2).joinToString(":"),
         client = client, apiUrl = server.url("/releases?per_page=100"))
 
@@ -59,6 +62,57 @@ class GitHubUpdateClientTest {
         server.enqueue(MockResponse().setBody(JsonArray(releases.toList()).toString()).apply {
             if (link != null) addHeader("Link", link)
         })
+    }
+
+    @Test fun retriesOnlyTheFailedPageAndStillSelectsNewestRelease() = runBlocking {
+        val waits = mutableListOf<Long>()
+        val retrying = GitHubUpdateClient(20, certificate, apiUrl = server.url("/releases?per_page=100"),
+            requestRetry = RequestRetry(pause = { waits += it }))
+        enqueue(release(), link = "<${server.url("/releases?per_page=100&page=2")}>; rel=\"next\"")
+        server.enqueue(MockResponse().setResponseCode(503))
+        enqueue(release(25))
+        assertEquals(25L, retrying.latest()!!.versionCode)
+        assertEquals(listOf(1000L), waits)
+        assertEquals("/releases?per_page=100", server.takeRequest().path)
+        repeat(2) { assertEquals("/releases?per_page=100&page=2", server.takeRequest().path) }
+    }
+
+    @Test fun rateLimited403WaitsButPermission403AndMalformedResponsesDoNotRetry() = runBlocking {
+        var time = 1000L
+        val waits = mutableListOf<Long>()
+        val retrying = GitHubUpdateClient(20, certificate, apiUrl = server.url("/releases?per_page=100"), now = { time },
+            requestRetry = RequestRetry(now = { time }, pause = { waits += it; time += it / 1000 }))
+        server.enqueue(MockResponse().setResponseCode(403).setHeader("X-RateLimit-Remaining", "0").setHeader("X-RateLimit-Reset", "1005"))
+        enqueue(release())
+        assertNotNull(retrying.latest())
+        server.enqueue(MockResponse().setResponseCode(403))
+        assertTrue(runCatching { retrying.latest() }.exceptionOrNull() is HttpFailure)
+        server.enqueue(MockResponse().setBody("not json"))
+        assertTrue(runCatching { retrying.latest() }.exceptionOrNull() is IOException)
+        assertEquals(listOf(5000L), waits)
+        assertEquals(4, server.requestCount)
+    }
+
+    @Test fun failedCheckHasBoundedRequestsAndLongLimitBlocksRepeatedManualAttempts() = runBlocking {
+        val retrying = GitHubUpdateClient(20, certificate, apiUrl = server.url("/releases?per_page=100"), now = { 1000 },
+            requestRetry = RequestRetry(now = { 1000 }, pause = {}))
+        repeat(3) { server.enqueue(MockResponse().setResponseCode(502)) }
+        assertTrue(runCatching { retrying.latest() }.exceptionOrNull() is HttpFailure)
+        assertEquals(3, server.requestCount)
+        server.enqueue(MockResponse().setResponseCode(429).setHeader("Retry-After", "120"))
+        repeat(2) { assertEquals(1120L, (runCatching { retrying.latest() }.exceptionOrNull() as HttpFailure).retryAt) }
+        assertEquals(4, server.requestCount)
+    }
+
+    @Test fun cancellingRetryWaitDoesNotIssueAnotherRequest() = runBlocking {
+        val entered = CompletableDeferred<Unit>()
+        val retrying = GitHubUpdateClient(20, certificate, apiUrl = server.url("/releases?per_page=100"),
+            requestRetry = RequestRetry(pause = { entered.complete(Unit); awaitCancellation() }))
+        server.enqueue(MockResponse().setResponseCode(503))
+        val job = launch { retrying.latest() }
+        withTimeout(5000) { entered.await() }
+        job.cancelAndJoin()
+        assertEquals(1, server.requestCount)
     }
 
     @Test fun selectsHighestCodeAmongPrereleasesRegardlessOfListOrder() = runBlocking {

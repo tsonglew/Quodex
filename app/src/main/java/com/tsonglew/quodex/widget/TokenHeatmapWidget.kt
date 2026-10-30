@@ -146,10 +146,11 @@ internal suspend fun refreshTokenWidget(context: Context, force: Boolean = true)
     repository.initialize()
     if (repository.state.value.let { !it.connected || it.demo || it.tokenLoading }) return SyncResult.SUCCESS
     if (repository.state.value.snapshot == null) {
-        val outcome = repository.refresh()
+        val outcome = repository.refresh(retryNetwork = false)
         if (repository.state.value.snapshot == null) return outcome
     }
-    repository.refreshTokenUsage(force = force)
+    repository.refreshTokenUsage(force = force, retryNetwork = false)
+    if (repository.state.value.let { it.tokenFailure != null && !it.tokenFailureRetryable }) return SyncResult.PERMANENT_FAILURE
     return when (repository.state.value.tokenFailure) {
         FailureKind.NETWORK, FailureKind.SERVER, FailureKind.STORAGE -> SyncResult.RETRY
         FailureKind.LIMITED -> SyncResult.DEFERRED

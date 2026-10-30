@@ -20,7 +20,7 @@ class TokenUsageApiTest {
     private lateinit var api: CodexApi
     @Before fun start() {
         server.start()
-        api = CodexApi(tokenUsageUrl = server.url("/backend-api/wham/profiles/me").toString(), now = { 1000 })
+        api = CodexApi(requestRetry = com.tsonglew.quodex.network.RequestRetry(maxAttempts = 1), tokenUsageUrl = server.url("/backend-api/wham/profiles/me").toString(), now = { 1000 })
     }
     @After fun stop() { server.shutdown() }
 
@@ -77,7 +77,7 @@ class TokenUsageApiTest {
         val directory = Files.createTempDirectory("token-api-test").toFile()
         try {
             val diagnostics = Diagnostics(File(directory, "events.log"))
-            val instrumented = CodexApi(tokenUsageUrl = server.url("/private-profile-path").toString(), diagnostics = diagnostics)
+            val instrumented = CodexApi(requestRetry = com.tsonglew.quodex.network.RequestRetry(maxAttempts = 1), tokenUsageUrl = server.url("/private-profile-path").toString(), diagnostics = diagnostics)
             server.enqueue(MockResponse().setBody("""{"profile":{"display_name":"private-name"},"stats":{"lifetime_tokens":123456789}}"""))
             instrumented.tokenUsage(session)
             val report = diagnostics.report()
@@ -91,7 +91,7 @@ class TokenUsageApiTest {
 
     @Test fun cancellationPropagatesAndStopsTheHttpCall() = runBlocking {
         val client = OkHttpClient()
-        val instrumented = CodexApi(client = client, tokenUsageUrl = server.url("/profiles/me").toString())
+        val instrumented = CodexApi(requestRetry = com.tsonglew.quodex.network.RequestRetry(maxAttempts = 1), client = client, tokenUsageUrl = server.url("/profiles/me").toString())
         server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
         val pending = async { instrumented.tokenUsage(session) }
         withContext(Dispatchers.IO) { assertNotNull(server.takeRequest(5, TimeUnit.SECONDS)) }

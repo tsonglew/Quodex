@@ -82,9 +82,8 @@ class AndroidUpdateNotifier(private val context: Context) : UpdateNotifier {
 class AppUpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         return try {
-            // A failed check waits for the next period; manual checking is always available.
-            applicationContext.quotaApp.updates.check()
-            Result.success()
+            // The HTTP client retries within this check. Do not multiply that budget here.
+            if (applicationContext.quotaApp.updates.check()) Result.success() else Result.failure()
         } catch (cancel: CancellationException) { throw cancel }
         catch (_: Exception) { Result.failure() }
     }
