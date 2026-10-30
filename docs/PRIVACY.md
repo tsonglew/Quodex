@@ -4,6 +4,7 @@
 
 | 数据／行为 | 实现证据 |
 | --- | --- |
+| 网络重试 | `network/RequestRetry.kt`：额度、Token、更新检查和下载的临时失败最多尝试 3 次，后台任务单独限制次数并关闭内部重试；遵守服务端等待要求。更新限流截止时间写入本地设置。下载重新获取公开地址并从头下载，可能增加流量；不新增请求域名或上传内容。详见[重试规则](NETWORK_RETRIES.md)。 |
 | 应用语言 | `i18n/AppLanguages.kt`：Android 13+ 使用系统应用语言，旧版本由 AndroidX 在本机保存选择；语言偏好不随额度或更新请求发送。 |
 | 版本检查与通知 | `update/GitHubUpdateClient.kt`：独立客户端访问 api.github.com 的公开 Releases，不携带账号、令牌或设备标识；签名比较在本机完成。默认开启目标 12 小时检查，设置可关闭；`AndroidUpdates.kt` 使用 WorkManager 和本机通知，点击打开 App；用户主动下载后由 `ApkDownloader.kt` 通过独立公共客户端获取 APK，校验哈希、包名、版本和签名，`InAppUpdate.kt` 通过仅暴露 updates 缓存目录的 FileProvider 调起系统安装确认。安装包不含账号数据，取消／失败会删除未完成文件；无静默安装。`UpdateRepository.kt` 与独立 DataStore 保存公开版本缓存、时间和提醒去重；退出账号保留这些偏好。 |
 | 授权、续期、额度请求域名及携带信息 | `CodexApi.kt`：authBase、usageUrl、设备码／令牌请求、Authorization／ChatGPT-Account-Id headers；没有聊天生成调用 |

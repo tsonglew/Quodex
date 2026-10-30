@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.data
 
+import com.tsonglew.quodex.network.*
+
 import com.tsonglew.quodex.diagnostics.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.*
@@ -8,10 +10,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.time.Instant
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -28,6 +29,7 @@ class CodexApi(
     private val now: () -> Long = { Instant.now().epochSecond },
     private val diagnostics: Diagnostics? = null,
     private val tokenUsageUrl: String = "https://chatgpt.com/backend-api/wham/profiles/me",
+    private val requestRetry: RequestRetry = RequestRetry(now = now),
 ) {
     companion object {
         // Public client identifier from openai/codex; not a client secret.
@@ -36,6 +38,8 @@ class CodexApi(
     }
 
     private data class Reply(val status: Int, val body: String, val retryAfter: String?)
+    private val usageCooldown = AtomicReference<Pair<String, ApiFailure>?>(null)
+    private val tokenCooldown = AtomicReference<Pair<String, ApiFailure>?>(null)
     private suspend fun send(request: Request): Reply = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         suspendCancellableCoroutine { cont ->
             val operation = when (request.url.toString()) {
@@ -51,21 +55,25 @@ class CodexApi(
             call.enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     diagnostics?.record(DiagnosticEvent.HTTP_NETWORK_FAILURE, operation, if (call.isCanceled()) 1 else 0)
-                    if (cont.isActive) cont.resumeWithException(ApiFailure(FailureKind.NETWORK))
+                    if (cont.isActive) cont.resumeWithException(ApiFailure(FailureKind.NETWORK, retryable = isTransientTransport(e)))
                 }
                 override fun onResponse(call: Call, response: Response) {
                     diagnostics?.record(DiagnosticEvent.HTTP_END, operation, response.code.toLong(), (System.nanoTime() - started) / 1_000_000)
                     response.use {
                         try {
+                            if (!it.isSuccessful) {
+                                if (cont.isActive) cont.resume(Reply(it.code, "", it.header("Retry-After")))
+                                return
+                            }
                             val body = it.body ?: throw ApiFailure(FailureKind.PROTOCOL)
                             val source = body.source()
                             source.request(512 * 1024 + 1L)
                             if (source.buffer.size > 512 * 1024) throw ApiFailure(FailureKind.PROTOCOL)
                             val reply = Reply(it.code, source.readUtf8(), it.header("Retry-After"))
                             if (cont.isActive) cont.resume(reply)
-                        } catch (_: IOException) {
+                        } catch (failure: IOException) {
                             diagnostics?.record(DiagnosticEvent.HTTP_NETWORK_FAILURE, operation, if (call.isCanceled()) 1 else 0)
-                            if (cont.isActive) cont.resumeWithException(ApiFailure(FailureKind.NETWORK))
+                            if (cont.isActive) cont.resumeWithException(ApiFailure(FailureKind.NETWORK, retryable = isTransientTransport(failure)))
                         } catch (_: Exception) {
                             if (cont.isActive) cont.resumeWithException(ApiFailure(FailureKind.PROTOCOL))
                         }
@@ -81,12 +89,12 @@ class CodexApi(
             400 -> if (tokenEndpoint) FailureKind.AUTH else FailureKind.PROTOCOL
             401 -> FailureKind.AUTH
             403 -> FailureKind.FORBIDDEN
+            408 -> FailureKind.NETWORK
             429 -> FailureKind.LIMITED
             else -> FailureKind.SERVER
         }
-        val retry = reply.retryAfter?.toLongOrNull()?.let { now() + it.coerceAtLeast(0) }
-            ?: runCatching { ZonedDateTime.parse(reply.retryAfter, DateTimeFormatter.RFC_1123_DATE_TIME).toEpochSecond() }.getOrNull()
-        throw ApiFailure(kind, if (kind == FailureKind.LIMITED) retry ?: now() + 60 else null)
+        val retry = retryAfterAt(reply.retryAfter, now()) ?: if (kind == FailureKind.LIMITED) now() + 60 else null
+        throw ApiFailure(kind, retry, reply.status in setOf(408, 429, 500, 502, 503, 504))
     }
 
     private fun obj(raw: String): JsonObject = try { AppJson.parseToJsonElement(raw).jsonObject }
@@ -141,17 +149,32 @@ class CodexApi(
             previous?.clientId ?: CLIENT_ID)
     }
 
-    suspend fun usage(session: Session): UsageSnapshot {
-        val reply = send(Request.Builder().url(usageUrl).header("Authorization", "Bearer ${session.accessToken}")
-            .header("ChatGPT-Account-Id", session.accountId).get().build())
-        return UsageParser.parse(check(reply), session.accountId, now())
+    private fun retryDirective(failure: Exception): RetryDirective? =
+        (failure as? ApiFailure)?.takeIf { it.retryable }?.let { RetryDirective(it.retryAt) }
+
+    private suspend fun <T> retryRead(session: Session, retryNetwork: Boolean,
+        cooldown: AtomicReference<Pair<String, ApiFailure>?>, read: suspend () -> T): T = requestRetry.run(retryNetwork, ::retryDirective) {
+        cooldown.get()?.takeIf { it.first == session.accountId && (it.second.retryAt ?: 0) > now() }?.let { throw it.second }
+        try { read() } catch (failure: ApiFailure) {
+            // Cancellation during the delay must not let the next tap bypass Retry-After.
+            if (failure.retryable && failure.retryAt != null) cooldown.set(session.accountId to failure)
+            throw failure
+        }
     }
 
-    suspend fun tokenUsage(session: Session): TokenUsageSnapshot = kotlinx.coroutines.withTimeoutOrNull(10_000) {
+    suspend fun usage(session: Session, retryNetwork: Boolean = true): UsageSnapshot = retryRead(session, retryNetwork, usageCooldown) {
+        val reply = send(Request.Builder().url(usageUrl).header("Authorization", "Bearer ${session.accessToken}")
+            .header("ChatGPT-Account-Id", session.accountId).get().build())
+        UsageParser.parse(check(reply), session.accountId, now())
+    }
+
+    suspend fun tokenUsage(session: Session, retryNetwork: Boolean = true): TokenUsageSnapshot = retryRead(session, retryNetwork, tokenCooldown) {
+        kotlinx.coroutines.withTimeoutOrNull(10_000) {
         val reply = send(Request.Builder().url(tokenUsageUrl).header("Authorization", "Bearer ${session.accessToken}")
             .header("ChatGPT-Account-Id", session.accountId).get().build())
         TokenUsageParser.parse(check(reply), now())
-    } ?: throw ApiFailure(FailureKind.NETWORK)
+        } ?: throw ApiFailure(FailureKind.NETWORK)
+    }
 
     private fun jwtClaims(token: String): JsonObject = try {
         val part = token.split('.')[1]

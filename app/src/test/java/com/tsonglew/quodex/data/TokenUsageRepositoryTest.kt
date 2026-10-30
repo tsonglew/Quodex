@@ -45,7 +45,7 @@ class TokenUsageRepositoryTest {
     // A cancelled localhost route can switch to ::1 even when the test server only listens on IPv4.
     private fun serverUrl(path: String) = server.url(path).newBuilder().host("127.0.0.1").build().toString()
 
-    private fun newRepository() = UsageRepository(CodexApi(
+    private fun newRepository() = UsageRepository(CodexApi(requestRetry = com.tsonglew.quodex.network.RequestRetry(maxAttempts = 1),
         authBase = serverUrl("/").trimEnd('/'),
         usageUrl = serverUrl("/usage"), tokenUsageUrl = serverUrl("/tokens"), now = { time },
     ), vault, dao, settings, now = { time })
@@ -208,7 +208,7 @@ class TokenUsageRepositoryTest {
                     if (call.isCanceled()) cancelledHttp.countDown()
                 }
             }).build()
-        repository = UsageRepository(CodexApi(
+        repository = UsageRepository(CodexApi(requestRetry = com.tsonglew.quodex.network.RequestRetry(maxAttempts = 1),
             client = client, usageUrl = serverUrl("/usage"),
             tokenUsageUrl = serverUrl("/tokens"), now = { time },
         ), vault, dao, settings, now = { time })

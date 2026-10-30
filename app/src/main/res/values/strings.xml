@@ -349,4 +349,6 @@
     <string name="token_heatmap_widget_description">"Thirty service dates in a GitHub-style heatmap. Resizable 4×3 widget with refresh; tap the chart to open the 30-day view."</string>
     <string name="add_token_heatmap_widget">"Add token heatmap widget"</string>
     <string name="token_heatmap_known_days_short">"%1$s/%2$s days"</string>
+    <string name="download_retrying">"Download interrupted. Retrying in %1$s s (attempt %2$s/%3$s)…"</string>
+    <string name="network_retry_after">"The server asked us to wait. Please try again later."</string>
 </resources>

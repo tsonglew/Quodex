@@ -162,6 +162,23 @@ class UpdateRepositoryTest {
         assertFalse(repository.state.value.checking)
     }
 
+    @Test fun rateLimitSurvivesRestartAndManualChecksCannotBypassIt() = runBlocking {
+        store.value = SavedUpdates(available = release)
+        response = { throw com.tsonglew.quodex.network.HttpFailure(429, time + 120) }
+        assertFalse(repository().check(force = true))
+        assertEquals(time + 120, store.value.retryAt)
+        assertEquals(release, store.value.available)
+        val restarted = repository()
+        assertFalse(restarted.check(force = true))
+        assertEquals(1, requests)
+        time += 120
+        response = { release }
+        assertTrue(restarted.check(force = true))
+        assertEquals(2, requests)
+        assertEquals(0L, store.value.retryAt)
+        assertNull(restarted.state.value.error)
+    }
+
     @Test fun cancellationPropagatesAndReleasesCheckingStateWithoutErasingCache() = runBlocking {
         val previousAttempt = time - UpdateRepository.CHECK_INTERVAL_SECONDS
         store.value = SavedUpdates(available = release, lastAttemptAt = previousAttempt, lastCheckedAt = time - 100)

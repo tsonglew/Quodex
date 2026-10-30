@@ -1,5 +1,7 @@
 package com.tsonglew.quodex.update
 
+import com.tsonglew.quodex.network.*
+
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
@@ -26,21 +28,25 @@ class GitHubUpdateClient(
     private val signingCertificateSha256: String,
     client: OkHttpClient = OkHttpClient(),
     private val apiUrl: HttpUrl = "https://api.github.com/repos/tsonglew/Quodex/releases?per_page=100".toHttpUrl(),
+    private val now: () -> Long = { java.time.Instant.now().epochSecond },
+    private val requestRetry: RequestRetry = RequestRetry(now = now),
 ) : UpdateSource {
     // Also disable redirects for injected clients: a Link or HTTP redirect must not change the endpoint.
     private val client = client.newBuilder().callTimeout(20, TimeUnit.SECONDS)
         .connectTimeout(10, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS)
         .followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false).build()
+    @Volatile private var cooldown: HttpFailure? = null
 
     override suspend fun latest(): AppUpdate? {
         // A completed scan can legitimately return null; the wrapper distinguishes it from a timeout.
         val result = withTimeoutOrNull(60_000) { ScanResult(scan()) }
-            ?: throw IOException("Update check timed out")
+            ?: throw (cooldown?.takeIf { (it.retryAt ?: 0) > now() } ?: IOException("Update check timed out"))
         return result.update
     }
 
     private data class ScanResult(val update: AppUpdate?)
     private data class Page(val releases: JsonArray, val link: String?)
+    private class InvalidResponse(message: String, cause: Exception? = null) : IOException(message, cause)
 
     private suspend fun scan(): AppUpdate? {
         var next: HttpUrl? = apiUrl
@@ -48,7 +54,12 @@ class GitHubUpdateClient(
         var pages = 0
         while (next != null) {
             if (++pages > MAX_PAGES) throw IOException("Update list exceeds page limit")
-            val page = fetch(next)
+            val url = next
+            val page = requestRetry.run(classify = ::networkRetry) {
+                // Retain a server deadline even if the previous check was cancelled in backoff.
+                cooldown?.takeIf { (it.retryAt ?: 0) > now() }?.let { throw it }
+                fetch(url)
+            }
             page.releases.forEach { item ->
                 candidate(item as? JsonObject)?.let { update ->
                     if (best == null || update.versionCode > best!!.versionCode) best = update
@@ -88,24 +99,35 @@ class GitHubUpdateClient(
         continuation.invokeOnCancellation { call.cancel() }
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                if (continuation.isActive) continuation.resumeWithException(e)
+                if (continuation.isActive) continuation.resumeWithException(TransportFailure(e))
             }
 
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     try {
-                        if (it.code != 200) throw IOException("Update service returned HTTP ${it.code}")
-                        val body = it.body ?: throw IOException("Missing update response")
+                        if (it.code != 200) {
+                            val limited = it.code == 429 || it.code == 403 && (it.header("X-RateLimit-Remaining") == "0" || it.header("Retry-After") != null)
+                            val deadline = retryAfterAt(it.header("Retry-After"), now())
+                                ?: if (limited) it.header("X-RateLimit-Reset")?.toLongOrNull()?.takeIf { value -> value > now() } ?: now() + 60 else null
+                            val failure = HttpFailure(it.code, deadline, limited)
+                            if (failure.retryable && deadline != null) cooldown = failure
+                            throw failure
+                        }
+                        val body = it.body ?: throw InvalidResponse("Missing update response")
                         val source = body.source()
                         source.request(MAX_RESPONSE_BYTES + 1)
-                        if (source.buffer.size > MAX_RESPONSE_BYTES) throw IOException("Update response is too large")
+                        if (source.buffer.size > MAX_RESPONSE_BYTES) throw InvalidResponse("Update response is too large")
                         val releases = Json.parseToJsonElement(source.readUtf8()) as? JsonArray
-                            ?: throw IOException("Invalid update list")
+                            ?: throw InvalidResponse("Invalid update list")
                         val page = Page(releases, it.headers.values("Link").takeIf { values -> values.isNotEmpty() }?.joinToString(","))
                         if (continuation.isActive) continuation.resume(page)
                     } catch (failure: Exception) {
                         if (continuation.isActive) continuation.resumeWithException(
-                            if (failure is IOException) failure else IOException("Invalid update response", failure))
+                            when (failure) {
+                                is HttpFailure, is InvalidResponse -> failure
+                                is IOException -> TransportFailure(failure)
+                                else -> InvalidResponse("Invalid update response", failure)
+                            })
                     }
                 }
             }

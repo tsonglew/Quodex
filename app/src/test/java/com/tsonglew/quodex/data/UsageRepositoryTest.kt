@@ -25,7 +25,7 @@ class UsageRepositoryTest {
         repository = newRepository()
     }
     @After fun stop() { server.shutdown() }
-    private fun newRepository() = UsageRepository(CodexApi(authBase = server.url("/").toString().trimEnd('/'), usageUrl = server.url("/usage").toString(), now = { 1000 }), vault, dao, settings, now = { 1000 })
+    private fun newRepository() = UsageRepository(CodexApi(requestRetry = com.tsonglew.quodex.network.RequestRetry(maxAttempts = 1), authBase = server.url("/").toString().trimEnd('/'), usageUrl = server.url("/usage").toString(), now = { 1000 }), vault, dao, settings, now = { 1000 })
 
     private suspend fun seedPreviousConnection(): AppState {
         dao.record = SnapshotRecord(accountId = "test-account", json = AppJson.encodeToString(demoSnapshot(500).copy(accountId = "test-account")))
@@ -287,7 +287,7 @@ class UsageRepositoryTest {
         val client = okhttp3.OkHttpClient.Builder().retryOnConnectionFailure(false).eventListener(object : okhttp3.EventListener() {
             override fun responseHeadersEnd(call: okhttp3.Call, response: okhttp3.Response) { readingBody.countDown() }
         }).build()
-        repository = UsageRepository(CodexApi(client = client, usageUrl = server.url("/usage").toString(), now = { 1000 }), vault, dao, settings, now = { 1000 })
+        repository = UsageRepository(CodexApi(requestRetry = com.tsonglew.quodex.network.RequestRetry(maxAttempts = 1), client = client, usageUrl = server.url("/usage").toString(), now = { 1000 }), vault, dao, settings, now = { 1000 })
         server.enqueue(MockResponse().setHeader("Connection", "close").setBody(body).setBodyDelay(2, TimeUnit.SECONDS))
         val attempt = async { repository.refresh(true) }
         // Cancel while reading an assigned response, not while the test server is still
