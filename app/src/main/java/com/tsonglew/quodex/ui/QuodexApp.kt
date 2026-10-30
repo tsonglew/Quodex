@@ -216,7 +216,8 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
     Column(Modifier.testTag("dashboard")) {
         QuotaOverview(state, prefs, now, onReconnect = model::startLogin)
         Spacer(Modifier.height(16.dp))
-        TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage, prefs.compactTokens, model::compactTokens, heatmapLaunch)
+        TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage,
+            prefs.compactTokens, model::compactTokens, heatmapLaunch, prefs.tokenChartStyle, model::tokenChartStyle)
         if (state.demo) {
             Spacer(Modifier.height(18.dp))
             ConnectButton(texts(R.string.connect_my_codex_account), model::startLogin, modifier = Modifier.fillMaxWidth())

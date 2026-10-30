@@ -6,6 +6,8 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.tsonglew.quodex.data.FailureKind
 import com.tsonglew.quodex.data.Session
+import com.tsonglew.quodex.data.TokenChartStyle
+import com.tsonglew.quodex.data.SettingsStore
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
@@ -18,16 +20,21 @@ import org.junit.runner.RunWith
 class TokenUsageDeviceTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val app get() = compose.activity.quotaApp as TestQuotaApplication
+    private var previousStyle: TokenChartStyle? = null
 
     @Before fun startDisconnected() {
         app.tokenUsageStatusCode = 200
-        runBlocking { app.repository.logout(); app.settings.theme("light") }
+        runBlocking {
+            previousStyle = app.settings.read().tokenChartStyle
+            app.settings.tokenChartStyle(null)
+            app.repository.logout(); app.settings.theme("light")
+        }
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("connect-button").fetchSemanticsNodes().isNotEmpty() }
     }
 
     @After fun clearSyntheticAccount() {
         app.tokenUsageStatusCode = 200
-        runBlocking { app.repository.logout() }
+        runBlocking { app.repository.logout(); app.settings.tokenChartStyle(previousStyle) }
     }
 
     @Test fun serviceDatesZeroAndMissingDaysRemainDistinctInBothPeriods() {
@@ -113,6 +120,7 @@ class TokenUsageDeviceTest {
 
     @Test fun heatmapWidgetIntentReturnsFromSettingsAndShowsThirtyDays() {
         connectWithTokens()
+        chooseChart("bars")
         compose.onNodeWithTag("tab-settings").performClick()
         compose.activity.startActivity(com.tsonglew.quodex.widget.widgetLaunchIntent(compose.activity)
             .putExtra(com.tsonglew.quodex.widget.EXTRA_TOKEN_HEATMAP_LAUNCH, true))
@@ -120,9 +128,51 @@ class TokenUsageDeviceTest {
             compose.onAllNodes(hasTestTag("token-trend-30") and isSelected()).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("token-trend-chart").assertIsDisplayed()
+        compose.onNodeWithTag("token-chart-heatmap").assertIsSelected()
+        assertEquals(TokenChartStyle.BARS, runBlocking { app.settings.read().tokenChartStyle })
+        chooseChart("bars")
+        compose.onNodeWithTag("token-trend-30").assertIsSelected()
         // A later tab change must not be overridden by the consumed launch request.
         compose.onNodeWithTag("tab-settings").performClick()
         compose.onNodeWithTag("logout-button").assertExists()
+    }
+
+    @Test fun bothPeriodsSwitchChartTypesWithoutRequestsAndChoiceSurvivesRecreation() {
+        connectWithTokens()
+        val quotaRequests = app.usageRequests.get()
+        val tokenRequests = app.tokenUsageRequests.get()
+        for (days in listOf(7, 30)) {
+            compose.onNodeWithTag("token-trend-$days").performScrollToVisible(compose).performClick()
+            for (style in listOf("heatmap", "bars")) {
+                chooseChart(style)
+                compose.onNodeWithTag("token-trend-$days").assertIsSelected()
+                compose.onNodeWithTag("token-trend-total").assertTextEquals("57,000")
+                compose.onNodeWithTag("token-trend-chart").performScrollToVisible(compose).assertIsDisplayed()
+                if (style == "heatmap") {
+                    compose.onNodeWithTag("token-heatmap", useUnmergedTree = true).assertExists()
+                    compose.onNodeWithTag("token-bars").assertDoesNotExist()
+                } else {
+                    compose.onNodeWithTag("token-bars").assertExists()
+                    compose.onNodeWithTag("token-heatmap", useUnmergedTree = true).assertDoesNotExist()
+                }
+                screenshot("token-$days-$style-switch")
+            }
+        }
+        assertEquals(quotaRequests, app.usageRequests.get())
+        assertEquals(tokenRequests, app.tokenUsageRequests.get())
+        assertEquals(TokenChartStyle.BARS, runBlocking { SettingsStore(compose.activity).read().tokenChartStyle })
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { compose.onAllNodes(hasTestTag("token-chart-bars") and isSelected()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("token-trend-30").assertIsSelected()
+        compose.onNodeWithTag("token-bars").assertExists()
+    }
+
+    private fun chooseChart(style: String) {
+        compose.onNodeWithTag("token-chart-$style").performScrollToVisible(compose).performClick()
+        compose.waitUntil(10_000) {
+            runBlocking { app.settings.read().tokenChartStyle?.name?.lowercase(java.util.Locale.ROOT) == style } &&
+                compose.onAllNodes(hasTestTag("token-chart-$style") and isSelected()).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     private fun connectWithTokens() {
