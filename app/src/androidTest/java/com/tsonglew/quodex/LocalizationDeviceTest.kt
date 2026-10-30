@@ -87,9 +87,17 @@ class LocalizationDeviceTest {
                             // Request foreground once, then allow the window focus transition to settle.
                             if (!requestedFocus) {
                                 activity.getSystemService(android.app.ActivityManager::class.java).appTasks
-                                    .firstOrNull { it.taskInfo.taskId == activity.taskId }?.let {
-                                        it.moveToFront()
-                                        requestedFocus = true
+                                    .firstOrNull { task ->
+                                        // Android 10 can still return the language picker's removed task.
+                                        try { task.taskInfo.taskId == activity.taskId }
+                                        catch (_: IllegalArgumentException) { false }
+                                    }?.let { task ->
+                                        try {
+                                            task.moveToFront()
+                                            requestedFocus = true
+                                        } catch (_: IllegalArgumentException) {
+                                            // The task list changed again; retry within the existing deadline.
+                                        }
                                     }
                             }
                             assertEquals("The original host must survive app language changes", ids.first(), activity.widgetId)
