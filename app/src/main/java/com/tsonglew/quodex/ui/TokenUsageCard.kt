@@ -8,6 +8,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.*
@@ -44,6 +45,8 @@ fun TokenUsageCard(
     compact: Boolean = false,
     onCompactChange: (Boolean) -> Unit = {},
     heatmapLaunch: String? = null,
+    chartStyle: TokenChartStyle? = null,
+    onChartStyleChange: (TokenChartStyle) -> Unit = {},
 ) {
     val texts = localTextResources()
     var period by rememberSaveable { mutableIntStateOf(7) }
@@ -53,10 +56,14 @@ fun TokenUsageCard(
     val trend = remember(displayed, period) { tokenTrend(displayed?.dailyBuckets, period) }
     var handledLaunch by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingScroll by rememberSaveable { mutableStateOf<String?>(null) }
+    var showLaunchedHeatmap by rememberSaveable { mutableStateOf(false) }
+    val selectedStyle = if (showLaunchedHeatmap) TokenChartStyle.HEATMAP
+        else chartStyle ?: if (period == 30) TokenChartStyle.HEATMAP else TokenChartStyle.BARS
     val chartFocus = remember { BringIntoViewRequester() }
     LaunchedEffect(heatmapLaunch) {
         if (heatmapLaunch != null && heatmapLaunch != handledLaunch) {
             period = 30
+            showLaunchedHeatmap = true
             handledLaunch = heatmapLaunch
             pendingScroll = heatmapLaunch
         }
@@ -74,7 +81,7 @@ fun TokenUsageCard(
         Column(Modifier.fillMaxWidth().padding(20.dp).testTag("token-usage-card"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             PanelHeading(texts(R.string.token_usage_trend), Icons.Outlined.BarChart)
             Text(if (demo) texts(R.string.sample_data_preview_only) else texts(R.string.account_wide_token_totals_service_dates), fontSize = 12.sp, color = secondary)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(7, 30).forEach { days ->
                     FilterChip(shape = RoundedCornerShape(50), selected = period == days, onClick = { pendingScroll = null; period = days },
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -82,18 +89,31 @@ fun TokenUsageCard(
                         label = { Text(texts(R.string.last_value_days, days)) }, modifier = Modifier.testTag("token-trend-$days"))
                 }
             }
+            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TokenChartStyle.entries.forEach { style ->
+                    FilterChip(shape = RoundedCornerShape(50), selected = selectedStyle == style,
+                        onClick = { pendingScroll = null; showLaunchedHeatmap = false; onChartStyleChange(style) },
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer),
+                        label = { Text(texts(if (style == TokenChartStyle.BARS) R.string.token_chart_bars else R.string.token_chart_heatmap)) },
+                        modifier = Modifier.testTag("token-chart-${style.name.lowercase(java.util.Locale.ROOT)}"))
+                }
+            }
             if (trend != null) {
                 Text(texts(R.string.through_value_last_value_days, trend.endDate, period), fontSize = 12.sp, color = secondary)
                 Text(formatTokenCount(trend.total, compact), fontSize = 32.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold,
                     lineHeight = 40.sp, modifier = Modifier.testTag("token-trend-total"))
                 Text(texts(R.string.total_reported_daily_usage_value_value_days, trend.knownDays, trend.days.size), fontSize = 12.sp, color = secondary)
-                if (period == 30) TokenHeatmapChart(trend, compact, Modifier.bringIntoViewRequester(chartFocus)) { details = true } else TokenBars(trend, compact)
+                Box(Modifier.fillMaxWidth().bringIntoViewRequester(chartFocus)) {
+                    if (selectedStyle == TokenChartStyle.HEATMAP) TokenHeatmapChart(trend, compact) { details = true }
+                    else TokenBars(trend, compact)
+                }
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                     verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(trend.startDate.toString(), fontSize = 12.sp, color = secondary)
                     Text(trend.endDate.toString(), fontSize = 12.sp, color = secondary)
                 }
-                if (period == 7) Text(texts(R.string.dash_no_data_dot_recorded_as_0), fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
+                if (selectedStyle == TokenChartStyle.BARS) Text(texts(R.string.dash_no_data_dot_recorded_as_0), fontSize = 12.sp, lineHeight = 20.sp, color = secondary)
                 TextButton(onClick = { details = true }, modifier = Modifier.testTag("token-trend-details")) { Text(texts(R.string.daily_details)) }
             } else {
                 val message = when {
@@ -196,7 +216,7 @@ private fun TokenBars(trend: TokenTrend, compact: Boolean) {
         texts(R.string.total_reported_daily_usage_value_tokens, formatTokenCount(trend.total, compact)) +
         texts(R.string.value_days_without_data, trend.days.size - trend.knownDays) +
         texts(R.string.value_days_recorded_as_0_open_daily, trend.days.count { it.tokens == BigInteger.ZERO })
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(Modifier.testTag("token-bars"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(texts(R.string.peak_daily_usage_value_tokens, formatTokenCount(trend.peak, compact)), fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Canvas(Modifier.fillMaxWidth().height(140.dp).testTag("token-trend-chart").semantics { contentDescription = description }) {

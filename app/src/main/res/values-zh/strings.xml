@@ -343,9 +343,14 @@
     <string name="token_heatmap_through">"截至 %1$s"</string>
     <string name="token_heatmap_no_estimates">"缺失数据不会根据额度百分比估算。"</string>
     <string name="token_heatmap_widget_name">"Token 热力图 · 30 天"</string>
-    <string name="token_heatmap_widget_description">"按服务端日期显示 30 天用量，类似 GitHub 贡献图。4×3 布局支持缩放与刷新，点击图表打开 30 日视图。"</string>
+    <string name="token_heatmap_widget_description">"按服务端日期显示 30 天用量，类似 GitHub 贡献图。2×2 布局支持缩放与刷新，点击图表打开 30 日视图。"</string>
     <string name="add_token_heatmap_widget">"添加 Token 热力图组件"</string>
     <string name="token_heatmap_known_days_short">"%1$s/%2$s 天"</string>
     <string name="download_retrying">"下载中断，%1$s 秒后重试（第 %2$s/%3$s 次尝试）…"</string>
     <string name="network_retry_after">"服务端要求等待，请稍后再试。"</string>
+    <string name="token_chart_bars">"条形图"</string>
+    <string name="token_chart_heatmap">"热力图"</string>
+    <string name="token_heatmap_widget_title_compact">"Token"</string>
+    <string name="token_heatmap_status_updating">"更新中"</string>
+    <string name="token_heatmap_status_unavailable">"无数据"</string>
 </resources>

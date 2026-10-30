@@ -69,6 +69,8 @@ class CredentialVault(context: Context) : CredentialStore {
 
 private val Context.quotaPreferences by preferencesDataStore("quodex")
 
+enum class TokenChartStyle { BARS, HEATMAP }
+
 data class PreferencesState(
     val refreshMinutes: Long = 30,
     val showRemaining: Boolean = true,
@@ -80,6 +82,8 @@ data class PreferencesState(
     val compactTokens: Boolean = false,
     val desktopIconEnabled: Boolean = true,
     val desktopIconWindow: String = "short",
+    // Unset keeps the pre-existing 7-day bars / 30-day heatmap defaults until a choice is made.
+    val tokenChartStyle: TokenChartStyle? = null,
 )
 
 interface SyncSettings {
@@ -92,6 +96,10 @@ class SettingsStore(context: Context) : SyncSettings {
     private val store = context.quotaPreferences
     private val compactTokens = booleanPreferencesKey("compact_tokens")
     suspend fun compactTokens(value: Boolean) { store.edit { it[compactTokens] = value } }
+    private val tokenChartStyle = stringPreferencesKey("token_chart_style")
+    suspend fun tokenChartStyle(value: TokenChartStyle?) {
+        store.edit { if (value == null) it.remove(tokenChartStyle) else it[tokenChartStyle] = value.name }
+    }
     private val minutes = longPreferencesKey("refresh_minutes")
     private val remaining = booleanPreferencesKey("show_remaining")
     private val theme = stringPreferencesKey("theme")
@@ -104,7 +112,8 @@ class SettingsStore(context: Context) : SyncSettings {
     val flow = store.data.map { p -> PreferencesState(p[minutes] ?: 30, p[remaining] ?: true, p[theme] ?: "system",
         p[demo] ?: false, p[failure]?.let { runCatching { FailureKind.valueOf(it) }.getOrNull() }, p[retry] ?: 0, p[attempt] ?: 0,
         p[compactTokens] ?: false, p[iconEnabled] ?: true,
-        p[iconWindow]?.takeIf { it in listOf("short", "weekly") } ?: "short") }
+        p[iconWindow]?.takeIf { it in listOf("short", "weekly") } ?: "short",
+        TokenChartStyle.entries.firstOrNull { it.name == p[tokenChartStyle] }) }
     override suspend fun read() = flow.first()
     suspend fun refreshMinutes(value: Long) { require(value in listOf(15L, 30L, 60L)); store.edit { it[minutes] = value } }
     suspend fun showRemaining(value: Boolean) {

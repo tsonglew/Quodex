@@ -53,6 +53,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun demo() { launchOperation { cancelLogin(); app.repository.demo(); app.reconcileSync(); app.updateWidgets() } }
     fun logout() { cancelLogin(); app.scope.launch { runUiOperation(::reportError) { app.repository.logout(); app.reconcileSync(); app.updateWidgets() } } }
     fun compactTokens(value: Boolean) { launchOperation { app.settings.compactTokens(value); app.updateWidgets() } }
+    fun tokenChartStyle(value: TokenChartStyle) { launchOperation { app.settings.tokenChartStyle(value) } }
     fun showRemaining(value: Boolean) { launchOperation { app.settings.showRemaining(value); app.updateWidgets() } }
     fun theme(value: String) { launchOperation { app.settings.theme(value); app.updateWidgets() } }
     fun refreshMinutes(value: Long) { launchOperation { app.settings.refreshMinutes(value); app.reconcileSync() } }

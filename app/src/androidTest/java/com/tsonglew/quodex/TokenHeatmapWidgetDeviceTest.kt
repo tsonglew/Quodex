@@ -52,8 +52,8 @@ class TokenHeatmapWidgetDeviceTest {
         try {
             for (language in listOf("en", "ja")) {
                 select(language)
-                withHost(220, 160, "light") { scenario ->
-                    awaitLabels(scenario, texts(R.string.token_heatmap_known_days, 30, 30), texts(R.string.sample_data))
+                withHost(110, 110, "light") { scenario ->
+                    awaitLabels(scenario, "2026-10-22", texts(R.string.sample_data))
                     verifyLayoutAndSave(scenario, "token-heatmap-widget-$language")
                 }
             }
@@ -62,9 +62,11 @@ class TokenHeatmapWidgetDeviceTest {
 
     @Test fun responsiveLightAndDarkWidgetsKeepThirtyDaysAndActionsVisible() = fixture {
         runBlocking { app.repository.demo() }
-        for ((width, height, theme) in listOf(Triple(220, 160, "light"), Triple(280, 180, "light"), Triple(360, 220, "dark"))) {
+        for ((width, height, theme) in listOf(Triple(110, 110, "light"), Triple(160, 160, "light"), Triple(160, 160, "dark"),
+            Triple(220, 160, "light"), Triple(280, 180, "light"), Triple(360, 220, "dark"))) {
             withHost(width, height, theme) { scenario ->
-                awaitLabels(scenario, "30/30 天有数据", "示例数据")
+                awaitLabels(scenario, "2026-10-22", "示例数据")
+                if (width >= 220) awaitLabels(scenario, "30/30 天有数据")
                 verifyLayoutAndSave(scenario, "token-heatmap-widget-$width-$theme")
             }
         }
@@ -73,8 +75,8 @@ class TokenHeatmapWidgetDeviceTest {
     @Test fun minimumWidgetSupportsLargeSystemFonts() = withWidgetFontScale(2f) {
         fixture {
             runBlocking { app.repository.demo() }
-            withHost(220, 160, "light") { scenario ->
-                awaitLabels(scenario, "30/30 天", "2026-10-22", "示例数据")
+            withHost(110, 110, "light") { scenario ->
+                awaitLabels(scenario, "2026-10-22", "示例数据")
                 verifyLayoutAndSave(scenario, "token-heatmap-widget-large-font")
             }
         }
@@ -88,18 +90,20 @@ class TokenHeatmapWidgetDeviceTest {
         val monitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
         var opened: Activity? = null
         try {
-            withHost(280, 180, "light") { scenario ->
+            withHost(160, 160, "light") { scenario ->
                 // Adding just this widget fetches its optional data without opening MainActivity.
-                awaitLabels(scenario, "57K", "3/30 天有数据", "2026-10-22")
+                awaitLabels(scenario, "57K", "3/30 天", "2026-10-22")
                 assertEquals(tokenRequests + 1, app.tokenUsageRequests.get())
                 assertEquals(quotaRequests, app.usageRequests.get())
                 assertTrue(runBlocking { app.backgroundSyncRequired() })
                 val tokenTime = app.repository.state.value.snapshot!!.tokenUsage!!.fetchedAt
-                awaitLabels(scenario, absoluteTime(tokenTime, true))
+                scenario.onActivity { host -> assertTrue(descendants(host.widgetView).any {
+                    it.contentDescription?.toString()?.contains(absoluteTime(tokenTime, true)) == true
+                }) }
                 val beforeRefresh = app.tokenUsageRequests.get()
                 app.tokenUsageBody = """{"stats":{"daily_usage_buckets":[{"start_date":"2026-10-29","tokens":0},{"start_date":"2026-10-30","tokens":96000}]}}"""
                 tapAction(scenario) { it == refreshDescription }
-                awaitLabels(scenario, "96K", "2/30 天有数据", "2026-10-30")
+                awaitLabels(scenario, "96K", "2/30 天", "2026-10-30")
                 assertEquals(beforeRefresh + 1, app.tokenUsageRequests.get())
                 assertEquals(quotaRequests, app.usageRequests.get())
                 assertEquals("Refresh must not launch the app", 0, monitor.hits)
