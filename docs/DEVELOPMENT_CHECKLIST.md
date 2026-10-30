@@ -1,7 +1,10 @@
 # Quodex 开发与验收 Checklist
 
+## 每次开发交付
 
-记录日期：2026-10-11。状态：开发进行中。进度与验证证据见 [开发进度](PROGRESS.md)。
+按 [项目开发约定](../AGENTS.md)，每次开发完成都同步 README 与官网：核对最新功能、操作路径、版本／下载入口、截图和限制；官网源码位于 `tsonglew/tsonglew.github.io/public/quodex/`。在 PR 中关联官网同步改动或说明核对后无需改动的原因；有官网改动时，在 Pages 部署成功并核对线上页面后报告完成。
+
+以下为阶段验收清单，记录日期：2026-10-11。状态：开发进行中。最新进度与验证证据见 [开发进度](PROGRESS.md)。
 
 首版范围为 Android 平台的 Codex 单账号额度监控与桌面小组件，发布路线为先自用验证，再公开发布。完整产品范围、技术方案、阶段交付物与工期见 [开发计划](DEVELOPMENT_PLAN.md)，阶段跟踪见 [GitHub milestones](https://github.com/tsonglew/Quodex/milestones)。
 
