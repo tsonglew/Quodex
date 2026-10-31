@@ -168,6 +168,12 @@ class TokenHeatmapWidgetDeviceTest {
                 assertEquals("One token request per worker attempt", tokenRequests + attempt + 1, app.tokenUsageRequests.get())
             }
         }
+        // This cached window contains only three reported dates. Missing cells must
+        // still occupy the complete calendar, just like the fully populated demo.
+        withHost(160, 160, "light") { scenario ->
+            awaitLabels(scenario, "57K", "3/30 天", "2026-10-22")
+            verifyLayoutAndSave(scenario, "token-heatmap-widget-sparse-cache")
+        }
     }
 
     private fun fixture(block: () -> Unit) {
@@ -221,15 +227,25 @@ class TokenHeatmapWidgetDeviceTest {
             saveDeviceScreenshot(context, name, bitmap)
             assertWidgetActionLayout(view, refreshDescription, texts(R.string.value_open_quodex, ""))
             assertTrue("Heatmap bitmap must be visible", descendants(view).filterIsInstance<ImageView>().any { it.drawable != null && it.width > 0 && it.height > 0 })
-            // Inspect the rendered host, including ImageView scaling: a visible but narrow
-            // bitmap used to pass while leaving most of the 2×2 widget empty.
-            val greens = com.tsonglew.quodex.ui.TokenHeatmapRenderer.colors(false).drop(1).toSet() +
-                com.tsonglew.quodex.ui.TokenHeatmapRenderer.colors(true).drop(1).toSet()
-            val occupiedColumns = (0 until bitmap.width).filter { x ->
-                (0 until bitmap.height).any { y -> bitmap.getPixel(x, y) in greens }
-            }
-            assertTrue("Heatmap must span most of the widget width",
-                occupiedColumns.isNotEmpty() && occupiedColumns.last() - occupiedColumns.first() > bitmap.width * .68f)
+            // Draw each chart ImageView at its actual host size. Count all nontransparent
+            // cells, including zero fills and missing-data outlines; only counting green
+            // would incorrectly reject a full-width chart with sparse service records.
+            // Widget labels are excluded so a long title cannot hide a narrow chart.
+            val spans = descendants(view).filterIsInstance<ImageView>()
+                .filter { it.drawable != null && it.width > 0 && it.height > 0 }.map { chart ->
+                    val rendered = Bitmap.createBitmap(chart.width, chart.height, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(rendered)
+                    canvas.translate(chart.paddingLeft.toFloat(), chart.paddingTop.toFloat())
+                    canvas.concat(chart.imageMatrix)
+                    chart.drawable.draw(canvas)
+                    val columns = (0 until rendered.width).filter { x ->
+                        (0 until rendered.height).any { y -> android.graphics.Color.alpha(rendered.getPixel(x, y)) > 0 }
+                    }
+                    val span = if (columns.isEmpty()) 0 else columns.last() - columns.first()
+                    rendered.recycle()
+                    span
+                }
+            assertTrue("Heatmap must span most of the widget width", spans.any { it > bitmap.width * .68f })
             for (label in labels(view).filter { it.text.isNotEmpty() }) {
                 val bounds = Rect()
                 assertTrue("Hidden widget text: ${label.text}", label.getLocalVisibleRect(bounds))
