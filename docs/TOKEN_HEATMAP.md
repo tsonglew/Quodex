@@ -27,12 +27,12 @@ alpha31 起，热力图横向固定为周一至周日，每行一周。App 将�
 
 2026-10-30 本地验证：182 项 JVM 测试通过，debug/release lint 与构建通过；API 37 模拟器的 Token、热力图组件、权限引导及界面回归共 16 项通过，另有 1 项宽屏测试因当前窗口尺寸跳过。英文、日文最小尺寸及中文 200% 字体组件均检查了真实布局和文字裁切。发布仍以 GitHub 六组 Android CI 的实际结果为准。
 
-2026-10-31 alpha31 本地验证：204 项 JVM 测试、55 项发布脚本测试、debug lint 与 APK 构建通过；API 37 专项 12 项中 11 项通过，包括 App 全宽／自适应高度、日期点击、状态恢复、组件六种尺寸与主题、英文／日文最小尺寸和 200% 字体。渲染像素检查要求热力格占据 App 图表宽度的 80% 以上、实际组件宿主宽度的 68% 以上。首次添加后取数的 1 项因本机模拟器网络只有 PARTIAL_CONNECTIVITY、未通过系统验证而失败，保留原断言，完整取数与刷新回归交由 GitHub 六组设备测试验证。
+2026-10-31 alpha31 本地验证：204 项 JVM 测试、55 项发布脚本测试、debug lint 与 APK 构建通过；API 37 专项 12 项中 11 项通过，包括 App 全宽／自适应高度、日期点击、状态恢复、组件六种尺寸与主题、英文／日文最小尺寸和 200% 字体。随后补充英文／日文 160、220 dp 与宽组件 200% 字体检查，以及同一份示例数据的图表截图，两项专项复测均通过。渲染像素检查要求热力格占据 App 图表宽度的 80% 以上、实际组件宿主宽度的 68% 以上。首次添加后取数的 1 项因本机模拟器网络只有 PARTIAL_CONNECTIVITY、未通过系统验证而失败，保留原断言，完整取数与刷新回归结果见 [PR #45](https://github.com/tsonglew/Quodex/pull/45) 的 GitHub 六组设备测试。
 
-以下热力图截图来自 alpha31 debug / API 37 模拟器及真实 AppWidgetHost，使用明确标注的示例数据；条形图沿用 alpha30 合成数据截图，布局未改动。图片原样保存，不代表真实账号用量。
+以下截图来自 alpha31 debug / API 37 模拟器及真实 AppWidgetHost，使用同一份明确标注的示例数据。图片原样保存，不代表真实账号用量。
 
 | App 30 日热力图 | App 30 日条形图 | 2×2 桌面组件 |
 | --- | --- | --- |
-| <img src="screenshots/token-heatmap-app.png" width="260" alt="alpha31 七列日历式 30 日热力图，示例数据" /> | <img src="screenshots/token-thirty-day-bars.png" width="260" alt="同一时间范围切换为条形图，合成数据" /> | <img src="screenshots/token-heatmap-widget.png" width="220" alt="alpha31 全宽浅色 2×2 热力图桌面组件，示例数据" /> |
+| <img src="screenshots/token-heatmap-app.png" width="260" alt="alpha31 七列日历式 30 日热力图，示例数据" /> | <img src="screenshots/token-thirty-day-bars.png" width="260" alt="alpha31 同一份 30 日示例数据切换为条形图" /> | <img src="screenshots/token-heatmap-widget.png" width="220" alt="alpha31 全宽浅色 2×2 热力图桌面组件，示例数据" /> |
 
 <img src="screenshots/token-heatmap-widget-dark.png" width="360" alt="alpha31 全宽深色 2×2 热力图桌面组件，示例数据" />

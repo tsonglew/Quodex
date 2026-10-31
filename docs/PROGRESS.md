@@ -2,7 +2,7 @@
 
 更新日期：2026-10-31（Asia/Shanghai）。本轮代码版本为 `0.1.0-alpha31`：App 与桌面热力图统一改为横向七列日历布局，App 高度随周数调整，组件将更多空间留给图表。版本是否已发布以 [Releases](https://github.com/tsonglew/Quodex/releases) 的实际附件为准。
 
-本轮本地验证：204 项 JVM、55 项脚本、debug lint 与构建通过；API 37 热力图专项 11 项通过，1 项首次取数因模拟器网络未验证失败，完整设备 CI 待本轮 PR。README 与官网将同步新布局说明和实际截图。
+本轮本地验证：204 项 JVM、55 项脚本、debug lint 与构建通过；API 37 热力图专项 11 项通过，1 项首次取数因模拟器网络未验证失败，英文／日文宽组件 200% 字体补充检查也通过。完整设备 CI 与发布状态见 [PR #45](https://github.com/tsonglew/Quodex/pull/45)。README 已同步新布局说明和实际截图，官网同步 PR 在该 PR 中关联。
 
 上一轮验证记录：alpha30 公开预发布为 [0.1.0-alpha30](https://github.com/tsonglew/Quodex/releases/tag/build-41033042814-1)，源提交 `832b4da92cfd1f3e32d05f1b6d33a94d003bc712`，已合并 [PR #43](https://github.com/tsonglew/Quodex/pull/43)。近 7／30 天支持条形图与热力图互相切换并保存偏好；30 天热力图桌面组件默认 2×2。已包含中英日三语、玻璃导航、小米桌面权限提醒、应用内更新和有限网络重试。
 

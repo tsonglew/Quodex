@@ -38,7 +38,7 @@ class TokenHeatmapWidgetDeviceTest {
     private val texts get() = com.tsonglew.quodex.i18n.AndroidTextResources(context)
     private val refreshDescription get() = texts(R.string.refresh_token_statistics)
 
-    @Test fun minimumEnglishAndJapaneseWidgetsKeepAllLabelsVisible() = fixture {
+    @Test fun englishAndJapaneseWidgetsKeepAllLabelsVisible() = fixture {
         runBlocking { app.repository.demo() }
         fun select(tag: String) {
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
@@ -52,9 +52,17 @@ class TokenHeatmapWidgetDeviceTest {
         try {
             for (language in listOf("en", "ja")) {
                 select(language)
-                withHost(110, 110, "light") { scenario ->
-                    awaitLabels(scenario, "2026-10-22", texts(R.string.sample_data))
-                    verifyLayoutAndSave(scenario, "token-heatmap-widget-$language")
+                for ((width, height) in listOf(110 to 110, 160 to 160, 220 to 160)) {
+                    withHost(width, height, "light") { scenario ->
+                        awaitLabels(scenario, "2026-10-22", texts(R.string.sample_data))
+                        verifyLayoutAndSave(scenario, "token-heatmap-widget-$language-$width")
+                    }
+                }
+                withWidgetFontScale(2f) {
+                    withHost(220, 160, "light") { scenario ->
+                        awaitLabels(scenario, "2026-10-22", texts(R.string.sample_data))
+                        verifyLayoutAndSave(scenario, "token-heatmap-widget-$language-wide-large-font")
+                    }
                 }
             }
         } finally { select("zh-Hans") }

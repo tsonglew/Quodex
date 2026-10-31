@@ -21,9 +21,9 @@
 
 | 30 日热力图 | 30 日条形图 | 2×2 桌面热力图 |
 | --- | --- | --- |
-| <img src="docs/screenshots/token-heatmap-app.png" width="260" alt="alpha31 横向七列的 30 日热力图与图表切换按钮，示例数据" /> | <img src="docs/screenshots/token-thirty-day-bars.png" width="260" alt="alpha30 同一 30 日范围切换为条形图，合成数据" /> | <img src="docs/screenshots/token-heatmap-widget.png" width="220" alt="alpha31 铺满内容宽度的浅色 2×2 热力图桌面组件，示例数据" /> |
+| <img src="docs/screenshots/token-heatmap-app.png" width="260" alt="alpha31 横向七列的 30 日热力图与图表切换按钮，示例数据" /> | <img src="docs/screenshots/token-thirty-day-bars.png" width="260" alt="alpha31 同一份 30 日示例数据切换为条形图" /> | <img src="docs/screenshots/token-heatmap-widget.png" width="220" alt="alpha31 铺满内容宽度的浅色 2×2 热力图桌面组件，示例数据" /> |
 
-热力图与小组件为 alpha31 debug 模拟器原生截图，使用示例数据；条形图沿用 alpha30 合成数据截图，该布局未改动。[热力图与切换说明](docs/TOKEN_HEATMAP.md)。已有桌面实例可能保留旧尺寸，缩小或重新添加即可使用 2×2 布局。
+以上为 alpha31 debug 模拟器原生截图，使用同一份示例数据；条形图布局未改动。[热力图与切换说明](docs/TOKEN_HEATMAP.md)。已有桌面实例可能保留旧尺寸，缩小或重新添加即可使用 2×2 布局。
 
 安装包、校验和与来源提交见 [GitHub Releases](https://github.com/tsonglew/Quodex/releases)。每次主分支发布须通过完整 CI 和固定签名验证，实际可安装版本以对应发布记录和 APK 附件为准。
 

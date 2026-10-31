@@ -134,8 +134,12 @@ class TokenUsageDeviceTest {
             assertTrue("Every period should fill the chart width", occupiedColumns.isNotEmpty() &&
                 occupiedColumns.last() - occupiedColumns.first() > bitmap.width * .80f)
             if (days == 7) sevenDayHeight = bitmap.height else assertTrue(bitmap.height > sevenDayHeight * 1.5)
+            compose.onNodeWithTag("heatmap-selected-day").performScrollToVisible(compose)
             screenshot("token-calendar-$days-demo-light")
         }
+        chooseChart("bars")
+        compose.onNodeWithTag("token-trend-chart").performScrollToVisible(compose)
+        screenshot("token-calendar-30-bars-demo-light")
     }
 
     @Test fun heatmapWidgetIntentReturnsFromSettingsAndShowsThirtyDays() {
