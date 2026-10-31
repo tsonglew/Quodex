@@ -38,7 +38,7 @@ class TokenHeatmapWidgetDeviceTest {
     private val texts get() = com.tsonglew.quodex.i18n.AndroidTextResources(context)
     private val refreshDescription get() = texts(R.string.refresh_token_statistics)
 
-    @Test fun minimumEnglishAndJapaneseWidgetsKeepAllLabelsVisible() = fixture {
+    @Test fun englishAndJapaneseWidgetsKeepAllLabelsVisible() = fixture {
         runBlocking { app.repository.demo() }
         fun select(tag: String) {
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
@@ -52,9 +52,17 @@ class TokenHeatmapWidgetDeviceTest {
         try {
             for (language in listOf("en", "ja")) {
                 select(language)
-                withHost(110, 110, "light") { scenario ->
-                    awaitLabels(scenario, "2026-10-22", texts(R.string.sample_data))
-                    verifyLayoutAndSave(scenario, "token-heatmap-widget-$language")
+                for ((width, height) in listOf(110 to 110, 160 to 160, 220 to 160)) {
+                    withHost(width, height, "light") { scenario ->
+                        awaitLabels(scenario, "2026-10-22", texts(R.string.sample_data))
+                        verifyLayoutAndSave(scenario, "token-heatmap-widget-$language-$width")
+                    }
+                }
+                withWidgetFontScale(2f) {
+                    withHost(220, 160, "light") { scenario ->
+                        awaitLabels(scenario, "2026-10-22", texts(R.string.sample_data))
+                        verifyLayoutAndSave(scenario, "token-heatmap-widget-$language-wide-large-font")
+                    }
                 }
             }
         } finally { select("zh-Hans") }
@@ -160,6 +168,12 @@ class TokenHeatmapWidgetDeviceTest {
                 assertEquals("One token request per worker attempt", tokenRequests + attempt + 1, app.tokenUsageRequests.get())
             }
         }
+        // This cached window contains only three reported dates. Missing cells must
+        // still occupy the complete calendar, just like the fully populated demo.
+        withHost(160, 160, "light") { scenario ->
+            awaitLabels(scenario, "57K", "3/30 天", "2026-10-22")
+            verifyLayoutAndSave(scenario, "token-heatmap-widget-sparse-cache")
+        }
     }
 
     private fun fixture(block: () -> Unit) {
@@ -213,6 +227,25 @@ class TokenHeatmapWidgetDeviceTest {
             saveDeviceScreenshot(context, name, bitmap)
             assertWidgetActionLayout(view, refreshDescription, texts(R.string.value_open_quodex, ""))
             assertTrue("Heatmap bitmap must be visible", descendants(view).filterIsInstance<ImageView>().any { it.drawable != null && it.width > 0 && it.height > 0 })
+            // Draw each chart ImageView at its actual host size. Count all nontransparent
+            // cells, including zero fills and missing-data outlines; only counting green
+            // would incorrectly reject a full-width chart with sparse service records.
+            // Widget labels are excluded so a long title cannot hide a narrow chart.
+            val spans = descendants(view).filterIsInstance<ImageView>()
+                .filter { it.drawable != null && it.width > 0 && it.height > 0 }.map { chart ->
+                    val rendered = Bitmap.createBitmap(chart.width, chart.height, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(rendered)
+                    canvas.translate(chart.paddingLeft.toFloat(), chart.paddingTop.toFloat())
+                    canvas.concat(chart.imageMatrix)
+                    chart.drawable.draw(canvas)
+                    val columns = (0 until rendered.width).filter { x ->
+                        (0 until rendered.height).any { y -> android.graphics.Color.alpha(rendered.getPixel(x, y)) > 0 }
+                    }
+                    val span = if (columns.isEmpty()) 0 else columns.last() - columns.first()
+                    rendered.recycle()
+                    span
+                }
+            assertTrue("Heatmap must span most of the widget width", spans.any { it > bitmap.width * .68f })
             for (label in labels(view).filter { it.text.isNotEmpty() }) {
                 val bounds = Rect()
                 assertTrue("Hidden widget text: ${label.text}", label.getLocalVisibleRect(bounds))

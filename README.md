@@ -7,7 +7,7 @@
 
 面向 Android 的 Codex 额度监控 App，支持桌面小组件、重置时间和 Token 使用趋势。Quodex 是独立第三方工具，与 OpenAI 无隶属关系。
 
-> **当前公开预发布：0.1.0-alpha30**。近 7／30 天均可切换条形图与热力图，并记住选择；30 天热力图桌面组件默认 **2×2**。已包含中英日三语、液态玻璃风格悬浮导航、小米桌面权限提醒、App 内下载安装更新及网络自动重试。
+> **当前代码版本：0.1.0-alpha31**。近 7／30 天均可切换条形图与热力图，并记住选择；热力图按周一至周日横向铺满，App 高度随周数调整，**2×2** 桌面组件优先把空间留给图表。已包含中英日三语、液态玻璃风格悬浮导航、小米桌面权限提醒、App 内下载安装更新及网络自动重试。
 
 [官网](https://tsonglew.github.io/quodex/) · [观看动效](https://tsonglew.github.io/quodex/#motion) · [公开 APK 与预发布](https://github.com/tsonglew/Quodex/releases) · [支持范围](docs/SUPPORT.md)
 
@@ -15,20 +15,20 @@
 | --- | --- |
 | <img src="docs/screenshots/glass-navigation/light.png" width="300" alt="浅色界面与玻璃悬浮导航，使用示例数据" /> | <img src="docs/screenshots/glass-navigation/dark.png" width="300" alt="深色界面与玻璃悬浮导航，使用示例数据" /> |
 
-以上为 alpha26 引入的[玻璃导航界面](docs/GLASS_NAVIGATION.md)，来自 API 37 模拟器，使用示例数据。alpha30 的图表切换与 2×2 组件截图见下方。[品牌与素材规范](docs/BRANDING.md)。
+以上为 alpha26 引入的[玻璃导航界面](docs/GLASS_NAVIGATION.md)，来自 API 37 模拟器，使用示例数据。alpha31 的日历式热力图与 2×2 组件截图见下方。[品牌与素材规范](docs/BRANDING.md)。
 
-已验证的 alpha30 安装包见 [build-41033042814-1](https://github.com/tsonglew/Quodex/releases/tag/build-41033042814-1)。[对应 CI](https://github.com/tsonglew/Quodex/actions/runs/41033042814) 的六组 Android 设备测试、发布构建与固定签名流程全部通过；公开 APK 的版本、签名、SHA-256 和来源提交已核对。当前功能见下方，历史发布仍保留在 [Releases](https://github.com/tsonglew/Quodex/releases)。
+安装包见 [GitHub Releases](https://github.com/tsonglew/Quodex/releases)。主分支通过六组 Android 设备测试、发布构建与固定签名检查后自动生成预发布；源码版本不代表该版本已发布，请以 Release 中实际上传的 APK、版本、来源与 SHA-256 为准。已有用户可在 App 内检查并下载安装更新。
 
 | 30 日热力图 | 30 日条形图 | 2×2 桌面热力图 |
 | --- | --- | --- |
-| <img src="docs/screenshots/token-heatmap-app.png" width="260" alt="alpha30 的 30 日热力图与图表切换按钮，合成数据" /> | <img src="docs/screenshots/token-thirty-day-bars.png" width="260" alt="alpha30 同一 30 日范围切换为条形图，合成数据" /> | <img src="docs/screenshots/token-heatmap-widget.png" width="220" alt="alpha30 浅色 2×2 热力图桌面组件，示例数据" /> |
+| <img src="docs/screenshots/token-heatmap-app.png" width="260" alt="alpha31 横向七列的 30 日热力图与图表切换按钮，示例数据" /> | <img src="docs/screenshots/token-thirty-day-bars.png" width="260" alt="alpha31 同一份 30 日示例数据切换为条形图" /> | <img src="docs/screenshots/token-heatmap-widget.png" width="220" alt="alpha31 铺满内容宽度的浅色 2×2 热力图桌面组件，示例数据" /> |
 
-以上为 alpha30 模拟器截图，数据为演示或测试数据。[热力图与切换说明](docs/TOKEN_HEATMAP.md)。已有桌面实例可能保留旧尺寸，缩小或重新添加即可使用 2×2 布局。
+以上为 alpha31 debug 模拟器原生截图，使用同一份示例数据；条形图布局未改动。[热力图与切换说明](docs/TOKEN_HEATMAP.md)。已有桌面实例可能保留旧尺寸，缩小或重新添加即可使用 2×2 布局。
 
 安装包、校验和与来源提交见 [GitHub Releases](https://github.com/tsonglew/Quodex/releases)。每次主分支发布须通过完整 CI 和固定签名验证，实际可安装版本以对应发布记录和 APK 附件为准。
 
 - **额度与重置时间**：按服务端实际返回的周期展示，支持剩余／已用切换；没有返回用量时明确说明，不补成零或无限额度。
-- **Token 趋势**：近 7／30 天均可切换条形图与 [GitHub 风格热力图](docs/TOKEN_HEATMAP.md)，记住图表选择，提供累计用量和逐日明细；缺失日期与实际零值分别标记，统计失败保留上次数据。兼容接口仍待真实账号验收，不提供输入／输出／缓存细分或费用估算。
+- **Token 趋势**：近 7／30 天均可切换条形图与 [日历式热力图](docs/TOKEN_HEATMAP.md)，记住图表选择，提供累计用量和逐日明细；缺失日期与实际零值分别标记，统计失败保留上次数据。兼容接口仍待真实账号验收，不提供输入／输出／缓存细分或费用估算。
 - **桌面小组件**：标准额度、独立 2×1 额度与 2×2 的 30 天 Token 热力图，支持缩放、原地手动刷新和独立外观配置；点击热力图打开 App 的 30 日视图。后台刷新受 Android 网络、省电与厂商限制。
 - **多语言**：设置 → 应用语言，支持跟随系统、简体中文、English、日本語；页面、小组件、桌面额度图标和更新提示同步切换。
 - **桌面权限提醒**：小米／Redmi／POCO 添加桌面额度图标或小组件时，提醒检查桌面快捷方式权限，提供应用权限入口和手动添加指引；提醒不代表已检测到权限被拒绝。见[添加权限说明](docs/HOME_SCREEN_PERMISSION.md)。
@@ -41,7 +41,7 @@ alpha29 为额度、Token 统计、更新检查和 APK 下载加入[有限次数
 <details>
 <summary>历史版本验收与发布流程</summary>
 
-alpha22 的[原生动效录屏](https://tsonglew.github.io/quodex/#motion)保留为历史资料，展示页面淡入、额度条填充和 Token 柱条展开，采用示例数据；其深海青外观不代表当前界面。[动效说明与录屏来源](docs/MOTION.md)。alpha24 的[蓝色卡片界面与应用内更新](docs/ANDROID_DASHBOARD_UPDATE.md)、alpha25 的[多语言](docs/LOCALIZATION.md)、alpha26 的[玻璃导航](docs/GLASS_NAVIGATION.md)、alpha27 的[桌面权限提醒](docs/HOME_SCREEN_PERMISSION.md)、alpha29 的[网络重试](docs/NETWORK_RETRIES.md)均已包含在 alpha30 中。
+alpha22 的[原生动效录屏](https://tsonglew.github.io/quodex/#motion)保留为历史资料，展示页面淡入、额度条填充和 Token 柱条展开，采用示例数据；其深海青外观不代表当前界面。[动效说明与录屏来源](docs/MOTION.md)。alpha24 的[蓝色卡片界面与应用内更新](docs/ANDROID_DASHBOARD_UPDATE.md)、alpha25 的[多语言](docs/LOCALIZATION.md)、alpha26 的[玻璃导航](docs/GLASS_NAVIGATION.md)、alpha27 的[桌面权限提醒](docs/HOME_SCREEN_PERMISSION.md)、alpha29 的[网络重试](docs/NETWORK_RETRIES.md)均已包含在当前版本中。
 
 alpha19 的小组件在 Android 12 及以上改用直接接收点击的透明 TextView，分开处理打开与刷新；固定 Glance 1.1.1 的布局覆盖由构建检查保护。当时的最终候选通过 API29／37 各 16 项模拟器回归，以及 API37 两项真实 TalkBack 探索／双击专项。小米完整 preview 的标题、时间、刷新手指点击与外观已验收；示例模式刷新跳过联网且不更新时间，正式签名覆盖升级与真实账号刷新仍待验收，见 [验证记录](docs/VALIDATION_XIAOMI_WIDGET_TOUCH.md)。这些历史结果不等同于本次深海青构建的完整回归。
 

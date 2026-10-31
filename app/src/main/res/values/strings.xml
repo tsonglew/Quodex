@@ -336,7 +336,7 @@
     <string name="token_heatmap_selected_day">"%1$s · %2$s"</string>
     <string name="token_heatmap_less">"Less"</string>
     <string name="token_heatmap_more">"More"</string>
-    <string name="token_heatmap_legend">"One square per service date. Gray = recorded as 0; outlined = no data. Tap a square or open daily details."</string>
+    <string name="token_heatmap_legend">"Columns run Monday to Sunday; each row is a week. One cell per service date. Gray = recorded as 0; outlined = no data. Tap a cell or open daily details."</string>
     <string name="token_heatmap_widget_title">"Tokens · 30 days"</string>
     <string name="token_heatmap_unavailable">"Daily token data unavailable"</string>
     <string name="token_heatmap_partial">"Partial data"</string>

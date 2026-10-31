@@ -333,7 +333,7 @@
     <string name="token_heatmap_selected_day">"%1$s · %2$s"</string>
     <string name="token_heatmap_less">"少"</string>
     <string name="token_heatmap_more">"多"</string>
-    <string name="token_heatmap_legend">"每格对应一个服务端日期。灰色为已记录的 0，空心为缺失数据。点击格子或打开逐日明细查看。"</string>
+    <string name="token_heatmap_legend">"横向周一至周日，每行一周；每格对应一个服务端日期。灰色为已记录的 0，空心为缺失数据。点击格子或打开逐日明细查看。"</string>
     <string name="token_heatmap_widget_title">"Token · 30 天"</string>
     <string name="token_heatmap_unavailable">"暂无每日 token 数据"</string>
     <string name="token_heatmap_partial">"部分数据"</string>

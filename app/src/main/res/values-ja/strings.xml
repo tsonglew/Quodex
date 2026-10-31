@@ -333,7 +333,7 @@
     <string name="token_heatmap_selected_day">"%1$s · %2$s"</string>
     <string name="token_heatmap_less">"少"</string>
     <string name="token_heatmap_more">"多"</string>
-    <string name="token_heatmap_legend">"1 マスはサービス側の日付 1 日分です。灰色は 0、枠のみはデータなし。マスをタップするか、日別の詳細を開いて確認できます。"</string>
+    <string name="token_heatmap_legend">"横は月曜から日曜、1 行は 1 週間です。1 マスはサービス側の日付 1 日分。灰色は 0、枠のみはデータなし。マスをタップするか、日別の詳細を開いて確認できます。"</string>
     <string name="token_heatmap_widget_title">"Token · 30 日"</string>
     <string name="token_heatmap_unavailable">"日別トークンデータなし"</string>
     <string name="token_heatmap_partial">"一部のデータ"</string>

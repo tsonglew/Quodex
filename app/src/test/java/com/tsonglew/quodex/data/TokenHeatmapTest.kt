@@ -6,7 +6,7 @@ import java.math.BigInteger
 import java.time.LocalDate
 
 class TokenHeatmapTest {
-    @Test fun calendarColumnsPreserveExactlyThirtyDatesAcrossLeapDay() {
+    @Test fun calendarWeeksPreserveExactlyThirtyDatesAcrossLeapDay() {
         val trend = tokenTrend(listOf(DailyTokenUsage("2024-03-10", 10)), 30)!!
         val map = TokenHeatmap(trend)
         val cells = (0 until map.weeks).flatMap { week -> (0..6).mapNotNull { map.day(week, it) } }

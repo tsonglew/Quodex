@@ -1,5 +1,9 @@
 # Android 原生截图与动效录屏
 
+## alpha31 日历式热力图（2026-10-31）
+
+[App 与桌面组件截图](TOKEN_HEATMAP.md#验证)来自 alpha31 debug / API 37 模拟器，使用示例数据。App 为 Compose 原生屏幕捕获，组件由真实 AppWidgetHost 绘制并原样保存；不是设计稿或真实账号数据。热力图按周一至周日横向铺满，App 高度随周数变化，2×2 与宽版组件保留更多图表空间。条形图布局未改，本次同样重新截取了相同示例数据的 30 日条形图。
+
 ## alpha22 动效录屏（2026-10-26）
 
 [在官网播放动效](https://tsonglew.github.io/quodex/#motion) · [打开 MP4](assets/motion/quodex-motion.mp4) · [动效参数与行为](MOTION.md)

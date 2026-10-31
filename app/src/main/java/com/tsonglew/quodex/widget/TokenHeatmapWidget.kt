@@ -55,12 +55,10 @@ class TokenHeatmapWidget : GlanceAppWidget() {
         val muted = ColorProvider(colors.onSurfaceVariant)
         val large = context.resources.configuration.fontScale > 1.3f
         val square = size.width < 220.dp
-        val compactLabels = large || size.width < 280.dp
         val tokens = if (state.demo) demoTokenUsage() else state.snapshot?.tokenUsage
         val trend = remember(tokens) { tokenTrend(tokens?.dailyBuckets, 30) }
-        // At the smallest size, move the total into the heading at large font scales
-        // so the heatmap still has useful height instead of becoming a tiny thumbnail.
-        val totalInHeading = square && size.height < 140.dp && large && trend != null
+        // Share the heading with the total at the smallest size to leave room for every week.
+        val totalInHeading = square && size.height < 140.dp && trend != null
         val stale = !state.demo && tokens != null && (state.tokenFailure != null || Instant.now().epochSecond - tokens.fetchedAt > 7200)
         val status = when {
             state.demo -> texts(R.string.sample_data)
@@ -77,7 +75,7 @@ class TokenHeatmapWidget : GlanceAppWidget() {
         Column(GlanceModifier.fillMaxSize().appWidgetBackground().background(ColorProvider(colors.background)).cornerRadius(24.dp).padding(if (square) 6.dp else 12.dp)) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(if (totalInHeading) formatTokenCount(trend!!.total, true) else texts(if (square && (size.width < 160.dp || large)) R.string.token_heatmap_widget_title_compact else R.string.token_heatmap_widget_title), GlanceModifier.defaultWeight(),
-                    style = TextStyle(color = foreground, fontSize = if (totalInHeading) 8.sp else if (square) { if (large) 7.sp else 11.sp } else if (large) 10.sp else 14.sp,
+                    style = TextStyle(color = foreground, fontSize = if (totalInHeading) { if (large) 8.sp else 14.sp } else if (square) { if (large) 7.sp else 11.sp } else if (large) 10.sp else 14.sp,
                         fontWeight = if (totalInHeading) FontWeight.Bold else FontWeight.Medium), maxLines = 1)
                 Button(if (state.tokenLoading) "…" else "↻", onClick = if (!state.connected && !state.demo) launch else actionRunCallback<RefreshTokenWidgetAction>(),
                     modifier = GlanceModifier.width(if (square) 32.dp else 40.dp).height(if (square) 28.dp else 32.dp).padding(0.dp).background(Color.Transparent)
@@ -88,34 +86,24 @@ class TokenHeatmapWidget : GlanceAppWidget() {
             Box(GlanceModifier.fillMaxWidth().defaultWeight()) {
                 if (trend != null) {
                     val map = remember(trend) { TokenHeatmap(trend) }
-                    val chartWidth = if (square) size.width.value - 12 else (size.width.value - 24) * if (large) .48f else .55f
-                    val chartHeight = if (square) (size.height.value - if (totalInHeading) 58 else 80).coerceAtLeast(20f)
-                        else (size.height.value - 80).coerceAtLeast(68f)
+                    val chartWidth = size.width.value - if (square) 12 else 24
+                    val chartHeight = (size.height.value - if (totalInHeading) 58 else 80).coerceAtLeast(20f)
                     val bitmap = remember(map, chartWidth, chartHeight, dark, texts.locale) {
-                        TokenHeatmapRenderer.render(map, (chartWidth * 2).toInt(), (chartHeight * 2).toInt(), dark, texts.locale)
+                        TokenHeatmapRenderer.render(map, (chartWidth * 2).toInt(), (chartHeight * 2).toInt(),
+                            dark, texts.locale, showLabels = false)
                     }
-                    if (square) Column(GlanceModifier.fillMaxSize()) {
+                    Column(GlanceModifier.fillMaxSize()) {
                         if (!totalInHeading) Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Text(formatTokenCount(trend.total, true), GlanceModifier.defaultWeight(), style = TextStyle(color = foreground,
-                                fontSize = if (large) 9.sp else if (size.width < 160.dp) 14.sp else 18.sp, fontWeight = FontWeight.Bold), maxLines = 1)
-                            if (size.width >= 160.dp && !large) Text(texts(R.string.token_heatmap_known_days_short, trend.knownDays, 30),
-                                style = TextStyle(color = muted, fontSize = 9.sp), maxLines = 1)
+                                fontSize = if (large) { if (square) 9.sp else 12.sp } else if (square) 18.sp else 23.sp,
+                                fontWeight = FontWeight.Bold), maxLines = 1)
+                            if (size.width >= 160.dp && (!large || !square)) Text(
+                                texts(if (square || large) R.string.token_heatmap_known_days_short else R.string.token_heatmap_known_days, trend.knownDays, 30),
+                                style = TextStyle(color = muted, fontSize = if (large) 7.sp else if (square) 9.sp else 10.sp), maxLines = 1)
                         }
-                        Image(ImageProvider(bitmap), null, GlanceModifier.fillMaxWidth().defaultWeight(), contentScale = ContentScale.Fit)
+                        // The seven weekday columns stretch across both narrow and wide widgets.
+                        Image(ImageProvider(bitmap), null, GlanceModifier.fillMaxWidth().defaultWeight(), contentScale = ContentScale.FillBounds)
                         Text(trend.endDate.toString(), style = TextStyle(color = muted, fontSize = if (large) 6.sp else 9.sp), maxLines = 1)
-                    } else Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                        Image(ImageProvider(bitmap), null, GlanceModifier.width(chartWidth.dp).fillMaxHeight(), contentScale = ContentScale.Fit)
-                        Spacer(GlanceModifier.width(10.dp))
-                        Column(GlanceModifier.defaultWeight()) {
-                            Text(formatTokenCount(trend.total, true), style = TextStyle(color = foreground,
-                                fontSize = if (large) 12.sp else 23.sp, fontWeight = FontWeight.Bold), maxLines = 2)
-                            if (!compactLabels) Text(texts(R.string.token_heatmap_tokens), style = TextStyle(color = muted, fontSize = 11.sp), maxLines = 1)
-                            Spacer(GlanceModifier.height(if (compactLabels) 4.dp else 6.dp))
-                            Text(texts(if (large) R.string.token_heatmap_known_days_short else R.string.token_heatmap_known_days, trend.knownDays, 30),
-                                style = TextStyle(color = muted, fontSize = if (large) 7.sp else 10.sp), maxLines = 2)
-                            Text(if (compactLabels) trend.endDate.toString() else texts(R.string.token_heatmap_through, trend.endDate),
-                                style = TextStyle(color = muted, fontSize = if (large) 7.sp else 10.sp), maxLines = 2)
-                        }
                     }
                 } else {
                     Column(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
