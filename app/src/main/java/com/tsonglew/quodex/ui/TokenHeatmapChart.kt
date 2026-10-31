@@ -44,18 +44,19 @@ internal fun TokenHeatmapChart(trend: TokenTrend, compact: Boolean, modifier: Mo
         texts(R.string.value_days_recorded_as_0_open_daily, trend.days.count { it.tokens == BigInteger.ZERO })
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(texts(R.string.token_heatmap_scale), fontSize = 12.sp, color = muted)
-        BoxWithConstraints(Modifier.fillMaxWidth().height(210.dp).testTag("token-trend-chart")
+        BoxWithConstraints(Modifier.fillMaxWidth().testTag("token-trend-chart")
             .semantics(mergeDescendants = true) {
                 contentDescription = description
                 if (onDetails != null) onClick(texts(R.string.daily_details)) { onDetails(); true }
             }) {
             val density = LocalDensity.current
             val width = with(density) { maxWidth.roundToPx() }.coerceAtLeast(1)
-            val height = with(density) { 210.dp.roundToPx() }
+            val chartHeight = (maxWidth.value * (.12f * map.weeks + .08f) + 4).coerceIn(60f, 260f).dp
+            val height = with(density) { chartHeight.roundToPx() }
             val bitmap = remember(map, width, height, dark, texts.locale, selectedDate) {
                 TokenHeatmapRenderer.render(map, width, height, dark, texts.locale, selectedDate).asImageBitmap()
             }
-            Image(bitmap, null, Modifier.fillMaxSize().testTag("token-heatmap").pointerInput(map, width, height) {
+            Image(bitmap, null, Modifier.fillMaxWidth().height(chartHeight).testTag("token-heatmap").pointerInput(map, width, height) {
                 detectTapGestures { point -> TokenHeatmapRenderer.hit(map, width.toFloat(), height.toFloat(), point.x, point.y)?.let { selected = it.date.toString() } }
             })
         }

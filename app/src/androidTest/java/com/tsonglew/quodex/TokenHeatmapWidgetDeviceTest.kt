@@ -213,6 +213,15 @@ class TokenHeatmapWidgetDeviceTest {
             saveDeviceScreenshot(context, name, bitmap)
             assertWidgetActionLayout(view, refreshDescription, texts(R.string.value_open_quodex, ""))
             assertTrue("Heatmap bitmap must be visible", descendants(view).filterIsInstance<ImageView>().any { it.drawable != null && it.width > 0 && it.height > 0 })
+            // Inspect the rendered host, including ImageView scaling: a visible but narrow
+            // bitmap used to pass while leaving most of the 2×2 widget empty.
+            val greens = com.tsonglew.quodex.ui.TokenHeatmapRenderer.colors(false).drop(1).toSet() +
+                com.tsonglew.quodex.ui.TokenHeatmapRenderer.colors(true).drop(1).toSet()
+            val occupiedColumns = (0 until bitmap.width).filter { x ->
+                (0 until bitmap.height).any { y -> bitmap.getPixel(x, y) in greens }
+            }
+            assertTrue("Heatmap must span most of the widget width",
+                occupiedColumns.isNotEmpty() && occupiedColumns.last() - occupiedColumns.first() > bitmap.width * .68f)
             for (label in labels(view).filter { it.text.isNotEmpty() }) {
                 val bounds = Rect()
                 assertTrue("Hidden widget text: ${label.text}", label.getLocalVisibleRect(bounds))

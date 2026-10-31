@@ -2,7 +2,7 @@ package com.tsonglew.quodex.data
 
 import java.math.BigInteger
 
-/** Monday-first rows and week columns, with padding outside the requested service-date range. */
+/** Monday-first weeks, with padding outside the requested service-date range. */
 data class TokenHeatmap(val trend: TokenTrend) {
     val leadingDays: Int = trend.startDate.dayOfWeek.value - 1
     val weeks: Int = (leadingDays + trend.days.size + 6) / 7

@@ -118,6 +118,26 @@ class TokenUsageDeviceTest {
         assertNull(app.repository.state.value.snapshot?.tokenUsage)
     }
 
+    @Test fun calendarUsesCardWidthAndAdaptsHeightToTheSelectedPeriod() {
+        compose.onNodeWithTag("demo-button").performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("token-usage-card").fetchSemanticsNodes().isNotEmpty() }
+        chooseChart("heatmap")
+        var sevenDayHeight = 0
+        for (days in listOf(7, 30)) {
+            compose.onNodeWithTag("token-trend-$days").performScrollToVisible(compose).performClick()
+            compose.onNodeWithTag("token-trend-chart").performScrollToVisible(compose)
+            val bitmap = compose.onNodeWithTag("token-heatmap", useUnmergedTree = true).captureToImage().asAndroidBitmap()
+            val greens = com.tsonglew.quodex.ui.TokenHeatmapRenderer.colors(false).drop(1).toSet()
+            val occupiedColumns = (0 until bitmap.width).filter { x ->
+                (0 until bitmap.height).any { y -> bitmap.getPixel(x, y) in greens }
+            }
+            assertTrue("Every period should fill the chart width", occupiedColumns.isNotEmpty() &&
+                occupiedColumns.last() - occupiedColumns.first() > bitmap.width * .80f)
+            if (days == 7) sevenDayHeight = bitmap.height else assertTrue(bitmap.height > sevenDayHeight * 1.5)
+            screenshot("token-calendar-$days-demo-light")
+        }
+    }
+
     @Test fun heatmapWidgetIntentReturnsFromSettingsAndShowsThirtyDays() {
         connectWithTokens()
         chooseChart("bars")
