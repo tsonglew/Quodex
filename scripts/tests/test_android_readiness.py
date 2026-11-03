@@ -31,7 +31,7 @@ class AndroidReadinessTest(unittest.TestCase):
     def test_registered_service_with_broken_pipe_is_not_ready(self):
         def broken(command, **kwargs):
             result = self.response(command, **kwargs)
-            if command[-3:] == ['input', 'keyevent', '0']:
+            if command[-3:] == ['input', 'keyevent', 'KEYCODE_WAKEUP']:
                 result.returncode = 224
                 result.stderr = 'Failure calling service input: Broken pipe (32)'
             return result
@@ -43,7 +43,8 @@ class AndroidReadinessTest(unittest.TestCase):
             self.assertTrue(module.ready('adb'))
 
     def test_configuration_requires_real_unlock_and_settings_commands(self):
-        for broken_tail in (['input', 'keyevent', '82'], ['settings', 'put', 'global', 'animator_duration_scale', '0']):
+        for broken_tail in (['input', 'keyevent', 'KEYCODE_WAKEUP'], ['wm', 'dismiss-keyguard'],
+                            ['settings', 'put', 'global', 'animator_duration_scale', '0']):
             def broken(command, **kwargs):
                 result = self.response(command, **kwargs)
                 if command[-len(broken_tail):] == broken_tail:

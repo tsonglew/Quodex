@@ -45,7 +45,8 @@ OpenCode Console：在 Account → Personal API keys 为目标工作区创建密
 
 - 228 项 JVM 测试通过，其中新增 24 项解析、HTTP、仓库与操作调度测试，覆盖币种／精度、microcent 换算、缺失值、超额、重定向隔离、凭据头、取消、限流、缓存、失败重连、写盘失败、跨服务隔离和晚到请求；另覆盖不可读缓存恢复、恢复前重试保护可读凭据，以及断开后快速重连／取消不影响凭据删除。
 - API 37、arm64 模拟器的 9 项订阅与界面设备测试通过，含新增 4 项订阅测试：取消首次连接不落盘，连接／鉴权失败／断开隔离，加密文件不含明文凭据，示例零请求，英文与日文切换重建。现有界面测试增加 320dp／200% 系统字体的订阅页和四项导航检查。
-- debug／release 构建与 lint、55 项发布脚本测试通过。
+- debug／release 构建与 lint、55 项发布脚本测试通过。生产代码评审修复后，本地 API 37 全套 83 项设备测试入口执行完成，无失败（包含按系统能力跳过的用例）。
+- 远端首轮验证暴露 API 37 冷启动桌面 ANR 与语言测试收尾卡住：测试启动改用唤醒／解锁、在安装 App 前重启一次已知模拟器桌面；语言测试清理使用 Application，并通过系统语言管理恢复。完整远端矩阵仍以 PR／Actions 的最终状态为准。
 - 同一 API 37 模拟器使用生产 debug 入口注入损坏文件：重试后仍显示错误，取消清除保留文件，确认清除后错误消失且可重新连接，设置文件散列不变；[恢复确认框](screenshots/subscriptions-alpha32/subscriptions-recovery.png)为 alpha32 debug 故障注入截图，不含真实账号。
 - [中文 DeepSeek](screenshots/subscriptions-alpha32/subscriptions-deepseek.png)、[OpenCode Go](screenshots/subscriptions-alpha32/subscriptions-opencode-go.png)、[OpenCode Console](screenshots/subscriptions-alpha32/subscriptions-opencode-zen.png)、[Cursor](screenshots/subscriptions-alpha32/subscriptions-cursor.png)、[English](screenshots/subscriptions-alpha32/subscriptions-en.png)、[日本語](screenshots/subscriptions-alpha32/subscriptions-ja.png)、[320dp／200% 字体](screenshots/subscriptions-alpha32/subscriptions-narrow-large-font.png)均为 alpha32 debug 原生截图、示例数据。
 

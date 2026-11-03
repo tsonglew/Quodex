@@ -15,7 +15,9 @@ import org.junit.Test
 
 class SubscriptionsUiTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
-    private val app get() = compose.activity.application as TestQuotaApplication
+    private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
+    // Cleanup must not resolve an Activity while a locale change is recreating it.
+    private val app get() = instrumentation.targetContext.applicationContext as TestQuotaApplication
 
     @Before fun clearProviders() {
         app.subscriptionFailure = null
@@ -103,8 +105,15 @@ class SubscriptionsUiTest {
                 saveDeviceScreenshot(app, "subscriptions-$language", compose.onRoot().captureToImage().asAndroidBitmap())
             }
         } finally {
-            compose.activityRule.scenario.onActivity { com.tsonglew.quodex.i18n.AppLanguages.select("zh-Hans") }
-            compose.waitForIdle()
+            instrumentation.runOnMainSync {
+                if (android.os.Build.VERSION.SDK_INT >= 33) {
+                    app.getSystemService(android.app.LocaleManager::class.java).applicationLocales =
+                        android.os.LocaleList.forLanguageTags("zh-Hans")
+                } else com.tsonglew.quodex.i18n.AppLanguages.select("zh-Hans")
+                app.languageChanged()
+            }
+            instrumentation.waitForIdleSync()
+            assertEquals("zh-Hans", com.tsonglew.quodex.i18n.AppLanguages.selectedTag(app))
         }
     }
 }

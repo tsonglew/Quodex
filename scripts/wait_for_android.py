@@ -23,10 +23,15 @@ def ready(adb, configure=False):
     ok, _ = shell('settings', 'get', 'global', 'window_animation_scale')
     if not ok:
         return False
-    ok, _ = shell('input', 'keyevent', '82' if configure else '0')
+    # WAKEUP is consumed by power policy. MENU/UNKNOWN reaches the cold launcher
+    # and can trigger a boot-time input ANR even though the framework is ready.
+    ok, _ = shell('input', 'keyevent', 'KEYCODE_WAKEUP')
     if not ok:
         return False
     if configure:
+        ok, _ = shell('wm', 'dismiss-keyguard')
+        if not ok:
+            return False
         for namespace, key, value in [('system', 'screen_off_timeout', '2147483647')] + [
                 ('global', key, '0') for key in ('window_animation_scale', 'transition_animation_scale', 'animator_duration_scale')]:
             ok, _ = shell('settings', 'put', namespace, key, value)
