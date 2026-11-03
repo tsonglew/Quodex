@@ -4,6 +4,7 @@ import com.tsonglew.quodex.network.*
 
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import okhttp3.*
@@ -20,9 +21,15 @@ data class AppUpdate(
     val apkUrl: String? = null, val apkSize: Long = 0, val apkSha256: String? = null,
 )
 
-fun interface UpdateSource { suspend fun latest(): AppUpdate? }
+fun interface UpdateSource {
+    suspend fun latest(): AppUpdate?
+    fun restoreFallbackRetryAt(value: Long) {}
+    fun fallbackRetryAt(): Long = 0
+}
 
-/** Reads the release publisher's public index, without consuming GitHub REST API quota. */
+class UpdateFallbackFailure(val failure: Exception) : IOException("Fallback update check failed", failure)
+
+/** Prefers the publisher's public index; API fallback is only for transport failures. */
 class GitHubUpdateClient(
     private val installedVersionCode: Long,
     private val signingCertificateSha256: String,
@@ -30,18 +37,41 @@ class GitHubUpdateClient(
     private val apiUrl: HttpUrl = "https://raw.githubusercontent.com/tsonglew/Quodex/update-feed/updates.json".toHttpUrl(),
     private val now: () -> Long = { java.time.Instant.now().epochSecond },
     private val requestRetry: RequestRetry = RequestRetry(now = now),
+    fallbackUrl: HttpUrl? = if (apiUrl.toString() == "https://raw.githubusercontent.com/tsonglew/Quodex/update-feed/updates.json")
+        "https://api.github.com/repos/tsonglew/Quodex/releases?per_page=100".toHttpUrl() else null,
 ) : UpdateSource {
     // Also disable redirects for injected clients: a Link or HTTP redirect must not change the endpoint.
     private val client = client.newBuilder().callTimeout(20, TimeUnit.SECONDS)
         .connectTimeout(10, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS)
         .followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false).build()
     @Volatile private var cooldown: HttpFailure? = null
+    private val fallback = fallbackUrl?.let { GitHubUpdateClient(installedVersionCode, signingCertificateSha256,
+        client = client, apiUrl = it, now = now, requestRetry = requestRetry, fallbackUrl = null) }
+    @Volatile private var restoredFallbackDeadline = 0L
+
+    override fun restoreFallbackRetryAt(value: Long) {
+        restoredFallbackDeadline = value
+    }
+    override fun fallbackRetryAt(): Long = maxOf(restoredFallbackDeadline, fallback?.cooldown?.retryAt ?: 0)
+        .takeIf { it > now() } ?: 0
+    private class CheckTimeout : IOException("Update check timed out")
 
     override suspend fun latest(): AppUpdate? {
-        // A completed scan can legitimately return null; the wrapper distinguishes it from a timeout.
-        val result = withTimeoutOrNull(60_000) { ScanResult(scan()) }
-            ?: throw (cooldown?.takeIf { (it.retryAt ?: 0) > now() } ?: IOException("Update check timed out"))
-        return result.update
+        try {
+            // A completed scan can legitimately return null; distinguish it from a timeout.
+            val result = withTimeoutOrNull(60_000) { ScanResult(scan()) }
+                ?: throw (cooldown?.takeIf { (it.retryAt ?: 0) > now() } ?: CheckTimeout())
+            return result.update
+        } catch (failure: Exception) {
+            // Fall back only when the host cannot be reached, never after server
+            // throttling, invalid metadata, TLS validation failure or cancellation.
+            if (failure is CancellationException || fallback == null ||
+                !(failure is CheckTimeout || failure is TransportFailure && networkRetry(failure) != null)) throw failure
+            if (fallbackRetryAt() > now()) throw UpdateFallbackFailure(IOException("Fallback wait active"))
+            try { return fallback.latest() }
+            catch (cancel: CancellationException) { throw cancel }
+            catch (error: Exception) { throw UpdateFallbackFailure(error) }
+        }
     }
 
     private data class ScanResult(val update: AppUpdate?)

@@ -48,7 +48,7 @@
     <string name="check_later">"稍后查看"</string>
     <string name="check_network_access_app_info_mobile_data">"检查网络：应用信息 → 移动数据，允许后台数据；省流量模式下按需要允许不受限数据。"</string>
     <string name="checking_for_updates">"正在检查更新…"</string>
-    <string name="checks_github_releases_and_prereleases_about_every">"约每 12 小时读取公开更新索引，不使用 GitHub REST API。发现可覆盖安装的新版本时提醒一次。系统调度、缓存或网络状况可能延迟发现新版本。"</string>
+    <string name="checks_github_releases_and_prereleases_about_every">"约每 12 小时读取公开更新索引，仅连接失败或超时时尝试备用 GitHub API；分别遵守各来源的等待时间。发现可覆盖安装的新版本时提醒一次。系统调度、缓存或网络状况可能延迟发现新版本。"</string>
     <string name="choose_a_layout_and_add_it_to">"选择布局，直接添加到桌面。"</string>
     <string name="clear">"清除"</string>
     <string name="clear_diagnostic_records">"清除诊断记录"</string>
@@ -407,4 +407,5 @@
     <string name="subscription_reset_detail">"将先重试读取；若仍失败，会清除所有 DeepSeek、OpenCode 和 Cursor 的本机凭据及缓存，需要重新连接。若已恢复可读，则保留原连接。不会清除 Codex 连接或其他设置。"</string>
     <string name="update_retry_at">"更新服务要求等待，请在 %1$s 后重试。"</string>
     <string name="update_retry_ready">"等待时间已结束，可以重新检查更新。"</string>
+    <string name="update_fallback_wait">主更新来源暂不可用，备用来源需等到 %1$s。可重试主来源；备用来源会继续等待。</string>
 </resources>

@@ -146,7 +146,15 @@ class PublishUpdateFeedTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'provenance'):
             self.publish()
         self.provenance['mode'] = 'release'
+        self.existing = self.entry(33)
+        self.existing[0]['tag_name'] = old
         self.assertTrue(self.publish())
+
+    def test_automatic_build_cannot_replace_equal_code_tagged_release(self):
+        self.existing = self.entry(33)
+        self.existing[0]['tag_name'] = 'v0.1.0-alpha33'
+        self.assertFalse(self.publish())
+        self.assertEqual([], self.writes)
 
     def test_corrupt_existing_index_is_not_overwritten(self):
         self.existing = []

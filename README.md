@@ -42,7 +42,7 @@
 3. 打开 App，可先体验**示例模式**，再连接 Codex；其他服务在“订阅”页单独连接，不要求先登录 Codex。
 4. 从系统桌面添加额度或 Token 小组件，也可在设置中添加桌面额度图标。小米／Redmi／POCO 用户可参考[桌面权限指引](docs/HOME_SCREEN_PERMISSION.md)。
 
-已有用户可在 **设置 → 应用更新**中检查、下载并安装更新。alpha33 源码改为读取独立的公开更新索引，避免 GitHub REST API 的共享 IP 配额影响；服务端要求等待时显示具体重试时间，到期后恢复检查按钮。alpha31／alpha32 若被旧接口限流，可从 Releases 下载已发布的新版本覆盖安装，保留本机数据。安装由 Android 弹窗确认；正式签名包与本地 debug 包不能直接相互覆盖。
+已有用户可在 **设置 → 应用更新**中检查、下载并安装更新。alpha33 源码改为读取独立的公开更新索引，正常检查不消耗 GitHub REST API 的共享 IP 配额；主来源连接失败时保留 API 备用通道，两者分别遵守等待时间。服务端要求等待时显示具体重试时间，到期后恢复检查按钮。alpha31／alpha32 若被旧接口限流，可从 Releases 下载已发布的新版本覆盖安装，保留本机数据。安装由 Android 弹窗确认；正式签名包与本地 debug 包不能直接相互覆盖。
 
 发布版本以 Releases 的实际 APK 为准，`master` 源码与 CI 预览不等同于已发布版本。CI 预览使用 debug 签名，artifact 保留 14 天。[安装与常见问题](docs/RELEASE_MATERIALS.md)
 

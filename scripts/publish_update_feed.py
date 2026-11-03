@@ -93,7 +93,13 @@ def publish(directory, repo, tag, source, execute=subprocess.run):
             if not isinstance(old, list) or len(old) != 1:
                 raise ValueError('Invalid existing update index')
             # A slow/older release job must never roll the index back.
-            if metadata(old[0])['version_code'] >= info['version_code']:
+            old_code = metadata(old[0])['version_code']
+            # A version tag can promote the identical source/version/signing
+            # identity, but an automatic build cannot demote a tagged release.
+            promote = (old_code == info['version_code'] and tag.startswith('v')
+                       and str(old[0].get('tag_name', '')).startswith('build-')
+                       and metadata(old[0]) == info)
+            if old_code > info['version_code'] or old_code == info['version_code'] and not promote:
                 return False
             sha = existing['sha']
         except subprocess.CalledProcessError as error:

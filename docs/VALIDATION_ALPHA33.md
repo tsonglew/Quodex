@@ -2,9 +2,9 @@
 
 2026-11-03。用户报告 alpha31 “检查更新”显示“服务端要求等待，请稍后再试”。所附诊断中没有更新检查的 HTTP 状态或截止时间，因此不能确认具体 403／429／503。源码复核确认旧客户端使用匿名 GitHub Releases API，并跨进程保存服务端等待截止时间；反复手动点击不能绕过等待。
 
-本次改为读取发布流程生成的公开静态索引，不消耗 REST API 匿名配额；普通网络故障与索引服务的限流仍按重试规则处理。设置显示具体等待时间，到期后恢复按钮；源迁移只清理旧 API 等待状态。发布器核对公开 Release 与签名产物，使用 CAS 和单调 versionCode 防止索引回退。
+本次改为读取发布流程生成的公开静态索引，正常检查不消耗 REST API 匿名配额，主来源连接失败／超时时才使用 API 备用通道；普通网络故障与索引服务的限流仍按重试规则处理。设置显示具体等待时间，到期后恢复按钮；源迁移将旧 API 等待时间保留给备用通道，不阻塞主来源。发布器核对公开 Release 与签名产物，使用 CAS 和单调 versionCode 防止索引回退。
 
-本地验证：231 项 JVM、65 项 Python 测试通过；lintDebug、assembleDebug、assembleDebugAndroidTest、actionlint 通过。API 37 arm64 专用模拟器验证等待提示／到期重试、手动检查、唯一后台任务及通知权限拒绝，4 项实际通过，通知投递项按未授权条件跳过。没有操作用户真机或真实服务账号。
+本地验证：236 项 JVM、66 项 Python 测试通过；lintDebug、assembleDebug、assembleDebugAndroidTest、actionlint 通过。API 37 arm64 专用模拟器验证等待提示／到期重试、备用等待不阻塞主来源、手动检查、唯一后台任务及通知权限拒绝，5 项实际通过，通知投递项按未授权条件跳过。没有操作用户真机或真实服务账号。
 
 [原生截图](screenshots/updates-alpha33/update-cooldown.png)来自 alpha33 debug 的 Compose 卡片捕获，等待时间为测试注入，未裁切或重绘，不代表实际服务端限流。
 

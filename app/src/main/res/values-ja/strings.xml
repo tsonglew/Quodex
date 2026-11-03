@@ -48,7 +48,7 @@
     <string name="check_later">"後で確認"</string>
     <string name="check_network_access_app_info_mobile_data">"ネットワークを確認：アプリ情報 → モバイルデータで、バックグラウンドデータを許可します。データセーバー使用時は、必要に応じてデータ使用の制限を解除してください。"</string>
     <string name="checking_for_updates">"更新を確認中…"</string>
-    <string name="checks_github_releases_and_prereleases_about_every">"約 12 時間ごとに公開更新インデックスを読み取り、GitHub REST API は使用しません。互換性のある新バージョンごとに一度通知します。システム、キャッシュ、通信状況により検出が遅れる場合があります。"</string>
+    <string name="checks_github_releases_and_prereleases_about_every">"約 12 時間ごとに公開更新インデックスを読み取ります。接続エラーやタイムアウト時のみ予備の GitHub API を確認し、更新元ごとの待機時間を守ります。互換性のある新バージョンごとに一度通知します。システム、キャッシュ、通信状況により検出が遅れる場合があります。"</string>
     <string name="choose_a_layout_and_add_it_to">"レイアウトを選んでホーム画面に追加できます。"</string>
     <string name="clear">"消去"</string>
     <string name="clear_diagnostic_records">"診断記録を消去"</string>
@@ -407,4 +407,5 @@
     <string name="subscription_reset_detail">"最初に読み込みを再試行します。引き続き失敗する場合、DeepSeek、OpenCode、Cursor の端末内の認証情報とキャッシュをすべて削除し、再接続が必要になります。読み込める接続は保持されます。Codex の接続と他の設定には影響しません。"</string>
     <string name="update_retry_at">"更新サービスから待機が求められています。%1$s 以降に再試行してください。"</string>
     <string name="update_retry_ready">"待機時間が終了しました。更新を再確認できます。"</string>
+    <string name="update_fallback_wait">メインの更新元に接続できません。予備の更新元は %1$s まで待機します。メインは再試行できますが、予備の待機は継続します。</string>
 </resources>

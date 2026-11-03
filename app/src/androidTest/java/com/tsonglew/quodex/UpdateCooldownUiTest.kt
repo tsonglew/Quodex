@@ -48,4 +48,19 @@ class UpdateCooldownUiTest {
         compose.onNodeWithTag("check-app-update").assertIsEnabled().performClick()
         assertEquals(1, checks)
     }
+
+    @Test fun fallbackCooldownStillAllowsCheckingPrimary() {
+        var checks = 0
+        compose.setContent {
+            QuotaTheme("light") {
+                AppUpdatesCard(UpdateState(SavedUpdates(enabled = false, fallbackRetryAt = 1_793_635_320L),
+                    initialized = true, error = UiText(R.string.update_fallback_wait)),
+                    onCheck = { checks++ }, onEnabled = {}, onPermissionChanged = {}, now = 1_793_635_200L)
+            }
+        }
+        compose.onNodeWithTag("update-fallback-deadline").assertIsDisplayed()
+            .assertTextContains("可重试主来源", substring = true)
+        compose.onNodeWithTag("check-app-update").assertIsEnabled().performClick()
+        assertEquals(1, checks)
+    }
 }

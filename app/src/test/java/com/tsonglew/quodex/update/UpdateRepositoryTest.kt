@@ -189,6 +189,7 @@ class UpdateRepositoryTest {
         assertEquals(time - 50, store.value.lastCheckedAt)
         assertEquals(release.versionCode, store.value.notifiedVersionCode)
         assertEquals(0L, store.value.retryAt)
+        assertEquals(time + 3600, store.value.fallbackRetryAt)
         assertEquals(0L, store.value.lastAttemptAt)
         assertEquals(UpdateRepository.SOURCE_GENERATION, store.value.sourceGeneration)
         response = { throw com.tsonglew.quodex.network.HttpFailure(503, time + 60) }
@@ -219,6 +220,53 @@ class UpdateRepositoryTest {
             assertTrue(repository.check(force = true))
             assertTrue(diagnostics.report().contains("UPDATE_CHECK_END 1 0 0"))
         } finally { directory.deleteRecursively() }
+    }
+
+    @Test fun fallbackCooldownPersistsAcrossRestartWithoutSuppressingPrimary() = runBlocking {
+        var primaryAvailable = false
+        var restored = 0L
+        fun repositoryWithFallback(): UpdateRepository {
+            val source = object : UpdateSource {
+                var deadline = 0L
+                override fun restoreFallbackRetryAt(value: Long) { restored = value; deadline = value }
+                override fun fallbackRetryAt() = deadline
+                override suspend fun latest(): AppUpdate? {
+                    requests++
+                    if (primaryAvailable) return release
+                    deadline = time + 120
+                    throw UpdateFallbackFailure(com.tsonglew.quodex.network.HttpFailure(429, deadline))
+                }
+            }
+            return UpdateRepository(source, store, notifier, 20, now = { time })
+        }
+        assertFalse(repositoryWithFallback().check(force = true))
+        assertEquals(0L, store.value.retryAt)
+        assertEquals(time + 120, store.value.fallbackRetryAt)
+        primaryAvailable = true
+        assertTrue(repositoryWithFallback().check(force = true))
+        assertEquals(time + 120, restored)
+        assertEquals(2, requests)
+    }
+
+    @Test fun cancellationPersistsFallbackDeadline() = runBlocking {
+        val started = CompletableDeferred<Unit>()
+        val source = object : UpdateSource {
+            var deadline = 0L
+            override fun fallbackRetryAt() = deadline
+            override suspend fun latest(): AppUpdate? {
+                deadline = time + 120
+                started.complete(Unit)
+                awaitCancellation()
+            }
+        }
+        val repository = UpdateRepository(source, store, notifier, 20, now = { time })
+        val check = launch { repository.check(force = true) }
+        withTimeout(5000) { started.await() }
+        check.cancelAndJoin()
+        assertEquals(time + 120, store.value.fallbackRetryAt)
+        assertEquals(0L, store.value.retryAt)
+        assertEquals(0L, store.value.lastAttemptAt)
+        assertFalse(repository.state.value.checking)
     }
 
     @Test fun cancellationPropagatesAndReleasesCheckingStateWithoutErasingCache() = runBlocking {

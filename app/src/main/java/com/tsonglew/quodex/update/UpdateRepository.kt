@@ -25,6 +25,7 @@ data class SavedUpdates(
     val notifiedVersionCode: Long = 0,
     val retryAt: Long = 0,
     val sourceGeneration: Int = 0,
+    val fallbackRetryAt: Long = 0,
 )
 
 data class UpdateState(
@@ -65,9 +66,11 @@ class UpdateRepository(
         val legacy = saved.sourceGeneration < SOURCE_GENERATION
         val current = saved.copy(available = saved.available?.takeIf { it.versionCode > installedVersionCode },
             retryAt = if (legacy) 0 else saved.retryAt,
+            fallbackRetryAt = if (legacy) maxOf(saved.retryAt, saved.fallbackRetryAt) else saved.fallbackRetryAt,
             lastAttemptAt = if (legacy && saved.retryAt > 0) 0 else saved.lastAttemptAt,
             sourceGeneration = SOURCE_GENERATION)
         if (current != saved) store.write(current)
+        source.restoreFallbackRetryAt(current.fallbackRetryAt)
         if (current.available == null || !current.enabled) notifier.clear()
         mutableState.value = UpdateState(saved = current, initialized = true)
     }
@@ -132,18 +135,33 @@ class UpdateRepository(
                 }
                 throw cancel
             } catch (failure: Exception) {
-                val deadline = (failure as? HttpFailure)?.retryAt?.takeIf { it > now() }
+                val http = (if (failure is UpdateFallbackFailure) failure.failure else failure) as? HttpFailure
+                val fallbackFailure = failure is UpdateFallbackFailure
+                val deadline = (http?.retryAt ?: if (fallbackFailure) source.fallbackRetryAt() else null)?.takeIf { it > now() }
                 diagnostics?.record(DiagnosticEvent.UPDATE_CHECK_END, 0,
-                    (failure as? HttpFailure)?.status?.toLong() ?: 0, deadline ?: 0)
-                if (deadline != null) {
+                    http?.status?.toLong() ?: 0, deadline ?: 0)
+                if (deadline != null && !fallbackFailure) {
                     val saved = state.value.saved.copy(retryAt = deadline)
                     // Keep the in-memory guard even if persisting settings fails.
                     mutableState.value = state.value.copy(saved = saved)
                     try { store.write(saved) } catch (cancel: CancellationException) { throw cancel } catch (_: Exception) { }
                 }
-                mutableState.value = state.value.copy(error = UiText(if (deadline != null) R.string.network_retry_after else R.string.could_not_check_for_updates_check_your))
+                mutableState.value = state.value.copy(error = UiText(when {
+                    fallbackFailure && source.fallbackRetryAt() > now() -> R.string.update_fallback_wait
+                    deadline != null && !fallbackFailure -> R.string.network_retry_after
+                    else -> R.string.could_not_check_for_updates_check_your
+                }))
                 false
             } finally {
+                // Persist fallback deadlines even when the check is cancelled in
+                // backoff. They never suppress a request to the primary index.
+                if (state.value.initialized) withContext(NonCancellable) {
+                    val saved = state.value.saved.copy(fallbackRetryAt = source.fallbackRetryAt())
+                    if (saved != state.value.saved) {
+                        mutableState.value = state.value.copy(saved = saved)
+                        try { store.write(saved) } catch (_: Exception) { }
+                    }
+                }
                 mutableState.value = state.value.copy(checking = false)
             }
         }

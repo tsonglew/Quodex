@@ -55,7 +55,7 @@ internal fun AppUpdatesCard(state: UpdateState, onCheck: () -> Unit, onEnabled: 
     val texts = localTextResources()
     val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
-    val retryTime = runCatching { java.time.Instant.ofEpochSecond(state.saved.retryAt).atZone(java.time.ZoneId.systemDefault())
+    fun retryTime(value: Long) = runCatching { java.time.Instant.ofEpochSecond(value).atZone(java.time.ZoneId.systemDefault())
         .format(java.time.format.DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.SHORT,
             java.time.format.FormatStyle.MEDIUM).withLocale(texts.locale)) }.getOrNull()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -94,10 +94,14 @@ internal fun AppUpdatesCard(state: UpdateState, onCheck: () -> Unit, onEnabled: 
             Spacer(Modifier.height(14.dp))
             when {
                 state.checking -> Text(texts(R.string.checking_for_updates), fontSize = 13.sp, lineHeight = 20.sp)
-                state.saved.retryAt > now -> Text(if (retryTime == null) texts(R.string.network_retry_after)
-                    else texts(R.string.update_retry_at, retryTime), fontSize = 13.sp, lineHeight = 20.sp,
+                state.saved.retryAt > now -> Text(retryTime(state.saved.retryAt)?.let { texts(R.string.update_retry_at, it) }
+                    ?: texts(R.string.network_retry_after), fontSize = 13.sp, lineHeight = 20.sp,
                     color = colors.error, modifier = Modifier.testTag("update-retry-deadline"))
-                state.error?.id == R.string.network_retry_after -> Text(texts(R.string.update_retry_ready),
+                state.error?.id == R.string.update_fallback_wait && state.saved.fallbackRetryAt > now ->
+                    Text(texts(R.string.update_fallback_wait, retryTime(state.saved.fallbackRetryAt) ?: "—"),
+                        fontSize = 13.sp, lineHeight = 20.sp, color = colors.error,
+                        modifier = Modifier.testTag("update-fallback-deadline"))
+                state.error?.id in setOf(R.string.network_retry_after, R.string.update_fallback_wait) -> Text(texts(R.string.update_retry_ready),
                     fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.testTag("update-retry-ready"))
                 state.error != null -> Text(state.error.resolve(texts), fontSize = 13.sp, lineHeight = 20.sp, color = colors.error)
                 state.saved.available != null -> Text(texts(R.string.update_available_value, state.saved.available.versionName),
