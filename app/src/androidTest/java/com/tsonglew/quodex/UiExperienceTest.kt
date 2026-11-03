@@ -130,6 +130,14 @@ class UiExperienceTest {
                 compose.onNodeWithTag("token-trend-day-list").assertExists()
                 compose.onNodeWithTag("token-trend-details-close").performClick()
 
+                compose.onNodeWithTag("tab-subscriptions").performClick()
+                compose.onNodeWithTag("subscription-examples").assertIsNotEnabled()
+                assertTextFits()
+                compose.onNode(hasText("官方控制台") and hasAnyAncestor(hasTestTag("subscription-CURSOR")))
+                    .performScrollToVisible(compose).assertIsDisplayed()
+                assertTextFits()
+                screenshot("subscriptions-narrow-large-font")
+
                 compose.onNodeWithTag("tab-settings").performClick()
                 compose.onNodeWithTag("show-remaining-toggle").performScrollToVisible(compose).assertIsOn()
                 assertTextFits()

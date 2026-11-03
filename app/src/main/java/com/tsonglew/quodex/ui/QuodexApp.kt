@@ -80,7 +80,7 @@ fun QuodexApp(model: MainViewModel) {
     LaunchedEffect(tab, state, prefs, configuration) {
         withContext(Dispatchers.IO) {
             diagnosticApp.diagnostics.record(DiagnosticEvent.UI_STATE,
-                listOf("quota", "widgets", "settings").indexOf(tab).toLong(),
+                listOf("quota", "widgets", "settings", "subscriptions").indexOf(tab).toLong(),
                 if (state.initialized) 1 else 0, if (state.connected) 1 else 0,
                 if (state.syncing) 1 else 0, if (state.snapshot != null) 1 else 0,
                 state.failure?.ordinal?.toLong() ?: -1,
@@ -91,6 +91,7 @@ fun QuodexApp(model: MainViewModel) {
     }
     val pageStates = rememberSaveableStateHolder()
     val destinations = listOf(Triple("quota", texts(R.string.quota), Icons.Outlined.Dashboard),
+        Triple("subscriptions", texts(R.string.subscriptions), Icons.Outlined.AccountBalanceWallet),
         Triple("widgets", texts(R.string.widgets), Icons.Outlined.Widgets), Triple("settings", texts(R.string.settings), Icons.Outlined.Settings))
     QuotaTheme(prefs.theme) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -140,6 +141,7 @@ fun QuodexApp(model: MainViewModel) {
                                         when (tab) {
                                             "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock, heatmapLaunch) }
                                             "widgets" -> WidgetPage(state, prefs)
+                                            "subscriptions" -> SubscriptionsPage(model, clock, state.demo)
                                             else -> SettingsPage(state, prefs, model, clock)
                                         }
                                         // Content scrolls behind the dock; only its end needs clearance.

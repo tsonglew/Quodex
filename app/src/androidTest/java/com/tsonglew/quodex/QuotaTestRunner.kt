@@ -18,6 +18,21 @@ class QuotaTestRunner : AndroidJUnitRunner() {
 }
 
 class TestQuotaApplication : QuodexApplication() {
+    val subscriptionRequests = AtomicInteger()
+    @Volatile var subscriptionFailure: com.tsonglew.quodex.data.FailureKind? = null
+    @Volatile var subscriptionDelayMillis = 0L
+    override val subscriptionSource = com.tsonglew.quodex.subscriptions.SubscriptionSource { provider, _ ->
+        subscriptionRequests.incrementAndGet()
+        kotlinx.coroutines.delay(subscriptionDelayMillis)
+        subscriptionFailure?.let { throw com.tsonglew.quodex.data.ApiFailure(it) }
+        val raw = when (provider) {
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.DEEPSEEK -> """{"is_available":true,"balance_infos":[{"currency":"CNY","total_balance":"110","granted_balance":"10","topped_up_balance":"100"}]}"""
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.OPENCODE_GO -> """{"usage":{"rolling":{"status":"ok","percent":24,"resetsAt":"2027-01-01T02:00:00Z"},"weekly":{"status":"ok","percent":38,"resetsAt":"2027-01-04T00:00:00Z"},"monthly":{"status":"ok","percent":46,"resetsAt":"2027-02-01T00:00:00Z"}}}"""
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.OPENCODE_ZEN -> """{"billingMode":"prepaid","balanceMicroCents":"1850000000","availableMicroCents":"1850000000"}"""
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.CURSOR -> """{"membershipType":"pro","billingCycleEnd":"2027-01-01T00:00:00Z","individualUsage":{"plan":{"autoPercentUsed":35,"apiPercentUsed":18,"totalPercentUsed":27}}}"""
+        }
+        com.tsonglew.quodex.subscriptions.SubscriptionParser.parse(provider, raw, java.time.Instant.now().epochSecond)
+    }
     override fun onCreate() {
         // Keep existing Chinese UI assertions deterministic without changing the emulator's system UI language.
         if (android.os.Build.VERSION.SDK_INT >= 33) {

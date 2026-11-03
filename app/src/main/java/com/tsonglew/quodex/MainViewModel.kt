@@ -11,6 +11,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.time.Instant
 import com.tsonglew.quodex.update.AppUpdateScheduler
+import com.tsonglew.quodex.subscriptions.SubscriptionProvider
 
 data class LoginState(val challenge: DeviceChallenge? = null, val error: UiText? = null)
 
@@ -18,6 +19,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val app = application as QuodexApplication
     val state = app.repository.state
     val updates = app.updates.state
+    val subscriptions = app.subscriptions.state
+    private val subscriptionJobs = mutableMapOf<SubscriptionProvider, Job>()
+    fun loadSubscriptions() {
+        SubscriptionProvider.entries.forEach { provider ->
+            if (subscriptionJobs[provider]?.isActive != true)
+                subscriptionJobs[provider] = launchOperation { app.subscriptions.refresh(provider) }
+        }
+    }
+    fun connectSubscription(provider: SubscriptionProvider, credential: String) {
+        cancelSubscription(provider)
+        subscriptionJobs[provider] = launchOperation { app.subscriptions.connect(provider, credential) }
+    }
+    fun refreshSubscription(provider: SubscriptionProvider) {
+        if (subscriptionJobs[provider]?.isActive == true) return
+        subscriptionJobs[provider] = launchOperation { app.subscriptions.refresh(provider, true) }
+    }
+    fun cancelSubscription(provider: SubscriptionProvider) { subscriptionJobs[provider]?.cancel() }
+    fun disconnectSubscription(provider: SubscriptionProvider) {
+        cancelSubscription(provider)
+        subscriptionJobs[provider] = launchOperation { app.subscriptions.disconnect(provider) }
+    }
     val desktopIconAvailability = app.desktopIcon.availability
     private val mutableIconMessage = MutableStateFlow<UiText?>(null)
     val desktopIconMessage = mutableIconMessage.asStateFlow()

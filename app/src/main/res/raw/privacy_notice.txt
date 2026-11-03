@@ -1,11 +1,16 @@
 Quodex Privacy Notice
-Updated: October 30, 2026
+Updated: November 3, 2026
 
-Quodex is an independent third-party Android tool for viewing Codex quota and home screen widgets. It is not affiliated with OpenAI. Connectivity is currently experimental.
+Quodex is an independent third-party Android tool for viewing Codex quota and widgets, plus DeepSeek, OpenCode and Cursor balances or subscription usage. It is not affiliated with these providers. Compatibility integrations remain experimental.
 
 Connection and network requests
 Sign-in takes place on OpenAI's website. Quodex does not ask you to enter your account password. The app sends device authorization, token exchange, and renewal requests to auth.openai.com, and requests quota and account token usage statistics from chatgpt.com. Requests include the relevant device code, authorization code or token, account identifier, and ordinary network information such as your IP address. The provider of the browser sign-in page is responsible for processing data on that page.
 The app uses the connection only to retrieve quota and account token usage statistics. It does not send chat or model generation requests. Sign-in credentials may grant broader access and must not be treated as dedicated read-only credentials. Do not share sign-in codes or tokens.
+
+Additional subscription services
+The Plans page optionally connects to DeepSeek, OpenCode Go, OpenCode Console (formerly Zen), and Cursor. DeepSeek API keys are sent only to api.deepseek.com/user/balance; OpenCode keys only to opencode.ai/zen/go/v1/usage or opencode.ai/console/api/billing/status; the Cursor session token only to cursor.com/api/usage-summary as the WorkosCursorSessionToken cookie. Requests also reveal ordinary network information such as the IP address. These connections only issue read requests, never model generation, payments, or subscription changes. The keys or session tokens themselves may grant broader permissions.
+Each service has one independent connection. Credentials and matching balance/usage snapshots are encrypted together using Android Keystore and AES-GCM in private storage excluded from backups. Raw responses, credentials, balances and usage are not written to diagnostics. Opening Plans checks connected services (with a five-minute cache); Refresh fetches on demand. Transient failures retry up to three total attempts and obey Retry-After. No background jobs or home screen widgets are added for these services. Errors preserve the last successful snapshot and timestamp. Examples are explicitly synthetic and never sent to a provider.
+Disconnect on each service deletes its local credential and snapshot without changing the other services or revoking the remote key. The Codex connection controls in Settings affect Codex only. To revoke an API key or session, use the relevant official dashboard. Official dashboard buttons open the provider in your browser; its privacy terms apply there. Console and Cursor dashboard compatibility can change or require reconnecting.
 
 Update checks and notifications
 Quota, token statistics, update checks, and APK downloads may retry temporary failures a limited number of times, respecting server wait instructions. Canceling stops the active operation. Interrupted APK downloads restart from the beginning and may use additional data. Retry deadlines may be stored locally. Retries add no new destinations or categories of uploaded data.

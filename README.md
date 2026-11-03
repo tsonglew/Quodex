@@ -5,17 +5,30 @@
   <img src="docs/assets/brand/quodex-horizontal-color.svg" width="320" alt="Quodex 流线 Q 标志与字标" />
 </picture>
 
-面向 Android 的 Codex 额度监控 App，支持桌面小组件、重置时间和 Token 使用趋势。Quodex 是独立第三方工具，与 OpenAI 无隶属关系。
+面向 Android 的额度与订阅查询 App，支持 Codex 额度、Token 使用趋势与桌面小组件，以及 DeepSeek、OpenCode 和 Cursor 的独立订阅连接。Quodex 是独立第三方工具，与服务提供方无隶属关系。
 
-> **当前代码版本：0.1.0-alpha31**。近 7／30 天均可切换条形图与热力图，并记住选择；热力图按周一至周日横向铺满，App 高度随周数调整，**2×2** 桌面组件优先把空间留给图表。已包含中英日三语、液态玻璃风格悬浮导航、小米桌面权限提醒、App 内下载安装更新及网络自动重试。
+> **当前源码版本：0.1.0-alpha32**。新增独立订阅页，查询 DeepSeek API 余额、OpenCode Go 周期用量、OpenCode Console（原 Zen）余额与 Cursor 个人用量；Console／Cursor 为实验性兼容接入，真实账号验收待完成。源码版本不代表已发布，可安装版本以 [GitHub Releases](https://github.com/tsonglew/Quodex/releases) 中实际上传的 APK 为准。
+
+近 7／30 天均可切换条形图与热力图，并记住选择；热力图按周一至周日横向铺满，App 高度随周数调整，**2×2** 桌面组件优先把空间留给图表。已包含中英日三语、液态玻璃风格悬浮导航、小米桌面权限提醒、App 内下载安装更新及网络自动重试。
 
 [官网](https://tsonglew.github.io/quodex/) · [观看动效](https://tsonglew.github.io/quodex/#motion) · [公开 APK 与预发布](https://github.com/tsonglew/Quodex/releases) · [支持范围](docs/SUPPORT.md)
+
+| DeepSeek 余额 | OpenCode Go 用量 | Cursor 个人订阅 |
+| --- | --- | --- |
+| <img src="docs/screenshots/subscriptions-alpha32/subscriptions-deepseek.png" width="260" alt="alpha32 debug 的 DeepSeek 余额与四项悬浮导航，示例数据" /> | <img src="docs/screenshots/subscriptions-alpha32/subscriptions-opencode-go.png" width="260" alt="alpha32 debug 的 OpenCode Go 滚动、周、月用量，示例数据" /> | <img src="docs/screenshots/subscriptions-alpha32/subscriptions-cursor.png" width="260" alt="alpha32 debug 的 Cursor 模型用量，实验接入，示例数据" /> |
+
+以上来自 2026-11-03 API 37 模拟器、alpha32 debug 原生界面，均为本机示例数据；不代表真实账户已验收。[OpenCode Console（原 Zen）](docs/screenshots/subscriptions-alpha32/subscriptions-opencode-zen.png) · [English](docs/screenshots/subscriptions-alpha32/subscriptions-en.png) · [日本語](docs/screenshots/subscriptions-alpha32/subscriptions-ja.png) · [320dp／200% 字体](docs/screenshots/subscriptions-alpha32/subscriptions-narrow-large-font.png)。
+
+<details>
+<summary>alpha26 历史玻璃导航截图</summary>
 
 | 浅色 | 深色 |
 | --- | --- |
 | <img src="docs/screenshots/glass-navigation/light.png" width="300" alt="浅色界面与玻璃悬浮导航，使用示例数据" /> | <img src="docs/screenshots/glass-navigation/dark.png" width="300" alt="深色界面与玻璃悬浮导航，使用示例数据" /> |
 
-以上为 alpha26 引入的[玻璃导航界面](docs/GLASS_NAVIGATION.md)，来自 API 37 模拟器，使用示例数据。alpha31 的日历式热力图与 2×2 组件截图见下方。[品牌与素材规范](docs/BRANDING.md)。
+以上为 alpha26 的历史[玻璃导航界面](docs/GLASS_NAVIGATION.md)，来自 API 37 模拟器，使用示例数据。其中三项导航不代表 alpha32 新增订阅页后的导航。alpha31 的日历式热力图与 2×2 组件截图见下方。[品牌与素材规范](docs/BRANDING.md)。
+
+</details>
 
 安装包见 [GitHub Releases](https://github.com/tsonglew/Quodex/releases)。主分支通过六组 Android 设备测试、发布构建与固定签名检查后自动生成预发布；源码版本不代表该版本已发布，请以 Release 中实际上传的 APK、版本、来源与 SHA-256 为准。已有用户可在 App 内检查并下载安装更新。
 
@@ -27,6 +40,7 @@
 
 安装包、校验和与来源提交见 [GitHub Releases](https://github.com/tsonglew/Quodex/releases)。每次主分支发布须通过完整 CI 和固定签名验证，实际可安装版本以对应发布记录和 APK 附件为准。
 
+- **订阅查询**：订阅页为 DeepSeek、OpenCode Go、OpenCode Zen 和 Cursor 分别保存连接；前台查询、加密缓存、错误保留上次数据和独立断开。金额按币种展示，缺失值不补零。接入步骤与兼容边界见[订阅服务说明](docs/SUBSCRIPTIONS.md)。这四项目前不进入桌面组件或后台刷新。
 - **额度与重置时间**：按服务端实际返回的周期展示，支持剩余／已用切换；没有返回用量时明确说明，不补成零或无限额度。
 - **Token 趋势**：近 7／30 天均可切换条形图与 [日历式热力图](docs/TOKEN_HEATMAP.md)，记住图表选择，提供累计用量和逐日明细；缺失日期与实际零值分别标记，统计失败保留上次数据。兼容接口仍待真实账号验收，不提供输入／输出／缓存细分或费用估算。
 - **桌面小组件**：标准额度、独立 2×1 额度与 2×2 的 30 天 Token 热力图，支持缩放、原地手动刷新和独立外观配置；点击热力图打开 App 的 30 日视图。后台刷新受 Android 网络、省电与厂商限制。
@@ -79,7 +93,7 @@ Android 10+，Kotlin 2.1.21、Compose、Glance、Room、DataStore 和 WorkManage
 
 已有 Android SDK 与 JDK 17 时执行 `./gradlew testDebugUnitTest lintDebug assembleDebug`。APK 位于 `app/build/outputs/apk/debug/app-debug.apk`。有设备或模拟器时执行 `./gradlew connectedDebugAndroidTest`。GitHub Actions 会保存 APK、测试报告及原生截图。
 
-设备登录由用户在 OpenAI 页面完成，Quodex 不收集密码。示例模式须主动选择并明确标注，不执行额度请求。凭据通过 Android Keystore 加密保存在本机；退出清理本机连接，远程授权不会因此自动撤销。
+设备登录由用户在 OpenAI 页面完成，Quodex 不收集密码。示例模式须主动选择并明确标注，不执行额度请求。凭据通过 Android Keystore 加密保存在本机；Codex 退出仅清理 Codex 连接，新服务在订阅页分别断开，远程授权不会因此自动撤销。
 
 当前账号覆盖、刷新限制和未完成验收见 [支持范围与已知限制](docs/SUPPORT.md)。
 
