@@ -1,0 +1,70 @@
+package com.tsonglew.quodex.subscriptions
+
+import kotlinx.coroutines.*
+
+/** Application-owned removals must survive a cancelled request or a replaced ViewModel. */
+class SubscriptionActions(
+    private val repository: SubscriptionRepository,
+    private val persistenceScope: CoroutineScope,
+) {
+    private val requests = mutableMapOf<SubscriptionProvider, Job>()
+    private val removals = mutableMapOf<SubscriptionProvider, Job>()
+    private var reset: Job? = null
+
+    fun connect(provider: SubscriptionProvider, credential: String, scope: CoroutineScope) =
+        query(provider, scope, replace = true) { repository.connect(provider, credential) }
+
+    fun refresh(provider: SubscriptionProvider, scope: CoroutineScope, force: Boolean = false) =
+        query(provider, scope, replace = false) { repository.refresh(provider, force) }
+
+    @Synchronized private fun query(provider: SubscriptionProvider, scope: CoroutineScope,
+        replace: Boolean, operation: suspend () -> Unit): Job {
+        if (!replace) requests[provider]?.takeIf { it.isActive }?.let { return it }
+        requests[provider]?.cancel()
+        val pendingRemoval = removals[provider]
+        val pendingReset = reset
+        val job = scope.launch(start = CoroutineStart.LAZY) {
+            pendingRemoval?.join()
+            pendingReset?.join()
+            operation()
+        }
+        requests[provider] = job
+        job.invokeOnCompletion {
+            synchronized(this) { if (requests[provider] === job) requests.remove(provider) }
+        }
+        job.start()
+        return job
+    }
+
+    @Synchronized fun cancel(provider: SubscriptionProvider) { requests[provider]?.cancel() }
+
+    @Synchronized fun disconnect(provider: SubscriptionProvider): Job {
+        cancel(provider)
+        removals[provider]?.takeIf { it.isActive }?.let { return it }
+        val pendingReset = reset
+        val job = persistenceScope.launch(start = CoroutineStart.LAZY) {
+            pendingReset?.join()
+            repository.disconnect(provider)
+        }
+        removals[provider] = job
+        job.invokeOnCompletion {
+            synchronized(this) { if (removals[provider] === job) removals.remove(provider) }
+        }
+        job.start()
+        return job
+    }
+
+    @Synchronized fun resetUnreadableStorage(): Job {
+        requests.values.toList().forEach { it.cancel() }
+        reset?.takeIf { it.isActive }?.let { return it }
+        val pendingRemovals = removals.values.toList()
+        val job = persistenceScope.launch(start = CoroutineStart.LAZY) {
+            pendingRemovals.joinAll()
+            repository.resetUnreadableStorage()
+        }
+        reset = job
+        job.invokeOnCompletion { synchronized(this) { if (reset === job) reset = null } }
+        job.start()
+        return job
+    }
+}

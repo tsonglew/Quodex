@@ -400,4 +400,9 @@
     <string name="subscription_credit">"クレジット請求"</string>
     <string name="subscription_seat">"シート課金"</string>
     <string name="subscription_legacy">"旧請求方式"</string>
+    <string name="subscription_storage_unreadable">"端末のプランデータを読み込めません。まず再試行してください。復旧しない場合は接続をリセットして再接続できます。"</string>
+    <string name="subscription_retry_storage">"データの読み込みを再試行"</string>
+    <string name="subscription_reset_storage">"プランデータをリセット"</string>
+    <string name="subscription_reset_title">"読み込めないプランデータをリセットしますか？"</string>
+    <string name="subscription_reset_detail">"最初に読み込みを再試行します。引き続き失敗する場合、DeepSeek、OpenCode、Cursor の端末内の認証情報とキャッシュをすべて削除し、再接続が必要になります。読み込める接続は保持されます。Codex の接続と他の設定には影響しません。"</string>
 </resources>

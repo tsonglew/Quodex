@@ -62,6 +62,9 @@ open class QuodexApplication : Application() {
             subscriptionSource,
             com.tsonglew.quodex.subscriptions.EncryptedSubscriptionStore(this))
     }
+    val subscriptionActions by lazy {
+        com.tsonglew.quodex.subscriptions.SubscriptionActions(subscriptions, scope)
+    }
     val desktopIcon by lazy { DesktopQuotaIcon(this) }
     open val updateSource: UpdateSource by lazy {
         GitHubUpdateClient(BuildConfig.VERSION_CODE.toLong(), installedSigningCertificate(this))

@@ -17,6 +17,7 @@ import javax.crypto.spec.GCMParameterSpec
 interface SubscriptionStore {
     fun read(): Map<SubscriptionProvider, SubscriptionAccount>
     fun write(accounts: Map<SubscriptionProvider, SubscriptionAccount>)
+    fun reset() = write(emptyMap())
 }
 
 /** Encrypt credentials and their matching cache as a single atomic transaction. */
@@ -46,11 +47,24 @@ class EncryptedSubscriptionStore(context: Context) : SubscriptionStore {
         catch (_: Exception) { throw ApiFailure(FailureKind.STORAGE) }
     }
     @Synchronized override fun write(accounts: Map<SubscriptionProvider, SubscriptionAccount>) {
-        if (accounts.isEmpty()) { file.delete(); return }
+        if (accounts.isEmpty()) {
+            file.delete()
+            // AtomicFile's delete has no result; do not report a successful removal
+            // if a file (including a restored backup) can still be opened.
+            try { file.openRead().use { throw ApiFailure(FailureKind.STORAGE) } }
+            catch (_: FileNotFoundException) {
+                if (file.baseFile.exists()) throw ApiFailure(FailureKind.STORAGE)
+            }
+            return
+        }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.ENCRYPT_MODE, key()) }
         val data = cipher.iv + cipher.doFinal(AppJson.encodeToString(accounts).toByteArray(Charsets.UTF_8))
         val stream = file.startWrite()
         try { stream.write(data); file.finishWrite(stream) }
         catch (failure: Exception) { file.failWrite(stream); throw failure }
+    }
+    @Synchronized override fun reset() {
+        KeyStore.getInstance("AndroidKeyStore").apply { load(null); deleteEntry(alias) }
+        write(emptyMap())
     }
 }

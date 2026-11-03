@@ -21,6 +21,8 @@ OpenCode Console：在 Account → Personal API keys 为目标工作区创建密
 
 凭据与快照共同使用 Android Keystore 和 AES-GCM 加密；禁止网络重定向，不向其他服务、GitHub 或诊断记录发送凭据。每个服务仅保存一个连接，重连成功后才替换旧连接。设置中的 Codex 退出只影响 Codex，新服务应在各自卡片断开。卸载或清除应用数据会清除全部本机连接。远端撤销须使用提供方控制台。
 
+断开操作独立于网络请求执行；快速重新连接、取消查询或关闭当前页面，不会取消已经发起的凭据删除。如果本机加密存储无法读取，订阅页会阻止新增连接并提供“重试读取数据”和“重置订阅数据”入口。清除前需要确认，并会再次尝试读取；若恢复可读则保留连接，仍无法读取时才清除这四项服务的本机凭据与缓存，随后可重新连接。此恢复操作不清除 Codex 连接、语言或其他设置，也不撤销远端授权。
+
 ## 数据与兼容边界
 
 - DeepSeek 金额保留十进制精度，不合并不同币种；不足或负余额不会显示为充足。
@@ -41,9 +43,10 @@ OpenCode Console：在 Account → Personal API keys 为目标工作区创建密
 
 2026-11-03 本地验证：
 
-- 223 项 JVM 测试通过，其中新增 19 项解析、HTTP 与仓库测试，覆盖币种／精度、microcent 换算、缺失值、超额、重定向隔离、凭据头、取消、限流、缓存、失败重连、写盘失败、跨服务隔离和晚到请求。
+- 228 项 JVM 测试通过，其中新增 24 项解析、HTTP、仓库与操作调度测试，覆盖币种／精度、microcent 换算、缺失值、超额、重定向隔离、凭据头、取消、限流、缓存、失败重连、写盘失败、跨服务隔离和晚到请求；另覆盖不可读缓存恢复、恢复前重试保护可读凭据，以及断开后快速重连／取消不影响凭据删除。
 - API 37、arm64 模拟器的 9 项订阅与界面设备测试通过，含新增 4 项订阅测试：取消首次连接不落盘，连接／鉴权失败／断开隔离，加密文件不含明文凭据，示例零请求，英文与日文切换重建。现有界面测试增加 320dp／200% 系统字体的订阅页和四项导航检查。
 - debug／release 构建与 lint、55 项发布脚本测试通过。
+- 同一 API 37 模拟器使用生产 debug 入口注入损坏文件：重试后仍显示错误，取消清除保留文件，确认清除后错误消失且可重新连接，设置文件散列不变；[恢复确认框](screenshots/subscriptions-alpha32/subscriptions-recovery.png)为 alpha32 debug 故障注入截图，不含真实账号。
 - [中文 DeepSeek](screenshots/subscriptions-alpha32/subscriptions-deepseek.png)、[OpenCode Go](screenshots/subscriptions-alpha32/subscriptions-opencode-go.png)、[OpenCode Console](screenshots/subscriptions-alpha32/subscriptions-opencode-zen.png)、[Cursor](screenshots/subscriptions-alpha32/subscriptions-cursor.png)、[English](screenshots/subscriptions-alpha32/subscriptions-en.png)、[日本語](screenshots/subscriptions-alpha32/subscriptions-ja.png)、[320dp／200% 字体](screenshots/subscriptions-alpha32/subscriptions-narrow-large-font.png)均为 alpha32 debug 原生截图、示例数据。
 
 样例与 MockWebServer 测试不能代替真实账号验收。尚未使用真实 DeepSeek／Go／Console／Cursor 凭据验证，不能据此承诺每种套餐与迁移中的工作区都可连接。

@@ -12,11 +12,17 @@ class SubscriptionRepositoryTest {
     private class MemoryStore : SubscriptionStore {
         var accounts: Map<SubscriptionProvider, SubscriptionAccount> = emptyMap()
         var failWrite = false
-        override fun read() = accounts
+        var failRead = false
+        var resets = 0
+        override fun read(): Map<SubscriptionProvider, SubscriptionAccount> {
+            if (failRead) throw ApiFailure(FailureKind.STORAGE)
+            return accounts
+        }
         override fun write(accounts: Map<SubscriptionProvider, SubscriptionAccount>) {
             if (failWrite) error("disk")
             this.accounts = accounts
         }
+        override fun reset() { write(emptyMap()); failRead = false; resets++ }
     }
 
     @Test fun restartRestoresEachProviderWithoutExposingCredentialsInUi() = runBlocking {
@@ -113,5 +119,47 @@ class SubscriptionRepositoryTest {
         repo.connect(provider, "key")
         repo.refresh(provider)
         assertEquals(1, calls)
+    }
+
+    @Test fun explicitRecoveryResetsUnreadableStoreAndAllowsNewConnection() = runBlocking {
+        val store = MemoryStore().apply { failRead = true }
+        var calls = 0
+        val repo = SubscriptionRepository({ p, _ -> calls++; snapshot(p) }, store)
+        repo.connect(provider, "new-key")
+        assertTrue(repo.storageUnavailable.value)
+        assertEquals(0, calls)
+        repo.resetUnreadableStorage()
+        assertFalse(repo.storageUnavailable.value)
+        assertEquals(1, store.resets)
+        repo.connect(provider, "new-key")
+        assertTrue(repo.state.value.getValue(provider).connected)
+        assertEquals(1, calls)
+    }
+
+    @Test fun recoveryRetriesReadAndPreservesConnectionsAfterTransientFailure() = runBlocking {
+        val account = SubscriptionAccount("existing-key", snapshot())
+        val store = MemoryStore().apply { accounts = mapOf(provider to account); failRead = true }
+        val repo = SubscriptionRepository({ _, _ -> error("no network during recovery") }, store)
+        repo.initialize()
+        assertTrue(repo.storageUnavailable.value)
+        store.failRead = false
+        repo.resetUnreadableStorage()
+        assertEquals(0, store.resets)
+        assertEquals(account, store.accounts[provider])
+        assertTrue(repo.state.value.getValue(provider).connected)
+        assertFalse(repo.storageUnavailable.value)
+    }
+
+    @Test fun failedResetKeepsStorageErrorUntilRecoverySucceeds() = runBlocking {
+        val store = MemoryStore().apply { failRead = true; failWrite = true }
+        val repo = SubscriptionRepository({ p, _ -> snapshot(p) }, store)
+        repo.initialize()
+        repo.resetUnreadableStorage()
+        assertTrue(repo.storageUnavailable.value)
+        assertEquals(FailureKind.STORAGE, repo.state.value.getValue(provider).failure)
+        store.failWrite = false
+        repo.resetUnreadableStorage()
+        assertFalse(repo.storageUnavailable.value)
+        assertTrue(repo.state.value.values.all { !it.connected && it.failure == null })
     }
 }

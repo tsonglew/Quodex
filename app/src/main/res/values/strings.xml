@@ -403,4 +403,9 @@
     <string name="subscription_credit">"Credit billing"</string>
     <string name="subscription_seat">"Seat billing"</string>
     <string name="subscription_legacy">"Legacy billing"</string>
+    <string name="subscription_storage_unreadable">"Subscription data could not be read. Retry first. If the problem persists, reset these connections and reconnect."</string>
+    <string name="subscription_retry_storage">"Retry reading data"</string>
+    <string name="subscription_reset_storage">"Reset subscription data"</string>
+    <string name="subscription_reset_title">"Reset unreadable subscriptions?"</string>
+    <string name="subscription_reset_detail">"Reading will be retried first. If it still fails, this clears all saved DeepSeek, OpenCode and Cursor credentials and cached data. You will need to reconnect. Readable connections are preserved. Your Codex connection and other settings are unaffected."</string>
 </resources>

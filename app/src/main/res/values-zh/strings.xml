@@ -400,4 +400,9 @@
     <string name="subscription_credit">"信用额度计费"</string>
     <string name="subscription_seat">"席位计费"</string>
     <string name="subscription_legacy">"旧版计费"</string>
+    <string name="subscription_storage_unreadable">"无法读取本机订阅数据。请先重试；如果仍无法恢复，可重置这些连接后重新添加。"</string>
+    <string name="subscription_retry_storage">"重试读取数据"</string>
+    <string name="subscription_reset_storage">"重置订阅数据"</string>
+    <string name="subscription_reset_title">"重置无法读取的订阅数据？"</string>
+    <string name="subscription_reset_detail">"将先重试读取；若仍失败，会清除所有 DeepSeek、OpenCode 和 Cursor 的本机凭据及缓存，需要重新连接。若已恢复可读，则保留原连接。不会清除 Codex 连接或其他设置。"</string>
 </resources>

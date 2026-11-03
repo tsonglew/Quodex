@@ -20,26 +20,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val state = app.repository.state
     val updates = app.updates.state
     val subscriptions = app.subscriptions.state
-    private val subscriptionJobs = mutableMapOf<SubscriptionProvider, Job>()
+    val subscriptionStorageUnavailable = app.subscriptions.storageUnavailable
     fun loadSubscriptions() {
         SubscriptionProvider.entries.forEach { provider ->
-            if (subscriptionJobs[provider]?.isActive != true)
-                subscriptionJobs[provider] = launchOperation { app.subscriptions.refresh(provider) }
+            app.subscriptionActions.refresh(provider, viewModelScope)
         }
     }
     fun connectSubscription(provider: SubscriptionProvider, credential: String) {
-        cancelSubscription(provider)
-        subscriptionJobs[provider] = launchOperation { app.subscriptions.connect(provider, credential) }
+        app.subscriptionActions.connect(provider, credential, viewModelScope)
     }
     fun refreshSubscription(provider: SubscriptionProvider) {
-        if (subscriptionJobs[provider]?.isActive == true) return
-        subscriptionJobs[provider] = launchOperation { app.subscriptions.refresh(provider, true) }
+        app.subscriptionActions.refresh(provider, viewModelScope, true)
     }
-    fun cancelSubscription(provider: SubscriptionProvider) { subscriptionJobs[provider]?.cancel() }
+    fun cancelSubscription(provider: SubscriptionProvider) { app.subscriptionActions.cancel(provider) }
     fun disconnectSubscription(provider: SubscriptionProvider) {
-        cancelSubscription(provider)
-        subscriptionJobs[provider] = launchOperation { app.subscriptions.disconnect(provider) }
+        app.subscriptionActions.disconnect(provider)
     }
+    fun resetUnreadableSubscriptions() { launchOperation {
+        app.subscriptionActions.resetUnreadableStorage().join()
+        loadSubscriptions()
+    } }
     val desktopIconAvailability = app.desktopIcon.availability
     private val mutableIconMessage = MutableStateFlow<UiText?>(null)
     val desktopIconMessage = mutableIconMessage.asStateFlow()

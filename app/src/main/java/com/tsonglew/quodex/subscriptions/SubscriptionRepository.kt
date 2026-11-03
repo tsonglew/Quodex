@@ -21,6 +21,8 @@ class SubscriptionRepository(
     private var accounts: Map<SubscriptionProvider, SubscriptionAccount> = emptyMap()
     private var initialized = false
     private var storageFailed = false
+    private val mutableStorageUnavailable = MutableStateFlow(false)
+    val storageUnavailable = mutableStorageUnavailable.asStateFlow()
     private val mutable = MutableStateFlow(SubscriptionProvider.entries.associateWith { SubscriptionState() })
     val state = mutable.asStateFlow()
 
@@ -35,9 +37,31 @@ class SubscriptionRepository(
                 }
                 initialized = true
                 storageFailed = false
+                mutableStorageUnavailable.value = false
             } catch (cancel: CancellationException) { throw cancel }
             catch (_: Exception) {
                 storageFailed = true
+                mutableStorageUnavailable.value = true
+                mutable.update { it.mapValues { (_, value) -> value.copy(failure = FailureKind.STORAGE) } }
+            }
+        }
+    }
+
+    /** Only called after the user confirms recovery. A readable store is never reset. */
+    suspend fun resetUnreadableStorage() = withContext(Dispatchers.IO) {
+        initialize() // Retry first: a transient Keystore/storage failure may have recovered.
+        storageLock.withLock {
+            if (initialized || !storageFailed) return@withLock
+            try {
+                store.reset()
+                accounts = emptyMap()
+                generations.values.forEach { it.incrementAndGet() }
+                initialized = true
+                storageFailed = false
+                mutableStorageUnavailable.value = false
+                mutable.value = SubscriptionProvider.entries.associateWith { SubscriptionState() }
+            } catch (cancel: CancellationException) { throw cancel }
+            catch (_: Exception) {
                 mutable.update { it.mapValues { (_, value) -> value.copy(failure = FailureKind.STORAGE) } }
             }
         }

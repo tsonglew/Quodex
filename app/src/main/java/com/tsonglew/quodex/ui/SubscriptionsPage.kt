@@ -28,12 +28,14 @@ import com.tsonglew.quodex.subscriptions.*
 @Composable
 fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
     val saved by model.subscriptions.collectAsStateWithLifecycle()
+    val storageUnavailable by model.subscriptionStorageUnavailable.collectAsStateWithLifecycle()
     var examples by rememberSaveable { mutableStateOf(false) }
     val demo = appDemo || examples
     LaunchedEffect(demo) { if (!demo) model.loadSubscriptions() }
     val texts = localTextResources()
     val context = LocalContext.current
     var connecting by remember { mutableStateOf<SubscriptionProvider?>(null) }
+    var confirmReset by remember { mutableStateOf(false) }
     Text(texts(R.string.subscriptions), fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
     Spacer(Modifier.height(8.dp))
     Text(texts(R.string.subscriptions_intro), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -41,6 +43,19 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
         Text(texts(if (demo) R.string.subscription_real_data else R.string.subscription_examples))
     }
     if (demo) Text(texts(R.string.subscription_sample_notice), color = MaterialTheme.colorScheme.primary)
+    if (!demo && storageUnavailable) {
+        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.errorContainer) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(texts(R.string.subscription_storage_unreadable))
+                OutlinedButton(onClick = model::loadSubscriptions, modifier = Modifier.fillMaxWidth()) {
+                    Text(texts(R.string.subscription_retry_storage))
+                }
+                TextButton(onClick = { confirmReset = true }, modifier = Modifier.testTag("subscription-reset")) {
+                    Text(texts(R.string.subscription_reset_storage))
+                }
+            }
+        }
+    }
     SubscriptionProvider.entries.forEach { provider ->
         val state = if (demo) SubscriptionState(snapshot = sampleSubscription(provider, now)) else saved.getValue(provider)
         Spacer(Modifier.height(16.dp))
@@ -78,7 +93,7 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
                     }
                     Text(texts(R.string.subscription_updated, absoluteTime(snapshot.fetchedAt, true)), style = MaterialTheme.typography.bodySmall)
                 }
-                state.failure?.let { failure ->
+                state.failure?.takeUnless { storageUnavailable && !demo }?.let { failure ->
                     Text(if (failure == FailureKind.LIMITED) texts(R.string.subscription_error_limited, absoluteTime(state.retryAt, true))
                         else texts(failure.subscriptionErrorResource()), color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.testTag("subscription-error-${provider.name}"))
@@ -88,7 +103,7 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
                     if (state.busy) TextButton(onClick = { model.cancelSubscription(provider) }) {
                         Text(texts(R.string.subscription_cancel))
                     }
-                    Button(onClick = { connecting = provider }, enabled = !state.busy,
+                    Button(onClick = { connecting = provider }, enabled = !state.busy && !storageUnavailable,
                         modifier = Modifier.fillMaxWidth().testTag("subscription-connect-${provider.name}")) { Text(texts(R.string.subscription_connect)) }
                     if (state.connected) {
                         OutlinedButton(onClick = { model.refreshSubscription(provider) },
@@ -104,6 +119,12 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
     }
     Spacer(Modifier.height(16.dp))
     Text(texts(R.string.subscriptions_scope), style = MaterialTheme.typography.bodySmall)
+    if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false },
+        title = { Text(texts(R.string.subscription_reset_title)) },
+        text = { Text(texts(R.string.subscription_reset_detail), modifier = Modifier.verticalScroll(rememberScrollState())) },
+        confirmButton = { TextButton(onClick = { confirmReset = false; model.resetUnreadableSubscriptions() },
+            modifier = Modifier.testTag("subscription-reset-confirm")) { Text(texts(R.string.clear)) } },
+        dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(texts(R.string.subscription_cancel)) } })
     connecting?.let { provider ->
         // Never save credentials to saved-instance-state or a persistent text field.
         var input by remember(provider) { mutableStateOf("") }
