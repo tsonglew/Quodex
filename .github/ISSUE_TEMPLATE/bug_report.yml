@@ -1,0 +1,68 @@
+name: "问题反馈 / Bug report"
+description: "报告崩溃、额度、订阅、刷新或桌面展示问题。"
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请先搜索已有 Issue。不要提交 API key、Cookie、令牌、授权码或未脱敏响应。
+        可使用中文或英文；不能复现的偶发问题也可以提供已知线索。
+  - type: input
+    id: version
+    attributes:
+      label: "App 版本与安装来源 / Version and source"
+      placeholder: "例如：0.1.0-alpha32，GitHub Release；或 debug + commit SHA"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: "设备与系统 / Device and OS"
+      placeholder: "机型、Android 版本；桌面问题请补充 Launcher 名称与版本"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: "涉及功能 / Area"
+      multiple: true
+      options:
+        - "Codex 连接与额度"
+        - "Token 图表"
+        - "DeepSeek / OpenCode / Cursor 订阅"
+        - "桌面小组件或额度图标"
+        - "后台刷新"
+        - "安装或应用更新"
+        - "界面、语言或无障碍"
+        - "其他"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: "复现步骤 / Steps to reproduce"
+      placeholder: |
+        1. 打开……
+        2. 点击……
+        3. 观察到……
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: "预期与实际结果 / Expected and actual behavior"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "补充证据 / Additional context"
+      description: "可选：脱敏截图、设置中预览后的诊断报告。后台问题请补充最后成功时间、网络、省电及是否强停；说明是否为示例模式。"
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: "隐私检查 / Privacy"
+      options:
+        - label: "我已移除凭据、授权码、Cookie 和个人信息。"
+          required: true

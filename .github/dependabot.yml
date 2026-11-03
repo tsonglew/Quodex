@@ -1,0 +1,34 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 2
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "chore(deps)"
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 3
+    groups:
+      kotlin:
+        patterns: ["org.jetbrains.kotlin*", "org.jetbrains.kotlinx*"]
+      compose:
+        patterns: ["androidx.compose*"]
+    # Glance 1.1.1 has native layout overrides checked by app/build.gradle.kts.
+    # Upgrade it manually together with the leaf layouts and device validation.
+    ignore:
+      - dependency-name: "androidx.glance:*"
+    commit-message:
+      prefix: "chore(deps)"

@@ -1,0 +1,24 @@
+name: "功能建议 / Feature request"
+description: "描述使用场景与希望解决的问题。"
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: "希望解决什么问题？ / Problem"
+      description: "描述你在什么场景下遇到什么困难。"
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "期望的体验 / Proposed experience"
+      description: "说明功能如何使用；无需先给出技术实现。"
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "其他办法或参考 / Alternatives and references"
+      description: "可选：已有办法、相关 Issue 或公开参考。请勿附带账号凭据。"
