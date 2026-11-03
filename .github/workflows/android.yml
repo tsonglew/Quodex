@@ -272,7 +272,9 @@ jobs:
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/publish_build.py
+        run: |
+          python3 scripts/publish_build.py
+          python3 scripts/publish_update_feed.py
       - name: APK download summary
         env:
           ARTIFACT_URL: ${{ steps.signed-apk.outputs.artifact-url }}

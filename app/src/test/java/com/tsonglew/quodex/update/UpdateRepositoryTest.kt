@@ -179,6 +179,96 @@ class UpdateRepositoryTest {
         assertNull(restarted.state.value.error)
     }
 
+    @Test fun legacyApiCooldownIsMigratedOnceWithoutLosingPreferencesOrCache() = runBlocking {
+        store.value = SavedUpdates(enabled = false, available = release, lastAttemptAt = time,
+            lastCheckedAt = time - 50, notifiedVersionCode = release.versionCode, retryAt = time + 3600)
+        val repository = repository()
+        repository.initialize()
+        assertFalse(store.value.enabled)
+        assertEquals(release, store.value.available)
+        assertEquals(time - 50, store.value.lastCheckedAt)
+        assertEquals(release.versionCode, store.value.notifiedVersionCode)
+        assertEquals(0L, store.value.retryAt)
+        assertEquals(time + 3600, store.value.fallbackRetryAt)
+        assertEquals(0L, store.value.lastAttemptAt)
+        assertEquals(UpdateRepository.SOURCE_GENERATION, store.value.sourceGeneration)
+        response = { throw com.tsonglew.quodex.network.HttpFailure(503, time + 60) }
+        assertFalse(repository.check(force = true))
+        val restarted = repository()
+        assertFalse(restarted.check(force = true))
+        assertEquals(1, requests)
+        assertEquals(time + 60, store.value.retryAt)
+    }
+
+    @Test fun updateDiagnosticsIncludeHttpStatusAndDeadlineWithoutFailureMessages() = runBlocking {
+        val directory = java.nio.file.Files.createTempDirectory("update-diagnostics").toFile()
+        try {
+            val diagnostics = com.tsonglew.quodex.diagnostics.Diagnostics(java.io.File(directory, "events.log"))
+            val repository = UpdateRepository(UpdateSource { requests++; response() }, store, notifier, 20,
+                now = { time }, diagnostics = diagnostics)
+            response = { throw com.tsonglew.quodex.network.HttpFailure(429, time + 120) }
+            assertFalse(repository.check(force = true))
+            assertFalse(repository.check(force = true))
+            assertEquals(1, requests)
+            assertTrue(diagnostics.report().contains("UPDATE_CHECK_END 0 429 ${time + 120}"))
+            assertTrue(diagnostics.report().contains("UPDATE_WAIT ${time + 120}"))
+            time += 120
+            response = { throw IOException("secret response body") }
+            assertFalse(repository.check(force = true))
+            assertFalse(diagnostics.report().contains("secret"))
+            response = { release }
+            assertTrue(repository.check(force = true))
+            assertTrue(diagnostics.report().contains("UPDATE_CHECK_END 1 0 0"))
+        } finally { directory.deleteRecursively() }
+    }
+
+    @Test fun fallbackCooldownPersistsAcrossRestartWithoutSuppressingPrimary() = runBlocking {
+        var primaryAvailable = false
+        var restored = 0L
+        fun repositoryWithFallback(): UpdateRepository {
+            val source = object : UpdateSource {
+                var deadline = 0L
+                override fun restoreFallbackRetryAt(value: Long) { restored = value; deadline = value }
+                override fun fallbackRetryAt() = deadline
+                override suspend fun latest(): AppUpdate? {
+                    requests++
+                    if (primaryAvailable) return release
+                    deadline = time + 120
+                    throw UpdateFallbackFailure(com.tsonglew.quodex.network.HttpFailure(429, deadline))
+                }
+            }
+            return UpdateRepository(source, store, notifier, 20, now = { time })
+        }
+        assertFalse(repositoryWithFallback().check(force = true))
+        assertEquals(0L, store.value.retryAt)
+        assertEquals(time + 120, store.value.fallbackRetryAt)
+        primaryAvailable = true
+        assertTrue(repositoryWithFallback().check(force = true))
+        assertEquals(time + 120, restored)
+        assertEquals(2, requests)
+    }
+
+    @Test fun cancellationPersistsFallbackDeadline() = runBlocking {
+        val started = CompletableDeferred<Unit>()
+        val source = object : UpdateSource {
+            var deadline = 0L
+            override fun fallbackRetryAt() = deadline
+            override suspend fun latest(): AppUpdate? {
+                deadline = time + 120
+                started.complete(Unit)
+                awaitCancellation()
+            }
+        }
+        val repository = UpdateRepository(source, store, notifier, 20, now = { time })
+        val check = launch { repository.check(force = true) }
+        withTimeout(5000) { started.await() }
+        check.cancelAndJoin()
+        assertEquals(time + 120, store.value.fallbackRetryAt)
+        assertEquals(0L, store.value.retryAt)
+        assertEquals(0L, store.value.lastAttemptAt)
+        assertFalse(repository.state.value.checking)
+    }
+
     @Test fun cancellationPropagatesAndReleasesCheckingStateWithoutErasingCache() = runBlocking {
         val previousAttempt = time - UpdateRepository.CHECK_INTERVAL_SECONDS
         store.value = SavedUpdates(available = release, lastAttemptAt = previousAttempt, lastCheckedAt = time - 100)

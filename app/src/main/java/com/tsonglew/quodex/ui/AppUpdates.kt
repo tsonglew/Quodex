@@ -50,10 +50,14 @@ internal fun AvailableUpdateNotice(update: AppUpdate) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun AppUpdatesCard(state: UpdateState, onCheck: () -> Unit, onEnabled: (Boolean) -> Unit, onPermissionChanged: () -> Unit) {
+internal fun AppUpdatesCard(state: UpdateState, onCheck: () -> Unit, onEnabled: (Boolean) -> Unit, onPermissionChanged: () -> Unit,
+    now: Long = java.time.Instant.now().epochSecond) {
     val texts = localTextResources()
     val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
+    fun retryTime(value: Long) = runCatching { java.time.Instant.ofEpochSecond(value).atZone(java.time.ZoneId.systemDefault())
+        .format(java.time.format.DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.SHORT,
+            java.time.format.FormatStyle.MEDIUM).withLocale(texts.locale)) }.getOrNull()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var notificationsEnabled by remember { mutableStateOf(AndroidUpdateNotifier(context).enabled()) }
     var openingFailed by remember { mutableStateOf(false) }
@@ -90,6 +94,15 @@ internal fun AppUpdatesCard(state: UpdateState, onCheck: () -> Unit, onEnabled: 
             Spacer(Modifier.height(14.dp))
             when {
                 state.checking -> Text(texts(R.string.checking_for_updates), fontSize = 13.sp, lineHeight = 20.sp)
+                state.saved.retryAt > now -> Text(retryTime(state.saved.retryAt)?.let { texts(R.string.update_retry_at, it) }
+                    ?: texts(R.string.network_retry_after), fontSize = 13.sp, lineHeight = 20.sp,
+                    color = colors.error, modifier = Modifier.testTag("update-retry-deadline"))
+                state.error?.id == R.string.update_fallback_wait && state.saved.fallbackRetryAt > now ->
+                    Text(texts(R.string.update_fallback_wait, retryTime(state.saved.fallbackRetryAt) ?: "—"),
+                        fontSize = 13.sp, lineHeight = 20.sp, color = colors.error,
+                        modifier = Modifier.testTag("update-fallback-deadline"))
+                state.error?.id in setOf(R.string.network_retry_after, R.string.update_fallback_wait) -> Text(texts(R.string.update_retry_ready),
+                    fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.testTag("update-retry-ready"))
                 state.error != null -> Text(state.error.resolve(texts), fontSize = 13.sp, lineHeight = 20.sp, color = colors.error)
                 state.saved.available != null -> Text(texts(R.string.update_available_value, state.saved.available.versionName),
                     fontSize = 13.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium)
@@ -101,7 +114,7 @@ internal fun AppUpdatesCard(state: UpdateState, onCheck: () -> Unit, onEnabled: 
                     lineHeight = 20.sp, color = colors.onSurfaceVariant)
             }
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                TextButton(onClick = onCheck, enabled = !state.checking,
+                TextButton(onClick = onCheck, enabled = !state.checking && state.saved.retryAt <= now,
                     modifier = Modifier.heightIn(min = 48.dp).testTag("check-app-update"),
                     contentPadding = PaddingValues(vertical = 10.dp)) { Text(texts(R.string.check_for_updates), fontSize = 14.sp) }
                 TextButton(onClick = { showDetails = !showDetails },

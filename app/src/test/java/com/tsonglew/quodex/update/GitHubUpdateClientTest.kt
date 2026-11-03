@@ -3,6 +3,7 @@ package com.tsonglew.quodex.update
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -62,6 +63,90 @@ class GitHubUpdateClientTest {
         server.enqueue(MockResponse().setBody(JsonArray(releases.toList()).toString()).apply {
             if (link != null) addHeader("Link", link)
         })
+    }
+
+    @Test fun productionEndpointReadsPublicIndexWithoutApiOrAccountHeaders() = runBlocking {
+        var requests = 0
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            val request = chain.request()
+            requests++
+            assertEquals("https://raw.githubusercontent.com/tsonglew/Quodex/update-feed/updates.json", request.url.toString())
+            assertEquals("application/json", request.header("Accept"))
+            assertNull(request.header("Authorization"))
+            assertNull(request.header("Cookie"))
+            assertNull(request.header("X-GitHub-Api-Version"))
+            okhttp3.Response.Builder().request(request).protocol(okhttp3.Protocol.HTTP_1_1)
+                .code(200).message("OK")
+                .body(JsonArray(listOf(release(digest = "sha256:" + "cd".repeat(32)))).toString().toResponseBody()).build()
+        }.build()
+        val update = GitHubUpdateClient(20, certificate, client = client).latest()!!
+        assertEquals(21L, update.versionCode)
+        assertEquals("cd".repeat(32), update.apkSha256)
+        assertEquals(1, requests)
+    }
+
+    @Test fun blockedIndexUsesFallbackAndRestoredFallbackWaitDoesNotBlockRecoveredIndex() = runBlocking {
+        var blocked = true
+        var primaryRequests = 0
+        var fallbackRequests = 0
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            val request = chain.request()
+            if (request.url.host == "raw.githubusercontent.com") {
+                primaryRequests++
+                if (blocked) throw java.net.UnknownHostException("fixture blocked host")
+            } else {
+                assertEquals("api.github.com", request.url.host)
+                fallbackRequests++
+            }
+            okhttp3.Response.Builder().request(request).protocol(okhttp3.Protocol.HTTP_1_1)
+                .code(200).message("OK").body(JsonArray(listOf(release())).toString().toResponseBody()).build()
+        }.build()
+        fun source() = GitHubUpdateClient(20, certificate, client = client, now = { 1000 },
+            requestRetry = RequestRetry(maxAttempts = 1))
+        assertNotNull(source().latest())
+        assertEquals(1, fallbackRequests)
+        val restarted = source()
+        restarted.restoreFallbackRetryAt(1120)
+        assertTrue(runCatching { restarted.latest() }.exceptionOrNull() is UpdateFallbackFailure)
+        assertEquals(1, fallbackRequests)
+        blocked = false
+        assertNotNull(restarted.latest())
+        assertEquals(3, primaryRequests)
+        assertEquals(1, fallbackRequests)
+    }
+
+    @Test fun primaryThrottleInvalidJsonAndTlsFailureNeverUseFallback() = runBlocking {
+        for (kind in listOf("throttle", "json", "tls")) {
+            var fallbackRequests = 0
+            val client = OkHttpClient.Builder().addInterceptor { chain ->
+                val request = chain.request()
+                if (request.url.host != "raw.githubusercontent.com") fallbackRequests++
+                if (kind == "tls") throw javax.net.ssl.SSLPeerUnverifiedException("fixture certificate")
+                okhttp3.Response.Builder().request(request).protocol(okhttp3.Protocol.HTTP_1_1)
+                    .code(if (kind == "throttle") 429 else 200).message("fixture")
+                    .header("Retry-After", "120").body("invalid json".toResponseBody()).build()
+            }.build()
+            val checker = GitHubUpdateClient(20, certificate, client = client,
+                requestRetry = RequestRetry(maxAttempts = 1))
+            assertNotNull(runCatching { checker.latest() }.exceptionOrNull())
+            assertEquals(kind, 0, fallbackRequests)
+        }
+    }
+
+    @Test fun fallbackRateLimitIsExposedForPersistence() = runBlocking {
+        var apiRequests = 0
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            if (chain.request().url.host == "raw.githubusercontent.com") throw java.net.UnknownHostException("fixture")
+            apiRequests++
+            okhttp3.Response.Builder().request(chain.request()).protocol(okhttp3.Protocol.HTTP_1_1)
+                .code(429).message("fixture").header("Retry-After", "120").body("".toResponseBody()).build()
+        }.build()
+        val checker = GitHubUpdateClient(20, certificate, client = client, now = { 1000 },
+            requestRetry = RequestRetry(maxAttempts = 1))
+        assertTrue(runCatching { checker.latest() }.exceptionOrNull() is UpdateFallbackFailure)
+        assertEquals(1120L, checker.fallbackRetryAt())
+        assertTrue(runCatching { checker.latest() }.exceptionOrNull() is UpdateFallbackFailure)
+        assertEquals(1, apiRequests)
     }
 
     @Test fun retriesOnlyTheFailedPageAndStillSelectsNewestRelease() = runBlocking {

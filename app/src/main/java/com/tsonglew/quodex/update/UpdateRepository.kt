@@ -3,6 +3,8 @@ package com.tsonglew.quodex.update
 import com.tsonglew.quodex.i18n.*
 import com.tsonglew.quodex.R
 import com.tsonglew.quodex.network.HttpFailure
+import com.tsonglew.quodex.diagnostics.Diagnostics
+import com.tsonglew.quodex.diagnostics.DiagnosticEvent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -22,6 +24,8 @@ data class SavedUpdates(
     val lastCheckedAt: Long = 0,
     val notifiedVersionCode: Long = 0,
     val retryAt: Long = 0,
+    val sourceGeneration: Int = 0,
+    val fallbackRetryAt: Long = 0,
 )
 
 data class UpdateState(
@@ -48,6 +52,7 @@ class UpdateRepository(
     private val notifier: UpdateNotifier,
     private val installedVersionCode: Long,
     private val now: () -> Long = { Instant.now().epochSecond },
+    private val diagnostics: Diagnostics? = null,
 ) {
     private val mutex = Mutex()
     private val mutableState = MutableStateFlow(UpdateState())
@@ -56,8 +61,16 @@ class UpdateRepository(
     private suspend fun load() {
         if (state.value.initialized) return
         val saved = store.read()
-        val current = saved.copy(available = saved.available?.takeIf { it.versionCode > installedVersionCode })
+        // REST API cooldowns do not apply to the new static index origin. Once
+        // migrated, retain all cooldowns from this source across process restarts.
+        val legacy = saved.sourceGeneration < SOURCE_GENERATION
+        val current = saved.copy(available = saved.available?.takeIf { it.versionCode > installedVersionCode },
+            retryAt = if (legacy) 0 else saved.retryAt,
+            fallbackRetryAt = if (legacy) maxOf(saved.retryAt, saved.fallbackRetryAt) else saved.fallbackRetryAt,
+            lastAttemptAt = if (legacy && saved.retryAt > 0) 0 else saved.lastAttemptAt,
+            sourceGeneration = SOURCE_GENERATION)
         if (current != saved) store.write(current)
+        source.restoreFallbackRetryAt(current.fallbackRetryAt)
         if (current.available == null || !current.enabled) notifier.clear()
         mutableState.value = UpdateState(saved = current, initialized = true)
     }
@@ -85,6 +98,7 @@ class UpdateRepository(
                 val time = now()
                 // A manual tap must also respect a server-provided cooldown.
                 if (time < saved.retryAt) {
+                    diagnostics?.record(DiagnosticEvent.UPDATE_WAIT, saved.retryAt)
                     mutableState.value = state.value.copy(error = UiText(R.string.network_retry_after))
                     return@withLock false
                 }
@@ -94,6 +108,7 @@ class UpdateRepository(
                     return@withLock true
                 }
                 mutableState.value = state.value.copy(checking = true, error = null)
+                diagnostics?.record(DiagnosticEvent.UPDATE_CHECK_START, if (force) 1 else 0)
                 previousAttempt = saved.lastAttemptAt
                 saved = saved.copy(lastAttemptAt = time)
                 store.write(saved)
@@ -104,8 +119,10 @@ class UpdateRepository(
                 mutableState.value = state.value.copy(saved = saved)
                 if (available == null) notifier.clear()
                 notifyAvailable(saved)
+                diagnostics?.record(DiagnosticEvent.UPDATE_CHECK_END, 1, 0, 0)
                 true
             } catch (cancel: CancellationException) {
+                diagnostics?.record(DiagnosticEvent.UPDATE_CANCELLED)
                 // Leaving the screen/cancelling a worker must not suppress checks for 12 hours.
                 previousAttempt?.let { previous ->
                     withContext(NonCancellable) {
@@ -118,16 +135,33 @@ class UpdateRepository(
                 }
                 throw cancel
             } catch (failure: Exception) {
-                val deadline = (failure as? HttpFailure)?.retryAt?.takeIf { it > now() }
-                if (deadline != null) {
+                val http = (if (failure is UpdateFallbackFailure) failure.failure else failure) as? HttpFailure
+                val fallbackFailure = failure is UpdateFallbackFailure
+                val deadline = (http?.retryAt ?: if (fallbackFailure) source.fallbackRetryAt() else null)?.takeIf { it > now() }
+                diagnostics?.record(DiagnosticEvent.UPDATE_CHECK_END, 0,
+                    http?.status?.toLong() ?: 0, deadline ?: 0)
+                if (deadline != null && !fallbackFailure) {
                     val saved = state.value.saved.copy(retryAt = deadline)
                     // Keep the in-memory guard even if persisting settings fails.
                     mutableState.value = state.value.copy(saved = saved)
                     try { store.write(saved) } catch (cancel: CancellationException) { throw cancel } catch (_: Exception) { }
                 }
-                mutableState.value = state.value.copy(error = UiText(if (deadline != null) R.string.network_retry_after else R.string.could_not_check_for_updates_check_your))
+                mutableState.value = state.value.copy(error = UiText(when {
+                    fallbackFailure && source.fallbackRetryAt() > now() -> R.string.update_fallback_wait
+                    deadline != null && !fallbackFailure -> R.string.network_retry_after
+                    else -> R.string.could_not_check_for_updates_check_your
+                }))
                 false
             } finally {
+                // Persist fallback deadlines even when the check is cancelled in
+                // backoff. They never suppress a request to the primary index.
+                if (state.value.initialized) withContext(NonCancellable) {
+                    val saved = state.value.saved.copy(fallbackRetryAt = source.fallbackRetryAt())
+                    if (saved != state.value.saved) {
+                        mutableState.value = state.value.copy(saved = saved)
+                        try { store.write(saved) } catch (_: Exception) { }
+                    }
+                }
                 mutableState.value = state.value.copy(checking = false)
             }
         }
@@ -143,5 +177,8 @@ class UpdateRepository(
         }
     }
 
-    companion object { const val CHECK_INTERVAL_SECONDS = 12 * 60 * 60L }
+    companion object {
+        const val CHECK_INTERVAL_SECONDS = 12 * 60 * 60L
+        const val SOURCE_GENERATION = 1
+    }
 }
