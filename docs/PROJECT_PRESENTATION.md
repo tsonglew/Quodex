@@ -40,4 +40,6 @@ Issue／Dependabot／发行说明等仓库文件在合并到默认分支后生�
 - 官网检查 1440 px 桌面、390 px 手机与 320 px 窄屏；本地资源、锚点、历史深色预览切换与 `#motion` 深链接通过，保留减少动画设置与手动视频播放。
 - 官网 `astro check` 无错误；完整站点构建在博客 `/archives` 渲染远程图片时失败，图片来自未修改的博客文章。Quodex 静态页面可独立预览，此结果不代表完整 Pages 构建通过或已经部署。
 
-官网应在 App PR 合并、MIT 与贡献文档链接可用后合并。合并后仍须核对 Pages 工作流和线上页面。
+远端补充验证：[官网 PR #10](https://github.com/tsonglew/tsonglew.github.io/pull/10) 新增不部署的 PR 构建检查，固定 Node 22 与 npm 11.11.0，保留 `npm ci`。修正 npm 10 对既有锁文件的 peer dependency 解析差异后，[运行 41619677125](https://github.com/tsonglew/tsonglew.github.io/actions/runs/41619677125) 完整成功；验证提交为 `b5d0c74a76bc577e075d85c1489bd3980cd9baac`。本地博客图片失败不代表远端构建失败。
+
+配套 [App PR #47](https://github.com/tsonglew/Quodex/pull/47)。官网应在 App PR 合并、MIT 与贡献文档链接可用后合并；合并后仍须核对 Pages 工作流和线上页面。
