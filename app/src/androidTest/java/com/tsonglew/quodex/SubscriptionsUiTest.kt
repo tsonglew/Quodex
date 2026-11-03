@@ -90,6 +90,7 @@ class SubscriptionsUiTest {
     }
 
     @Test fun englishAndJapaneseSubscriptionsSurviveLanguageRecreation() {
+        var primaryFailure: Throwable? = null
         try {
             for ((language, heading, notice) in listOf(
                 Triple("en", "App language", "Sample data · not your account"),
@@ -104,16 +105,25 @@ class SubscriptionsUiTest {
                 compose.onNodeWithTag("tab-subscriptions").assertIsSelected()
                 saveDeviceScreenshot(app, "subscriptions-$language", compose.onRoot().captureToImage().asAndroidBitmap())
             }
+        } catch (failure: Throwable) {
+            primaryFailure = failure
+            throw failure
         } finally {
-            instrumentation.runOnMainSync {
-                if (android.os.Build.VERSION.SDK_INT >= 33) {
-                    app.getSystemService(android.app.LocaleManager::class.java).applicationLocales =
-                        android.os.LocaleList.forLanguageTags("zh-Hans")
-                } else com.tsonglew.quodex.i18n.AppLanguages.select("zh-Hans")
-                app.languageChanged()
+            try {
+                instrumentation.runOnMainSync {
+                    if (android.os.Build.VERSION.SDK_INT >= 33) {
+                        app.getSystemService(android.app.LocaleManager::class.java).applicationLocales =
+                            android.os.LocaleList.forLanguageTags("zh-Hans")
+                    } else com.tsonglew.quodex.i18n.AppLanguages.select("zh-Hans")
+                    app.languageChanged()
+                }
+                instrumentation.waitForIdleSync()
+                assertEquals("zh-Hans", com.tsonglew.quodex.i18n.AppLanguages.selectedTag(app))
+            } catch (cleanupFailure: Throwable) {
+                val original = primaryFailure
+                if (original == null) throw cleanupFailure
+                original.addSuppressed(cleanupFailure)
             }
-            instrumentation.waitForIdleSync()
-            assertEquals("zh-Hans", com.tsonglew.quodex.i18n.AppLanguages.selectedTag(app))
         }
     }
 }
