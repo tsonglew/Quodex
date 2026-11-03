@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "使用帮助与已知限制 / Help"
+    url: https://github.com/tsonglew/Quodex/blob/master/docs/SUPPORT.md
+    about: "查看账号覆盖、后台刷新和桌面组件的已知限制。"
+  - name: "下载与安装 / Downloads"
+    url: https://github.com/tsonglew/Quodex/releases
+    about: "从包含 APK、SHA256SUMS 和 provenance.json 的发布记录安装。"
+  - name: "服务接入说明 / Provider setup"
+    url: https://github.com/tsonglew/Quodex/blob/master/docs/SUBSCRIPTIONS.md
+    about: "DeepSeek、OpenCode 与 Cursor 的接入方式、兼容边界与凭据保护。"
