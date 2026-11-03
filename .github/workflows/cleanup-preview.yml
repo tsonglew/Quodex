@@ -10,7 +10,7 @@ jobs:
     timeout-minutes: 5
     steps:
       # This event has write access; never checkout or run any PR code here.
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         with:
           script: |
             const environment = `android-preview/pr-${context.payload.pull_request.number}`;
