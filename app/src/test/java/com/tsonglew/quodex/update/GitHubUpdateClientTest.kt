@@ -3,6 +3,7 @@ package com.tsonglew.quodex.update
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -62,6 +63,26 @@ class GitHubUpdateClientTest {
         server.enqueue(MockResponse().setBody(JsonArray(releases.toList()).toString()).apply {
             if (link != null) addHeader("Link", link)
         })
+    }
+
+    @Test fun productionEndpointReadsPublicIndexWithoutApiOrAccountHeaders() = runBlocking {
+        var requests = 0
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            val request = chain.request()
+            requests++
+            assertEquals("https://raw.githubusercontent.com/tsonglew/Quodex/update-feed/updates.json", request.url.toString())
+            assertEquals("application/json", request.header("Accept"))
+            assertNull(request.header("Authorization"))
+            assertNull(request.header("Cookie"))
+            assertNull(request.header("X-GitHub-Api-Version"))
+            okhttp3.Response.Builder().request(request).protocol(okhttp3.Protocol.HTTP_1_1)
+                .code(200).message("OK")
+                .body(JsonArray(listOf(release(digest = "sha256:" + "cd".repeat(32)))).toString().toResponseBody()).build()
+        }.build()
+        val update = GitHubUpdateClient(20, certificate, client = client).latest()!!
+        assertEquals(21L, update.versionCode)
+        assertEquals("cd".repeat(32), update.apkSha256)
+        assertEquals(1, requests)
     }
 
     @Test fun retriesOnlyTheFailedPageAndStillSelectsNewestRelease() = runBlocking {

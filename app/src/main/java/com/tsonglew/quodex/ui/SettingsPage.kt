@@ -90,7 +90,7 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
 
         DesktopIconSettings(state, prefs, model, now)
         BackgroundGuide()
-        AppUpdatesCard(updates, model::checkForUpdates, model::automaticUpdates, model::updateNotificationPermissionChanged)
+        AppUpdatesCard(updates, model::checkForUpdates, model::automaticUpdates, model::updateNotificationPermissionChanged, now)
 
         SettingsPanel {
             SettingsLabel(texts(R.string.codex_connection), Icons.Outlined.AccountCircle)

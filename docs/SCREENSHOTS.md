@@ -1,5 +1,9 @@
 # Android 原生截图与动效录屏
 
+## alpha33 更新等待提示（2026-11-03）
+
+[原生截图](screenshots/updates-alpha33/update-cooldown.png)来自 alpha33 debug、API 37 模拟器，使用测试注入的等待截止时间。展示应用更新卡片、具体重试时间和等待期间禁用的检查按钮；并非真实服务端限流或已发布 APK 的截图。到期后的按钮恢复由设备测试断言。
+
 ## alpha32 订阅页（2026-11-03）
 
 [订阅页截图与验证范围](SUBSCRIPTIONS.md#验证记录)来自 alpha32 debug、API 37 arm64 模拟器，覆盖 DeepSeek、OpenCode Go／Console、Cursor、中英日三语及 320dp／200% 字体。均为明确标记的本机示例数据，通过 Compose 原生屏幕捕获并原样保存，没有生成、裁切或重绘；不代表真实账号或签名发布包已验收。

@@ -33,7 +33,7 @@
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/subscriptions-alpha32/subscriptions-deepseek.png" width="240" alt="alpha32 订阅页的 DeepSeek 余额，示例数据" /> | <img src="docs/screenshots/token-heatmap-app.png" width="240" alt="alpha31 Codex 30 日热力图，示例数据" /> | <img src="docs/screenshots/token-heatmap-widget.png" width="210" alt="alpha31 的 2×2 桌面热力图，示例数据" /> |
 
-截图来自 Android 模拟器中的 debug 构建，均为示例数据；订阅页为 alpha32，图表与组件为 alpha31。新版圆角 Q 品牌资源已纳入本次源码改动，已发布 APK 与历史截图可能仍显示旧标志。[更多原生截图](docs/SCREENSHOTS.md) · [深色图表](docs/screenshots/token-heatmap-widget-dark.png) · [品牌素材](docs/BRANDING.md)
+以上保留的历史截图来自 Android 模拟器中的 debug 构建，均为示例数据；订阅页为 alpha32，图表与组件为 alpha31。新版圆角 Q 品牌资源已纳入源码，已发布 APK 与历史截图可能仍显示旧标志。[alpha33 更新等待提示（合成状态）](docs/screenshots/updates-alpha33/update-cooldown.png) · [更多原生截图](docs/SCREENSHOTS.md) · [深色图表](docs/screenshots/token-heatmap-widget-dark.png) · [品牌素材](docs/BRANDING.md)
 
 ## 下载与开始使用
 
@@ -42,7 +42,7 @@
 3. 打开 App，可先体验**示例模式**，再连接 Codex；其他服务在“订阅”页单独连接，不要求先登录 Codex。
 4. 从系统桌面添加额度或 Token 小组件，也可在设置中添加桌面额度图标。小米／Redmi／POCO 用户可参考[桌面权限指引](docs/HOME_SCREEN_PERMISSION.md)。
 
-已有用户可在 **设置 → 应用更新**中检查、下载并安装更新。安装由 Android 弹窗确认；正式签名包与本地 debug 包不能直接相互覆盖。
+已有用户可在 **设置 → 应用更新**中检查、下载并安装更新。alpha33 源码改为读取独立的公开更新索引，避免 GitHub REST API 的共享 IP 配额影响；服务端要求等待时显示具体重试时间，到期后恢复检查按钮。alpha31／alpha32 若被旧接口限流，可从 Releases 下载已发布的新版本覆盖安装，保留本机数据。安装由 Android 弹窗确认；正式签名包与本地 debug 包不能直接相互覆盖。
 
 发布版本以 Releases 的实际 APK 为准，`master` 源码与 CI 预览不等同于已发布版本。CI 预览使用 debug 签名，artifact 保留 14 天。[安装与常见问题](docs/RELEASE_MATERIALS.md)
 

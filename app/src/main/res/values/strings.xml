@@ -48,7 +48,7 @@
     <string name="check_later">"Check later"</string>
     <string name="check_network_access_app_info_mobile_data">"Check network access: App info → Mobile data → Allow background data. Allow unrestricted data in Data Saver if needed."</string>
     <string name="checking_for_updates">"Checking for updates…"</string>
-    <string name="checks_github_releases_and_prereleases_about_every">"Checks GitHub releases and prereleases about every 12 hours, and alerts you once for each newer compatible version. System scheduling, battery saving, or lost connectivity may delay checks."</string>
+    <string name="checks_github_releases_and_prereleases_about_every">"Checks the public release index about every 12 hours without using the GitHub REST API. Alerts you once for each newer compatible version. System scheduling, caching or network conditions may delay discovery."</string>
     <string name="choose_a_layout_and_add_it_to">"Choose a layout and add it to your home screen."</string>
     <string name="clear">"Clear"</string>
     <string name="clear_diagnostic_records">"Clear diagnostic records"</string>
@@ -408,4 +408,6 @@
     <string name="subscription_reset_storage">"Reset subscription data"</string>
     <string name="subscription_reset_title">"Reset unreadable subscriptions?"</string>
     <string name="subscription_reset_detail">"Reading will be retried first. If it still fails, this clears all saved DeepSeek, OpenCode and Cursor credentials and cached data. You will need to reconnect. Readable connections are preserved. Your Codex connection and other settings are unaffected."</string>
+    <string name="update_retry_at">"The update service asks you to wait. Try again after %1$s."</string>
+    <string name="update_retry_ready">"The waiting period has ended. You can check for updates now."</string>
 </resources>

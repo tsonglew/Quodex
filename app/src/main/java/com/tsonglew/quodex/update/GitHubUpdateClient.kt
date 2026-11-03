@@ -22,12 +22,12 @@ data class AppUpdate(
 
 fun interface UpdateSource { suspend fun latest(): AppUpdate? }
 
-/** Public release metadata only. This client never reads Codex credentials or its HTTP client. */
+/** Reads the release publisher's public index, without consuming GitHub REST API quota. */
 class GitHubUpdateClient(
     private val installedVersionCode: Long,
     private val signingCertificateSha256: String,
     client: OkHttpClient = OkHttpClient(),
-    private val apiUrl: HttpUrl = "https://api.github.com/repos/tsonglew/Quodex/releases?per_page=100".toHttpUrl(),
+    private val apiUrl: HttpUrl = "https://raw.githubusercontent.com/tsonglew/Quodex/update-feed/updates.json".toHttpUrl(),
     private val now: () -> Long = { java.time.Instant.now().epochSecond },
     private val requestRetry: RequestRetry = RequestRetry(now = now),
 ) : UpdateSource {
@@ -92,8 +92,7 @@ class GitHubUpdateClient(
 
     private suspend fun fetch(url: HttpUrl): Page = suspendCancellableCoroutine { continuation ->
         val request = Request.Builder().url(url).get()
-            .header("Accept", "application/vnd.github+json")
-            .header("X-GitHub-Api-Version", "2022-11-28")
+            .header("Accept", "application/json")
             .header("User-Agent", "Quodex-Update-Checker").build()
         val call = client.newCall(request)
         continuation.invokeOnCancellation { call.cancel() }

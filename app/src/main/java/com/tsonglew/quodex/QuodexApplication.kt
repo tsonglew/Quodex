@@ -70,7 +70,7 @@ open class QuodexApplication : Application() {
         GitHubUpdateClient(BuildConfig.VERSION_CODE.toLong(), installedSigningCertificate(this))
     }
     val inAppUpdate by lazy { InAppUpdate(this, scope, updateSource) }
-    val updates by lazy { UpdateRepository(updateSource, AndroidUpdateStore(this), AndroidUpdateNotifier(this), BuildConfig.VERSION_CODE.toLong()) }
+    val updates by lazy { UpdateRepository(updateSource, AndroidUpdateStore(this), AndroidUpdateNotifier(this), BuildConfig.VERSION_CODE.toLong(), diagnostics = diagnostics) }
     val repository by lazy {
         UsageRepository(api, CredentialVault(this), Room.databaseBuilder(this, QuotaDatabase::class.java, "quota.db").build().snapshots(), settings, diagnostics = diagnostics)
     }

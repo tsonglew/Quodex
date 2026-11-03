@@ -148,3 +148,9 @@ G08 的实际预览与签名 Release 验收完成；这不表示真机、真实�
 ### 版本 tag 实际验收（2026-10-11）
 
 [v0.1.0-alpha17](https://github.com/tsonglew/Quodex/releases/tag/v0.1.0-alpha17) 指向 master 1772586，与实际 APK versionName／versionCode=17 一致。[运行 38117976113](https://github.com/tsonglew/Quodex/actions/runs/38117976113) 完整六组设备、gate、签名及公开预发布成功。三个附件已重新下载，哈希、远端摘要、固定证书、来源及 16 KB 对齐通过；APK 与同源自动构建发布的哈希完全一致。deployment 6992019277 为 success，环境链接指向该版本 Release。G05 完成，结构化证据见 [版本发布记录](diagnostics/alpha17-version-release.json)。
+
+## alpha33 静态更新索引
+
+master 自动发布及版本 tag 发布均在 Release 公开之后执行 `scripts/publish_update_feed.py`。脚本核对已上传 APK 的地址、大小、SHA-256、版本、签名指纹和来源，再将单条 Release 格式索引写入独立 `update-feed` 分支。写入使用文件 SHA 比较并交换，发生冲突后重新读取，禁止旧／相同 versionCode 覆盖较新索引。仅发布流程需要 GitHub API 权限；App 读取公开 raw 文件无需令牌，不使用 REST API 的匿名配额。
+
+索引发布失败会使发布步骤失败，已公开的 APK 不会被删除。排查后重跑发布任务可补发；不得手动向索引填入未经验证的下载地址。索引分支不触发 master 构建。下载入口仍以实际公开的 Release 为准，CDN 缓存可能延迟索引可见性。
