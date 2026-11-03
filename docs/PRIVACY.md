@@ -1,6 +1,6 @@
 # 隐私说明与数据流核对
 
-更新：2026-10-30。完整政策采用随 App 打包的隐私说明：[简体中文](../app/src/main/res/raw-zh/privacy_notice.txt)、[English](../app/src/main/res/raw/privacy_notice.txt)、[日本語](../app/src/main/res/raw-ja/privacy_notice.txt)，设置和连接对话框读取同一份文件，离线可查看。此页为实现核对，不是另一份政策。
+更新：2026-11-03。完整政策采用随 App 打包的隐私说明：[简体中文](../app/src/main/res/raw-zh/privacy_notice.txt)、[English](../app/src/main/res/raw/privacy_notice.txt)、[日本語](../app/src/main/res/raw-ja/privacy_notice.txt)，设置和连接对话框读取同一份文件，离线可查看。此页为实现核对，不是另一份政策。
 
 | 数据／行为 | 实现证据 |
 | --- | --- |
@@ -17,3 +17,7 @@
 | 诊断与分享 | `Diagnostics.kt`：私有 noBackup 目录最多 200 条本机事件及 168 个小时统计桶，仅接受固定枚举与数值；未捕获异常只记录类别与是否主线程，不存消息或堆栈；不含凭据、账号、额度或原始响应。设置提供清除、预览与用户主动系统分享，不自动上传。报告包含版本、网络、省电、系统后台受限标记与后台任务状态；无远程分析、自建服务或自动崩溃上报 |
 
 账号连接的实际权限、续期、服务方适用范围仍由 M0 真机接入验证完成，本政策不替代其验收。当前使用 GitHub Releases 发布实验性 APK；不将隐私说明或构建预发布等同于已通过商店审核或稳定版验收。
+
+## alpha32 源码中的订阅连接
+
+`SubscriptionApi` 仅向所选服务的固定 HTTPS 域名发 GET 请求，禁止重定向；Cursor 使用单一会话 Cookie，其余使用 Bearer API key。完整地址、权限与来源见 [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md)。凭据及对应快照作为一笔 AES-GCM 加密事务保存在 `noBackupFilesDir/subscriptions.enc`，不写入诊断或保存界面状态。每个服务独立断开，设置中的 Codex 退出仅影响 Codex。新服务只在订阅页前台刷新，不加入后台任务或桌面小组件；示例数据不联网。

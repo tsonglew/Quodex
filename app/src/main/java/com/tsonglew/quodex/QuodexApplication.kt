@@ -54,6 +54,17 @@ open class QuodexApplication : Application() {
     fun wallClockChanged() { mutableWallClockRevision.update { it + 1 } }
     open val api by lazy { CodexApi(diagnostics = diagnostics) }
     val settings by lazy { SettingsStore(this) }
+    open val subscriptionSource: com.tsonglew.quodex.subscriptions.SubscriptionSource by lazy {
+        com.tsonglew.quodex.subscriptions.SubscriptionApi()
+    }
+    val subscriptions by lazy {
+        com.tsonglew.quodex.subscriptions.SubscriptionRepository(
+            subscriptionSource,
+            com.tsonglew.quodex.subscriptions.EncryptedSubscriptionStore(this))
+    }
+    val subscriptionActions by lazy {
+        com.tsonglew.quodex.subscriptions.SubscriptionActions(subscriptions, scope)
+    }
     val desktopIcon by lazy { DesktopQuotaIcon(this) }
     open val updateSource: UpdateSource by lazy {
         GitHubUpdateClient(BuildConfig.VERSION_CODE.toLong(), installedSigningCertificate(this))

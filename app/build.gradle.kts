@@ -17,8 +17,8 @@ android {
         applicationId = "com.tsonglew.quodex"
         minSdk = 29
         targetSdk = 36
-        versionCode = 31
-        versionName = "0.1.0-alpha31"
+        versionCode = 32
+        versionName = "0.1.0-alpha32"
         resourceConfigurations += listOf("en", "zh", "ja")
         testInstrumentationRunner = "com.tsonglew.quodex.QuotaTestRunner"
     }

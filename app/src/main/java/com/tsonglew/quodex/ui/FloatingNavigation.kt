@@ -68,7 +68,7 @@ internal fun FloatingNavigation(
     Box(modifier.fillMaxWidth()
         .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
         .padding(horizontal = 24.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.widthIn(max = 320.dp).fillMaxWidth()
+        Box(Modifier.widthIn(max = if (destinations.size > 3) 360.dp else 320.dp).fillMaxWidth()
             .testTag("floating-navigation").onGloballyPositioned { origin = it.positionInRoot() }
             .shadow(12.dp, shape, clip = false, ambientColor = Color.Black.copy(alpha = 0.16f),
                 spotColor = Color.Black.copy(alpha = 0.22f))
@@ -112,10 +112,10 @@ internal fun FloatingNavigation(
                             label = "navigation-color")
                         Column(Modifier.weight(1f).clip(shape)
                             .selectable(active, role = Role.Tab, onClick = { onSelect(id) })
-                            .testTag("tab-$id").heightIn(min = 56.dp).padding(horizontal = 6.dp, vertical = 7.dp),
+                            .testTag("tab-$id").heightIn(min = 56.dp).padding(horizontal = 4.dp, vertical = 7.dp),
                             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
                             Icon(icon, null, Modifier.size(24.dp), tint = foreground)
-                            Text(label, fontSize = 12.sp, lineHeight = 16.sp, color = foreground)
+                            Text(label, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.sp, color = foreground)
                         }
                     }
                 }

@@ -61,6 +61,19 @@ if ! kill -0 "$emulator_pid" 2>/dev/null; then
   exit 1
 fi
 python3 scripts/wait_for_android.py "$ANDROID_HOME/platform-tools/adb" 300 --configure
+# The cold-boot launcher can already be unresponsive before any App is installed.
+# Restart only this disposable emulator's known system home once, after framework
+# readiness. Runtime App/launcher assertions in the suite remain unchanged.
+[[ "$(adb -e shell getprop ro.kernel.qemu | tr -d '\r')" == 1 ]]
+launcher=$(adb -e shell cmd package resolve-activity --brief \
+  -a android.intent.action.MAIN -c android.intent.category.HOME | tr -d '\r' | tail -n 1)
+case "$launcher" in
+  com.google.android.apps.nexuslauncher/*|com.android.launcher3/*) ;;
+  *) echo "Unexpected CI home component: $launcher" >&2; exit 1 ;;
+esac
+python3 scripts/bounded_command.py 20 adb -e shell am force-stop "${launcher%%/*}"
+python3 scripts/bounded_command.py 30 adb -e shell am start -W -n "$launcher" > screenshots/launcher-start.txt
+cat screenshots/launcher-start.txt
 adb -e shell getprop ro.build.version.sdk | tr -d '\r' | tee screenshots/guest-api.txt
 [[ "$(cat screenshots/guest-api.txt)" == 37 ]]
 adb -e shell getconf PAGE_SIZE | tr -d '\r' | tee screenshots/guest-page-size.txt

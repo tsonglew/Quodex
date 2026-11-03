@@ -11,6 +11,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.time.Instant
 import com.tsonglew.quodex.update.AppUpdateScheduler
+import com.tsonglew.quodex.subscriptions.SubscriptionProvider
 
 data class LoginState(val challenge: DeviceChallenge? = null, val error: UiText? = null)
 
@@ -18,6 +19,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val app = application as QuodexApplication
     val state = app.repository.state
     val updates = app.updates.state
+    val subscriptions = app.subscriptions.state
+    val subscriptionStorageUnavailable = app.subscriptions.storageUnavailable
+    fun loadSubscriptions() {
+        SubscriptionProvider.entries.forEach { provider ->
+            app.subscriptionActions.refresh(provider, viewModelScope)
+        }
+    }
+    fun connectSubscription(provider: SubscriptionProvider, credential: String) {
+        app.subscriptionActions.connect(provider, credential, viewModelScope)
+    }
+    fun refreshSubscription(provider: SubscriptionProvider) {
+        app.subscriptionActions.refresh(provider, viewModelScope, true)
+    }
+    fun cancelSubscription(provider: SubscriptionProvider) { app.subscriptionActions.cancel(provider) }
+    fun disconnectSubscription(provider: SubscriptionProvider) {
+        app.subscriptionActions.disconnect(provider)
+    }
+    fun resetUnreadableSubscriptions() { launchOperation {
+        app.subscriptionActions.resetUnreadableStorage().join()
+        loadSubscriptions()
+    } }
     val desktopIconAvailability = app.desktopIcon.availability
     private val mutableIconMessage = MutableStateFlow<UiText?>(null)
     val desktopIconMessage = mutableIconMessage.asStateFlow()

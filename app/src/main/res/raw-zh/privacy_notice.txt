@@ -1,11 +1,16 @@
 Quodex 隐私说明
-更新日期：2026-10-30
+更新日期：2026-11-03
 
-Quodex 是独立第三方 Android 工具，用于查看 Codex 额度和展示桌面小组件，与 OpenAI 无隶属关系。目前接入处于实验阶段。
+Quodex 是独立第三方 Android 工具，用于查看 Codex 额度、展示桌面小组件，以及查询 DeepSeek、OpenCode 和 Cursor 的余额或订阅用量，与这些服务提供方无隶属关系。兼容接入仍处于实验阶段。
 
 连接与网络请求
 登录在 OpenAI 页面完成，Quodex 不要求你输入账号密码。应用向 auth.openai.com 发起设备授权、交换和续期请求；向 chatgpt.com 请求额度及账号 token 用量汇总。请求包含对应的登录码、授权码或令牌、账号标识，以及通常的网络信息（例如 IP 地址）。浏览器登录页面的数据处理由提供该页面的服务方负责。
 应用仅使用连接获取额度和账号 token 用量统计，不发送聊天或模型生成请求。登录凭据的权限可能覆盖更多能力，不能视为专用只读凭据。不要向他人提供登录码或令牌。
+
+其他订阅服务
+“订阅”页可按需连接 DeepSeek、OpenCode Go、OpenCode Console（原 Zen）和 Cursor。DeepSeek API 密钥仅发送至 api.deepseek.com/user/balance；OpenCode 密钥仅发送至 opencode.ai/zen/go/v1/usage 或 opencode.ai/console/api/billing/status；Cursor 会话令牌仅作为 WorkosCursorSessionToken Cookie 发送至 cursor.com/api/usage-summary。服务方也会收到 IP 地址等常规网络信息。这些连接仅发起读取请求，不进行模型生成、付款或修改订阅；密钥或会话本身可能具有更广的权限。
+每个服务独立保存一个连接。凭据及对应的余额／用量快照一起使用 Android Keystore 与 AES-GCM 加密存入私有目录，不参与备份。不向诊断记录写入原始响应、凭据、余额或用量。打开订阅页时检查已连接服务（五分钟缓存），也可手动刷新；临时故障最多尝试三次，遵守 Retry-After。不为这些服务新增后台任务或桌面小组件。错误保留上次成功数据和时间；示例数据明确标注，且不会发送给服务方。
+各服务的“断开连接”删除其本机凭据和快照，不影响其他服务，也不撤销远端密钥。设置中的 Codex 连接操作仅影响 Codex。撤销 API 密钥或会话需在相应官方控制台操作。“官方控制台”按钮会在浏览器中打开服务方页面，由其隐私规则管理。Console 与 Cursor 的控制台兼容方式可能变化或需要重新连接。
 
 版本检查与通知
 额度、Token 统计、更新检查和 APK 下载遇到临时故障时会有限次数地重试，并遵守服务器要求的等待时间。取消会停止当前操作。中断的 APK 下载从头重新下载，可能增加流量。重试截止时间可能保存在本机；重试不新增请求目的地或上传的数据类别。
