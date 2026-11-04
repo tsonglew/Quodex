@@ -86,7 +86,7 @@ Android 17 使用官方 SDK 的 `37.0/google_apis` 与 `37.2/google_apis_ps16k` 
 
 ### Android 17 启动就绪
 
-以下保留排查时序；AVD 元数据修复已在 38007906590 及后续六组 CI 中验证，文中的“待验证”描述对应当时状态。当前结果以上方“当前验证状态”为准。
+以下保留排查时序；AVD 元数据修复已在 38007906590 及后续六组 CI 中验证，文中的“待验证”描述对应当时状态。相关证据见上方“历史验证记录（2026-10）”，仅代表所列日期与提交；当前结果请查看[对应提交的 Android CI 运行](https://github.com/tsonglew/Quodex/actions/workflows/android.yml)。
 
 运行 37986219241 的 API 37.0／37.2 在应用测试开始前分别因 input 服务缺失／Broken pipe 失败；四个既有版本设备测试通过。Android 17 改由 `scripts/android17_device_ci.sh` 启动相同官方镜像，`wait_for_android.py` 要求启动标记、核心服务、包查询、settings 与无操作按键命令连续三轮成功，再运行原有完整测试及可选 minified release 检查。启动／logcat 日志随设备证据上传；失败继续使统一 gate 失败，不跳过检查。该启动流程已在运行 38007906590 的完整矩阵中通过，后续组件刷新失败仍需单独排查。
 
