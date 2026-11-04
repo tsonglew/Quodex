@@ -21,3 +21,7 @@
 ## alpha32 源码中的订阅连接
 
 `SubscriptionApi` 仅向所选服务的固定 HTTPS 域名发 GET 请求，禁止重定向；Cursor 使用单一会话 Cookie，其余使用 Bearer API key。完整地址、权限与来源见 [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md)。凭据及对应快照作为一笔 AES-GCM 加密事务保存在 `noBackupFilesDir/subscriptions.enc`，不写入诊断或保存界面状态。每个服务独立断开，设置中的 Codex 退出仅影响 Codex。新服务只在订阅页前台刷新，不加入后台任务或桌面小组件；示例数据不联网。
+
+## 重置卡明细（2026-11-04，alpha34 源码）
+
+可用数量随额度读取；展开明细后使用相同账号凭据向 `chatgpt.com/backend-api/wham/rate-limit-reset-credits` 发起 GET。卡片标识、类型、状态、标题、说明、获得与到期时间、数量与获取时间保存在当前账号额度快照的本机非加密数据库中。明细独立缓存五分钟，可手动刷新，有限重试并遵守 Retry-After，不读取聊天、不消耗卡片、不新增后台明细任务。退出、切换账号及示例模式清理或隔离真实缓存；诊断只记录请求类别和状态，不记录卡片正文。三种语言隐私说明与官网中文原文同步。

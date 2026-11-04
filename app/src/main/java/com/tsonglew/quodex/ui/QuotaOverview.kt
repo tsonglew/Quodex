@@ -38,7 +38,8 @@ import com.tsonglew.quodex.data.*
 /** The dashboard's quota area. Data and refresh behaviour remain owned by the repository. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long, onReconnect: () -> Unit) {
+fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long,
+    onLoadResetCredits: (Boolean) -> Unit = {}, onReconnect: () -> Unit) {
     val texts = localTextResources()
     val snapshot = state.snapshot ?: return
     val colors = MaterialTheme.colorScheme
@@ -117,9 +118,6 @@ fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long, onReconne
             Column(Modifier.padding(top = 13.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(texts(if (state.demo) R.string.demo_updated_at else R.string.quota_updated_at, absoluteTime(snapshot.fetchedAt, true)),
                     fontSize = 12.sp, color = colors.onSurfaceVariant)
-                snapshot.resetCredits?.let {
-                    Text(texts(R.string.value_resets_available, it), fontSize = 12.sp, color = colors.onSurfaceVariant)
-                }
             }
             TextButton(onClick = { showUpdateInfo = true }, modifier = Modifier.testTag("quota-update-info"),
                 colors = ButtonDefaults.textButtonColors(contentColor = colors.onSurfaceVariant)) {
@@ -137,6 +135,8 @@ fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long, onReconne
                     colors = ButtonDefaults.textButtonColors(contentColor = colors.primary)) { Text(texts(R.string.reconnect)) }
             }
         }
+        Spacer(Modifier.height(12.dp))
+        ResetCreditsCard(state, now, onLoadResetCredits)
     }
     if (showUpdateInfo) AlertDialog(onDismissRequest = { showUpdateInfo = false },
         title = { Text(texts(R.string.about_quota_updates)) },

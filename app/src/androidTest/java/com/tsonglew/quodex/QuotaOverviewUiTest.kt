@@ -124,9 +124,9 @@ class QuotaOverviewUiTest {
         val sample = parse("""{"rate_limit":{"primary_window":{"used_percent":38,"limit_window_seconds":604800}}}""")
             .copy(resetCredits = 2)
         withOverview(sample, demo = true) {
-            compose.onNodeWithText("示例数据 · 非真实额度").assertExists()
+            compose.onAllNodesWithText("示例数据 · 非真实额度").assertCountEquals(2)
             compose.onNodeWithText("示例更新于 ${absoluteTime(NOW, true)}").assertExists()
-            compose.onNodeWithText("2 次重置可用").assertExists()
+            compose.onNodeWithText("2 张可用").assertExists()
             val meter = compose.onNodeWithTag("quota-meter-codex:primary_window")
             compose.onNodeWithTag("quota-primary-value").assertTextEquals("62")
             compose.onNodeWithText("剩余额度").assertExists()

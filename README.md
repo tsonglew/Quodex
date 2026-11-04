@@ -35,6 +35,10 @@
 
 以上保留的历史截图来自 Android 模拟器中的 debug 构建，均为示例数据；订阅页为 alpha32，图表与组件为 alpha31。新版圆角 Q 品牌资源已纳入源码，已发布 APK 与历史截图可能仍显示旧标志。[alpha33 更新等待提示（合成状态）](docs/screenshots/updates-alpha33/update-cooldown.png) · [更多原生截图](docs/SCREENSHOTS.md) · [深色图表](docs/screenshots/token-heatmap-widget-dark.png) · [品牌素材](docs/BRANDING.md)
 
+<img src="docs/screenshots/reset-credits-alpha34/reset-details-zh-Hans-light.png" width="280" alt="alpha34 debug Codex 重置卡区域，展开卡片状态和到期时间，示例数据" />
+
+重置卡界面来自 alpha34 开发版的原生组件截图，使用合成示例数据，不代表真实账号权益。[截图来源与验收范围](docs/screenshots/reset-credits-alpha34/README.md)。功能是否已发布请以 Releases 中的实际 APK 为准。
+
 ## 下载与开始使用
 
 1. 在 [GitHub Releases](https://github.com/tsonglew/Quodex/releases) 选择包含 APK 附件的发布记录，下载 `Quodex-<版本>.apk`。需要核验时，同页提供 `SHA256SUMS` 和 `provenance.json`。
@@ -51,10 +55,13 @@
 | 功能 | 使用方式与范围 |
 | --- | --- |
 | **Codex 额度** | 查看接口返回的额度周期、剩余／已用百分比和重置时间；刷新失败保留上次成功数据。 |
+| **Codex 重置卡** | 额度页显示可用张数；展开“查看明细”按需查询名称、状态、获得与到期时间。明细独立缓存和重试，仅展示，不消耗卡片。 |
 | **Token 趋势** | 近 7／30 天条形图与日历热力图切换，记住图表偏好；缺失数据与真实零值分别展示。 |
 | **桌面一览** | 标准额度、2×1 紧凑额度、2×2 的 30 天热力图，以及带百分比的桌面额度图标；支持手动刷新。 |
 | **订阅查询** | DeepSeek API 余额、OpenCode Go 用量、OpenCode Console（原 Zen）余额、Cursor 个人用量，各自独立连接。 |
 | **日常体验** | 简体中文／English／日本語、浅色／深色／跟随系统、大字体与宽屏适配、应用内更新。 |
+
+**重置卡查询。** 在额度页查看张数，点“查看明细”获取卡片；已展开时，额度刷新后会检查五分钟明细缓存，也可点“刷新明细”。服务端可能只返回部分明细，数量未知不会显示为零；到期时间按手机时区显示，实际可用性以服务端为准。明细失败不影响额度，不新增后台明细请求。使用卡片请前往 Codex。真实账号覆盖仍待验证。
 
 **订阅查询有明确边界。** 新服务仅前台查询，不进入 Codex 桌面组件、Token 图表或后台同步；Console 与 Cursor 为实验性兼容接入，Go 存在接口迁移风险，真实账号覆盖仍待验收。[接入步骤与兼容说明](docs/SUBSCRIPTIONS.md)
 

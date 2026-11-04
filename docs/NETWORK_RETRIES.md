@@ -30,3 +30,7 @@ DeepSeek、OpenCode Go／Console 和 Cursor 的前台读取也使用同一重试
 旧 APK 无法自行获得这一修复。如果仍被旧接口的等待状态阻塞，可从 GitHub Releases 下载实际已发布的 alpha33 或更高版本，以相同签名覆盖安装；无需卸载。不要使用 debug 包覆盖正式包。
 
 [alpha33 原生等待提示截图](screenshots/updates-alpha33/update-cooldown.png)：debug 模拟器中的合成等待状态，不是真实网络故障。
+
+## 重置卡明细（alpha34）
+
+明细 GET 复用有限重试（最多三次），独立遵守 Retry-After；手动刷新不能绕过等待。界面显示重试时间，等待期间禁用刷新。五分钟缓存与十秒防连点降低重复请求，失败后自动检查至少间隔一分钟；错误和缓存不影响额度、Token 统计或其他订阅。只在展开明细的前台页面查询，不新增后台任务。

@@ -147,3 +147,7 @@ APK SHA-256：`103210317eb8b455dcb1bb4d44ad93ab24eb3ee6b624b0be4ded147ef52d634f`
 | 无周期窗口且可用 | 未知用量 | 使用受限 |
 | --- | --- | --- |
 | <img src="screenshots/widget-slim-available-140x70.png" width="280" alt="紧凑组件显示当前可用" /> | <img src="screenshots/widget-slim-unknown-130x70.png" width="260" alt="紧凑组件显示暂不可用" /> | <img src="screenshots/widget-slim-restricted-140x70.png" width="280" alt="紧凑组件显示当前使用受限" /> |
+
+## 重置卡信息（alpha34 开发版，2026-11-04）
+
+[原生组件截图与来源](screenshots/reset-credits-alpha34/README.md)：中文、英文、日语，浅色和深色的重置卡数量与展开明细。均为模拟器合成示例数据，不代表真实账号；保留的 alpha31／32／33 截图仍为历史资料。

@@ -16,7 +16,7 @@ internal class ObservationStore(private val file: File) {
     fun record(event: DiagnosticEvent, values: LongArray, now: Long) {
         if (event !in EVENTS) return
         // These historical counters measure quota/auth requests only. Token profile
-        // requests (operation 2) remain in the bounded event log, not auth totals.
+        // and reset-card requests (operations 2/3) remain in the bounded event log, not auth totals.
         if (event != DiagnosticEvent.SNAPSHOT_SAVED && values.firstOrNull() !in listOf(0L, 1L)) return
         val hour = Math.floorDiv(now, 3600)
         val hours = read().filter { it.epoch in (hour - 167)..hour }.toMutableList()

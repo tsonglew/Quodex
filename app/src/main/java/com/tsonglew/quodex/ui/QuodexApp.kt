@@ -216,7 +216,7 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
         return
     }
     Column(Modifier.testTag("dashboard")) {
-        QuotaOverview(state, prefs, now, onReconnect = model::startLogin)
+        QuotaOverview(state, prefs, now, onReconnect = model::startLogin, onLoadResetCredits = model::loadResetCredits)
         Spacer(Modifier.height(16.dp))
         TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage,
             prefs.compactTokens, model::compactTokens, heatmapLaunch, prefs.tokenChartStyle, model::tokenChartStyle)

@@ -30,6 +30,7 @@ class CodexApi(
     private val diagnostics: Diagnostics? = null,
     private val tokenUsageUrl: String = "https://chatgpt.com/backend-api/wham/profiles/me",
     private val requestRetry: RequestRetry = RequestRetry(now = now),
+    private val resetCreditsUrl: String = "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits",
 ) {
     companion object {
         // Public client identifier from openai/codex; not a client secret.
@@ -40,11 +41,13 @@ class CodexApi(
     private data class Reply(val status: Int, val body: String, val retryAfter: String?)
     private val usageCooldown = AtomicReference<Pair<String, ApiFailure>?>(null)
     private val tokenCooldown = AtomicReference<Pair<String, ApiFailure>?>(null)
+    private val resetCreditsCooldown = AtomicReference<Pair<String, ApiFailure>?>(null)
     private suspend fun send(request: Request): Reply = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         suspendCancellableCoroutine { cont ->
             val operation = when (request.url.toString()) {
                 usageUrl -> 0L
                 tokenUsageUrl -> 2L
+                resetCreditsUrl -> 3L
                 else -> 1L
             }
             val started = System.nanoTime()
@@ -175,6 +178,13 @@ class CodexApi(
         TokenUsageParser.parse(check(reply), now())
         } ?: throw ApiFailure(FailureKind.NETWORK)
     }
+
+    suspend fun resetCredits(session: Session, retryNetwork: Boolean = true): ResetCreditsSnapshot =
+        retryRead(session, retryNetwork, resetCreditsCooldown) {
+            val reply = send(Request.Builder().url(resetCreditsUrl).header("Authorization", "Bearer ${session.accessToken}")
+                .header("ChatGPT-Account-Id", session.accountId).get().build())
+            ResetCreditsParser.parse(check(reply), session.accountId, now())
+        }
 
     private fun jwtClaims(token: String): JsonObject = try {
         val part = token.split('.')[1]

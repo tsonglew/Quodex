@@ -56,6 +56,7 @@ class TestQuotaApplication : QuodexApplication() {
     override val updateSource = com.tsonglew.quodex.update.UpdateSource { updateRequests.incrementAndGet(); availableUpdate }
     val usageRequests = AtomicInteger()
     val tokenUsageRequests = AtomicInteger()
+    val resetCreditRequests = AtomicInteger()
     @Volatile var tokenUsageStatusCode = 200
     @Volatile var tokenUsageBody = """{"stats":{"lifetime_tokens":1234567,"peak_daily_tokens":45000,"daily_usage_buckets":[{"start_date":"2026-10-20","tokens":12000},{"start_date":"2026-10-21","tokens":0},{"start_date":"2026-10-22","tokens":45000}]}}"""
     val usageRequestTimes = java.util.concurrent.ConcurrentLinkedQueue<Long>()
@@ -67,6 +68,13 @@ class TestQuotaApplication : QuodexApplication() {
     @Volatile var usageTransportFailure: java.io.IOException? = null
     override val api by lazy {
         CodexApi(OkHttpClient.Builder().addInterceptor { chain ->
+            if (chain.request().url.encodedPath == "/backend-api/wham/rate-limit-reset-credits") {
+                check(chain.request().method == "GET")
+                resetCreditRequests.incrementAndGet()
+                return@addInterceptor Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                    .code(200).message("Test reset cards")
+                    .body("""{"available_count":2,"credits":[{"id":"fixture-only","status":"available","granted_at":"2026-11-01T00:00:00Z","expires_at":"2026-12-01T00:00:00Z"}]}""".toResponseBody("application/json".toMediaType())).build()
+            }
             if (chain.request().url.encodedPath == "/backend-api/wham/profiles/me") {
                 tokenUsageRequests.incrementAndGet()
                 return@addInterceptor Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
