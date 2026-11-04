@@ -69,7 +69,7 @@
 
 ## 本地开发
 
-需要 **JDK 17、Android SDK Platform 36、Build Tools 35.0.0**。通过 `ANDROID_HOME` 或未提交的 `local.properties` 指定 SDK 路径。
+需要 **JDK 17、Android SDK Platform 37.0、Build Tools 35.0.0**。通过 `ANDROID_HOME` 或未提交的 `local.properties` 指定 SDK 路径。
 
 ```sh
 git clone https://github.com/tsonglew/Quodex.git
