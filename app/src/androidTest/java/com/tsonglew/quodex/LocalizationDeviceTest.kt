@@ -36,7 +36,7 @@ class LocalizationDeviceTest {
                 save("language-settings-ja")
                 compose.onNodeWithTag("tab-quota").performClick()
                 waitForText("週間使用枠")
-                compose.onNodeWithText("サンプルデータ · 実際の使用枠ではありません").assertExists()
+                compose.onAllNodesWithText("サンプルデータ · 実際の使用枠ではありません").onFirst().assertExists()
                 save("language-quota-ja")
 
                 compose.onNodeWithTag("tab-settings").performClick()

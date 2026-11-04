@@ -1,5 +1,5 @@
 Quodex Privacy Notice
-Updated: November 3, 2026
+Updated: November 4, 2026
 
 Quodex is an independent third-party Android tool for viewing Codex quota and widgets, plus DeepSeek, OpenCode and Cursor balances or subscription usage. It is not affiliated with these providers. Compatibility integrations remain experimental.
 
@@ -22,6 +22,7 @@ The app also stores update preferences, the times of the last attempt and succes
 Local storage
 Access and refresh tokens, account identifiers, and expiry times are encrypted with an Android Keystore key and AES-GCM in private app storage. Quota snapshots, windows, reset times, account identifiers, and successful fetch times are stored in a local database. Display preferences, widget configuration, last attempts, and error categories are stored in local settings. Android or AndroidX stores the language preference locally for the app, widgets, and notifications; the language preference is not sent to account services. The quota and token usage cache is not an encrypted database.
 Token trends use chatgpt.com/backend-api/wham/profiles/me to retrieve daily usage, lifetime totals, and daily peaks. The app parses only the required statistics and data timestamps. It does not store names, usernames, profiles, or raw error text returned by that endpoint. Statistics are saved locally with the current account's quota snapshot, retaining the last successfully fetched dates and values. Changing accounts, disconnecting, or entering demo mode clears or isolates real statistics. Missing days are not assumed to be zero. The app does not infer token counts, costs, or input/output breakdowns from quota percentages.
+The quota endpoint supplies the available reset-card count. Expanding View details sends a read-only GET request with the same account credentials to chatgpt.com/backend-api/wham/rate-limit-reset-credits. Card identifiers, types, status, names, descriptions, grant and expiry dates, available count, and fetch time are cached with the current account quota in the local unencrypted database, not in diagnostic bodies. Details use a five-minute cache and can be refreshed manually. Temporary failures retry a limited number of times and respect Retry-After. There are no background detail requests or card redemption requests. Disconnecting, changing accounts, or entering demo mode clears or isolates real card data.
 Android backup and device-transfer backup are disabled, and there is no cross-device sync. Local data remains available for the next launch and background updates until replaced by a later snapshot or cleared.
 
 Home screen display

@@ -20,7 +20,7 @@ class AppFlowTest {
     @Test fun demoThemeWidgetAndLogoutFlow() {
         compose.onNodeWithTag("demo-button").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("dashboard").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("示例数据 · 非真实额度", substring = false).assertIsDisplayed()
+        compose.onAllNodesWithText("示例数据 · 非真实额度", substring = false).onFirst().assertIsDisplayed()
         screenshot("quota-light")
         compose.onNodeWithTag("tab-widgets").performClick()
         compose.onNodeWithTag("add-widget-button").assertExists()

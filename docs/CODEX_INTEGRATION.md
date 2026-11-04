@@ -28,7 +28,7 @@
 
 目前使用官方开源 Codex 的公开客户端标识，标识不是 secret。该兼容路径不等同于获得面向第三方 Android App 的稳定公共 API 或官方合作资格。用户授权页面可能显示 Codex。当前构建预发布不代表这些接入条件已获确认。稳定发布前仍需重新确认独立客户端身份、接入支持范围和维护策略；此项保持未完成。
 
-应用仅执行认证、续期、额度和 token 用量统计读取，不发起模型请求、不消耗重置次数。登录凭据的权限可能广于额度读取，不能描述为只读凭据。
+应用仅执行认证、续期、额度、token 用量统计及重置卡信息读取，不发起模型请求、不消耗重置次数。登录凭据的权限可能广于额度读取，不能描述为只读凭据。
 
 token 中的账号和过期字段只用作路由与刷新提示，不以未经验证的 JWT 内容授予应用权限。真正的访问权限由额度服务验证；如果响应返回不同账号 ID，则拒绝展示。应用不创建自有服务或中转账号凭据。
 
@@ -79,3 +79,14 @@ token 中的账号和过期字段只用作路由与刷新提示，不以未经�
 - [HTTP 路径和读取实现](https://github.com/openai/codex/blob/07316174c6f62deb20278c53add2dbd9dcf6da70/codex-rs/backend-client/src/client.rs#L412)
 - [统计字段及可空类型](https://github.com/openai/codex/blob/07316174c6f62deb20278c53add2dbd9dcf6da70/codex-rs/backend-client/src/types.rs#L532)
 - [数据时间与部分失败字段](https://github.com/openai/codex/blob/07316174c6f62deb20278c53add2dbd9dcf6da70/codex-rs/backend-client/src/client/profile.rs#L24)
+
+## 2026-11-04：重置卡信息（alpha34 源码）
+
+- 可用张数继续读取 `GET /backend-api/wham/usage` 的 `rate_limit_reset_credits.available_count`。
+- 明细使用 `GET https://chatgpt.com/backend-api/wham/rate-limit-reset-credits`，沿用 Bearer 与 `ChatGPT-Account-Id`，无请求体。仅在前台展开明细或手动刷新时查询；额度更新后已展开的区域检查缓存。
+- 响应为 `{available_count, credits:[{id, reset_type, status, granted_at, expires_at?, title?, description?}]}`。HTTP 日期是 ISO 8601 字符串，转换为秒存储并按手机时区显示；App Server 对外文档中的 epoch seconds 不能直接当作 HTTP 格式。
+- `available_count` 为数量依据，明细可能截断；不以明细条数或本机时钟减少可用数量。缺失数据、零张、空列表分别处理。到期时间缺失时明确说明。
+- 同账号明细随额度快照持久化，独立五分钟缓存、十秒防连点和有限重试，遵守 Retry-After；故障保留旧明细，不更改额度错误或 Token 缓存。切换账号、退出或示例模式会隔离或清除真实数据。不增加后台明细请求。
+- 仅展示，未实现或调用 consume 接口。真实账号覆盖仍待验证；本次使用 MockWebServer 和模拟器合成数据验收，没有访问真实账号的重置卡。
+
+依据：[官方 App Server 文档](https://learn.chatgpt.com/docs/app-server#6-rate-limits-chatgpt)、[官方 HTTP 客户端](https://github.com/openai/codex/blob/a06545b311fe01e51ce855c7aa5d8da21e9e7aaf/codex-rs/backend-client/src/client/rate_limit_resets.rs)、[HTTP 响应类型](https://github.com/openai/codex/blob/a06545b311fe01e51ce855c7aa5d8da21e9e7aaf/codex-rs/backend-client/src/types.rs)。源码核对固定到上述提交，兼容接口未来可能变化。

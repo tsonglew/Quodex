@@ -26,6 +26,9 @@ data class AppState(
     val tokenLoading: Boolean = false,
     val tokenFailure: FailureKind? = null,
     val tokenFailureRetryable: Boolean = false,
+    val resetCreditsLoading: Boolean = false,
+    val resetCreditsFailure: FailureKind? = null,
+    val resetCreditsRetryAt: Long = 0,
 )
 
 enum class SyncResult { SUCCESS, RETRY, AUTH_REQUIRED, DEFERRED, NO_ACCOUNT, PERMANENT_FAILURE }
@@ -40,6 +43,7 @@ class UsageRepository(
 ) {
     private val lock = Mutex()
     private val tokenLock = Mutex()
+    private val resetCreditsLock = Mutex()
     private val generation = AtomicLong(0)
     // Accessed under lock; generation prevents a deadline crossing account changes.
     private var retryGuard: Pair<Long, Long>? = null
@@ -47,6 +51,9 @@ class UsageRepository(
     private data class TokenAttempt(val accountId: String, val attemptedAt: Long, val retryAt: Long = 0)
     private data class TokenRequest(val session: Session, val previousAttempt: TokenAttempt?, val previousFailure: FailureKind?, val previousRetryable: Boolean)
     private var tokenAttempt: TokenAttempt? = null
+    private data class ResetAttempt(val accountId: String, val attemptedAt: Long, val retryAt: Long = 0)
+    private data class ResetRequest(val session: Session, val previousAttempt: ResetAttempt?, val previousFailure: FailureKind?, val previousRetryAt: Long)
+    private var resetAttempt: ResetAttempt? = null
     private val mutableState = MutableStateFlow(AppState())
     val state: StateFlow<AppState> = mutableState
 
@@ -92,11 +99,11 @@ class UsageRepository(
             }
             val previousSnapshot = dao.read()
             val previousSettings = settings.read()
-            val previousTokens = previousSnapshot?.takeIf {
+            val previousCache = previousSnapshot?.takeIf {
                 previousSession?.accountId == session.accountId && it.accountId == session.accountId
             }?.let { runCatching { AppJson.decodeFromString<UsageSnapshot>(it.json) }.getOrNull() }
-                ?.takeIf { it.accountId == session.accountId }?.tokenUsage
-            val snapshot = fetched.copy(tokenUsage = previousTokens)
+                ?.takeIf { it.accountId == session.accountId }
+            val snapshot = fetched.copy(tokenUsage = previousCache?.tokenUsage, resetCreditDetails = previousCache?.resetCreditDetails)
             checkConnection()
             var snapshotTouched = false
             var settingsTouched = false
@@ -143,6 +150,7 @@ class UsageRepository(
             }
             diagnostics?.record(DiagnosticEvent.SNAPSHOT_SAVED)
             if (previousSession?.accountId != session.accountId) tokenAttempt = null
+            if (previousSession?.accountId != session.accountId) resetAttempt = null
             mutableState.value = AppState(true, true, snapshot)
         }
     }
@@ -198,8 +206,8 @@ class UsageRepository(
                     api.usage(active, retryNetwork)
                 }
                 if (ticket != generation.get()) return@withLock SyncResult.NO_ACCOUNT
-                val snapshot = fetched.copy(tokenUsage = mutableState.value.snapshot
-                    ?.takeIf { it.accountId == active.accountId }?.tokenUsage)
+                val previous = mutableState.value.snapshot?.takeIf { it.accountId == active.accountId }
+                val snapshot = fetched.copy(tokenUsage = previous?.tokenUsage, resetCreditDetails = previous?.resetCreditDetails)
                 dao.write(SnapshotRecord(accountId = active.accountId, json = AppJson.encodeToString(snapshot)))
                 settings.syncResult(null)
                 retryGuard = null
@@ -316,12 +324,83 @@ class UsageRepository(
         }
     }
 
+    /** Foreground-only detail read; quota/background sync never waits on this optional endpoint. */
+    suspend fun refreshResetCredits(force: Boolean = false) = withContext(Dispatchers.IO) {
+        initialize()
+        val ticket = generation.get()
+        resetCreditsLock.withLock readDetails@ {
+            val request = lock.withLock prepare@ {
+                val state = mutableState.value
+                val snapshot = state.snapshot
+                if (ticket != generation.get() || !state.connected || state.demo || snapshot == null) return@prepare null
+                val session = try { vault.read() } catch (cancel: CancellationException) {
+                    throw cancel
+                } catch (_: Exception) {
+                    mutableState.update { it.copy(resetCreditsFailure = FailureKind.STORAGE) }
+                    return@prepare null
+                }
+                if (session == null || session.accountId != snapshot.accountId) return@prepare null
+                val time = now()
+                val previous = resetAttempt?.takeIf { it.accountId == session.accountId }
+                if (previous != null && time < previous.retryAt) {
+                    mutableState.update { it.copy(resetCreditsFailure = FailureKind.LIMITED, resetCreditsRetryAt = previous.retryAt) }
+                    return@prepare null
+                }
+                if (previous != null && time - previous.attemptedAt in 0L until 10L) return@prepare null
+                if (!force) {
+                    if (state.resetCreditsFailure == null && snapshot.resetCreditDetails?.let {
+                            time - it.fetchedAt in 0L until 300L && (snapshot.resetCredits == null || snapshot.resetCredits == it.availableCount)
+                        } == true) return@prepare null
+                    if (previous != null && time - previous.attemptedAt in 0L until 60L) return@prepare null
+                }
+                resetAttempt = ResetAttempt(session.accountId, time)
+                mutableState.update { it.copy(resetCreditsLoading = true, resetCreditsFailure = null, resetCreditsRetryAt = 0) }
+                ResetRequest(session, previous, state.resetCreditsFailure, state.resetCreditsRetryAt)
+            } ?: return@readDetails
+            fun isCurrent() = ticket == generation.get() && mutableState.value.connected && !mutableState.value.demo &&
+                mutableState.value.snapshot?.accountId == request.session.accountId
+            try {
+                // Credential rotation remains serialized by the quota refresh path.
+                val details = api.resetCredits(request.session)
+                lock.withLock {
+                    if (isCurrent()) {
+                        val snapshot = mutableState.value.snapshot!!.copy(resetCreditDetails = details)
+                        dao.write(SnapshotRecord(accountId = snapshot.accountId, json = AppJson.encodeToString(snapshot)))
+                        if (isCurrent()) mutableState.update { it.copy(snapshot = snapshot, resetCreditsFailure = null, resetCreditsRetryAt = 0) }
+                    }
+                }
+            } catch (cancel: CancellationException) {
+                withContext(NonCancellable) { lock.withLock {
+                    if (isCurrent()) {
+                        resetAttempt = request.previousAttempt
+                        mutableState.update { it.copy(resetCreditsFailure = request.previousFailure, resetCreditsRetryAt = request.previousRetryAt) }
+                    }
+                } }
+                throw cancel
+            } catch (failure: ApiFailure) {
+                lock.withLock {
+                    if (isCurrent()) {
+                        failure.retryAt?.let { resetAttempt = resetAttempt?.copy(retryAt = it) }
+                        mutableState.update { it.copy(resetCreditsFailure = failure.kind, resetCreditsRetryAt = failure.retryAt ?: 0) }
+                    }
+                }
+            } catch (_: Exception) {
+                lock.withLock { if (isCurrent()) mutableState.update { it.copy(resetCreditsFailure = FailureKind.STORAGE) } }
+            } finally {
+                withContext(NonCancellable) { lock.withLock {
+                    if (isCurrent()) mutableState.update { it.copy(resetCreditsLoading = false) }
+                } }
+            }
+        }
+    }
+
     suspend fun demo(snapshot: UsageSnapshot = demoSnapshot(now())) = withContext(Dispatchers.IO) {
         require(snapshot.accountId == "demo")
         nextGeneration()
         lock.withLock {
             vault.clear(); dao.clear(); settings.demo(true); settings.syncResult(null, lastAttemptAt = 0)
             tokenAttempt = null
+            resetAttempt = null
             mutableState.value = AppState(true, snapshot = snapshot, demo = true)
         }
     }
@@ -332,6 +411,7 @@ class UsageRepository(
         lock.withLock {
             vault.clear(); dao.clear(); settings.demo(false); settings.syncResult(null, lastAttemptAt = 0)
             tokenAttempt = null
+            resetAttempt = null
             mutableState.value = AppState(initialized = true)
         }
     }
@@ -339,7 +419,7 @@ class UsageRepository(
     private fun nextGeneration(): Long {
         val ticket = generation.incrementAndGet()
         // Cancelling a login may keep the previous account; its invalidated request must not leave a spinner.
-        mutableState.update { it.copy(tokenLoading = false) }
+        mutableState.update { it.copy(tokenLoading = false, resetCreditsLoading = false) }
         return ticket
     }
 
