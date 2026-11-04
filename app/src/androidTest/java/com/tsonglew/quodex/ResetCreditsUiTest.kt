@@ -22,6 +22,7 @@ import com.tsonglew.quodex.ui.QuotaTheme
 import com.tsonglew.quodex.ui.ResetCreditsCard
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
@@ -34,6 +35,16 @@ class ResetCreditsUiTest {
     private var host: MainActivity? = null
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val app get() = instrumentation.targetContext.applicationContext as TestQuotaApplication
+
+    @Before fun resetNetworkFixture() {
+        // Other device tests deliberately leave a different quota percentage behind.
+        app.usedPercent = 38
+        app.usageStatusCode = 200
+        app.usageRetryAfter = null
+        app.usageTransportFailure = null
+        app.responseDelayMillis = 0
+        app.usageResponseGate = null
+    }
 
     @Test fun countOnlyUnknownZeroAndFailedDetailsKeepTheirMeaning() {
         withCard(demoSnapshot(NOW).copy(resetCredits = null, resetCreditDetails = null), demo = false) {
