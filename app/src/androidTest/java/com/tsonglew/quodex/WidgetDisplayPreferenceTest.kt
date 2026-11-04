@@ -95,8 +95,8 @@ class WidgetDisplayPreferenceTest {
             host.onActivity { activity ->
                 expectedTask = activity.taskId
                 val tasks = activity.getSystemService(android.app.ActivityManager::class.java).appTasks
-                actualTasks = tasks.map { it.taskInfo.taskId }
-                tasks.firstOrNull { it.taskInfo.taskId == expectedTask }?.let {
+                actualTasks = tasks.mapNotNull { it.taskInfo?.taskId }
+                tasks.firstOrNull { it.taskInfo?.taskId == expectedTask }?.let {
                     it.moveToFront()
                     found = true
                 }

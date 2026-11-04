@@ -13,7 +13,7 @@
 ## 开发环境
 
 1. Fork 并克隆仓库，从 `master` 创建独立分支。
-2. 安装 JDK 17、Android SDK Platform 36 和 Build Tools 35.0.0。设置 `ANDROID_HOME`，或在未提交的 `local.properties` 写入 `sdk.dir=/你的/Android/sdk`。
+2. 安装 JDK 17、Android SDK Platform 37.0 和 Build Tools 35.0.0；运行更新安装测试夹具时还需 Platform 36。设置 `ANDROID_HOME`，或在未提交的 `local.properties` 写入 `sdk.dir=/你的/Android/sdk`。
 3. 使用仓库内的 Gradle Wrapper：
 
 ```sh

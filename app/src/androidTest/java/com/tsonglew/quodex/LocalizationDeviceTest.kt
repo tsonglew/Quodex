@@ -89,7 +89,7 @@ class LocalizationDeviceTest {
                                 activity.getSystemService(android.app.ActivityManager::class.java).appTasks
                                     .firstOrNull { task ->
                                         // Android 10 can still return the language picker's removed task.
-                                        try { task.taskInfo.taskId == activity.taskId }
+                                        try { task.taskInfo?.taskId == activity.taskId }
                                         catch (_: IllegalArgumentException) { false }
                                     }?.let { task ->
                                         try {
