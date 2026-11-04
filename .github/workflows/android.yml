@@ -36,11 +36,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.sha }}
           persist-credentials: false
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version: '1.26'
           cache: false
@@ -55,20 +55,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.sha }}
           persist-credentials: false
       - name: Validate delivery tooling
         run: python3 -m unittest discover -s scripts/tests -v
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
@@ -85,7 +85,7 @@ jobs:
             --apk app/build/outputs/apk/debug/app-debug.apk \
             --output-metadata app/build/outputs/apk/debug/output-metadata.json \
             --destination artifacts/preview --source-sha "${PR_HEAD_SHA:-$BUILD_SHA}" --build-sha "$BUILD_SHA"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android-apk
           path: artifacts/preview/
@@ -94,14 +94,14 @@ jobs:
       - name: Build unsigned release for signing job
         if: env.BUILD_RELEASE == 'true'
         run: ./gradlew lintRelease assembleRelease --stacktrace
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: env.BUILD_RELEASE == 'true'
         with:
           name: android-release-unsigned
           path: app/build/outputs/apk/release/
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always() && env.BUILD_RELEASE == 'true'
         with:
           name: android-release-diagnostics
@@ -109,7 +109,7 @@ jobs:
             app/build/outputs/mapping/release/
             app/build/reports/lint-results-release.html
           retention-days: 90
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: android-build
@@ -136,24 +136,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || github.sha }}
           persist-credentials: false
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
       - name: Install compile platform
         run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: env.BUILD_RELEASE == 'true'
         with:
           name: android-release-unsigned
@@ -187,7 +187,7 @@ jobs:
           DEVICE_TARGET: ${{ matrix.target }}
           RELEASE_APK: ${{ env.BUILD_RELEASE == 'true' && 'release-unsigned/app-release-unsigned.apk' || '' }}
         run: bash scripts/android17_device_ci.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: android-device-tests-api-${{ matrix.api-level }}
@@ -221,20 +221,20 @@ jobs:
       name: android-release
       url: ${{ github.event_name == 'push' && format('{0}/{1}/releases/tag/build-{2}-{3}', github.server_url, github.repository, github.run_id, github.run_attempt) || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
           sparse-checkout: scripts
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: android-release-unsigned
           path: unsigned
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
@@ -261,7 +261,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
         run: bash scripts/publish_release.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         id: signed-apk
         with:
           name: ${{ github.event_name == 'push' && 'android-signed-apk' || 'android-fixed-signature-check' }}

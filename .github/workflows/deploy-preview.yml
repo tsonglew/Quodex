@@ -25,7 +25,7 @@ jobs:
       environment: ${{ steps.run.outputs.environment }}
       artifact-url: ${{ steps.run.outputs.artifact-url }}
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         id: run
         with:
           script: |
@@ -60,7 +60,7 @@ jobs:
       deployments: write
     steps:
       # No checkout or execution of PR code in this privileged workflow.
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         id: deployment
         env:
           SOURCE_SHA: ${{ needs.prepare.outputs.sha }}
@@ -80,7 +80,7 @@ jobs:
               ...context.repo, deployment_id: response.data.id, state: 'in_progress',
               log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             });
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: android-apk
           path: apk
@@ -109,7 +109,7 @@ jobs:
           PY
       - name: Record deployment result
         if: always() && steps.deployment.outputs.id != ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           DEPLOYMENT_ID: ${{ steps.deployment.outputs.id }}
           RESULT: ${{ job.status }}
