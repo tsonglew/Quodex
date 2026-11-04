@@ -8,12 +8,20 @@
 
 | 入口 | 检查／产物 | 部署 |
 | --- | --- | --- |
-| PR、master push、手动 CI | 交付脚本测试、71 项 JVM 测试、lint、debug APK；API 29／31／35／36／37.0／37.2 设备矩阵 | PR 或 master 全部通过后登记预览 deployment |
+| PR、master push、手动 CI | 交付脚本测试、JVM 单元测试、lint、debug APK；API 29／31／35／36／37.0／37.2 设备矩阵 | PR 或 master 全部通过后登记预览 deployment |
 | `v<versionName>` tag，或在该 tag 上手动运行 Release | 验证 tag 格式、版本及主分支祖先关系；复用完整 CI；额外构建和 lint minified release，并在六组模拟器检查真实 release 页面 | 固定密钥签名、校验证书、发布 GitHub Release；记录 `android-release` 环境 |
 
 合并到 master 自动执行完整 CI、release lint／R8 和六组 minified 页面检查；全部通过后使用 android-release 固定密钥签名，上传 `android-signed-apk`（保留 14 天）。运行摘要提供下载链接、版本、源提交和 APK 哈希；产物包含 APK、SHA256SUMS、provenance.json。构建或设备测试失败时不会签名。PR 不接触发布 secrets，master push 随后自动创建独立 `build-<runId>-<attempt>` 预发布并上传相同 APK／校验和／来源信息，历史包不覆盖；同版本 master 产物可用于测试，正式覆盖升级仍需递增 versionCode。
 
 统一状态为 `Android CI gate`，只有交付工具检查、build 与全部设备矩阵成功才会通过。交付工具检查固定 actionlint 1.7.12、运行 ShellCheck 与 Python 测试。主分支 CI 不因后续 push 取消正在运行的验证；PR 新提交可取消旧验证。发布同 tag 串行执行。开发分支通过 PR 验证，避免 push 与 PR 重复启动矩阵；取消整个运行时 gate 跳过，实际构建或测试失败时 gate 仍失败。
+
+## 编译平台与断网探针
+
+CI 的构建及设备任务显式安装 SDK Platform 37.0，与 App 的 compileSdk 37 和 README 一致；安装验证使用的最小测试 APK 也链接同一平台。minSdk 29、targetSdk 36、Build Tools 35.0.0 和现有运行时依赖保持主分支配置。
+
+真实断网探针同时等待系统无活动网络与 WorkManager 收到离线回调后再提交刷新，避免 Android 29 回调延迟导致任务读到旧的联网状态。它仍检查离线零请求、任务等待、恢复网络后仅刷新一次，不注入约束状态或跳过断言。
+
+Android 17 的原生测试入口为整套测试保留 900 秒，避免当前 85 项测试在最后一项被原有 600 秒上限截断；设备任务总上限仍为 30 分钟。超时会在日志中打印已完成的测试报告并保持失败，不自动重跑或忽略失败。
 
 ## 预览 deployment
 
@@ -60,7 +68,7 @@ CI debug 签名与 release 签名不同，首次切换需要卸载 debug 包再�
 - 发布先建立 draft，全部资产上传后才公开。已有 draft 可重跑上传；已公开版本拒绝覆盖，修复需增加版本并创建新 tag。
 - 需要回退时安装已验证的旧 Release；Android 降级限制与数据兼容需单独确认。不要移动已公开版本的 tag。
 
-## 当前验证状态
+## 历史验证记录（2026-10）
 
 [PR #16 CI 38037325156](https://github.com/tsonglew/Quodex/actions/runs/38037325156)（源提交 a361ded7b96600c5393a48246a4cce1d42a21e35）的交付检查、构建、lint、JVM、API 29／31／35／36／37.0／37.2 全部设备矩阵及统一 gate 已通过，并合并为 master d356cd8。合并触发的 [自动出包运行 38037985183](https://github.com/tsonglew/Quodex/actions/runs/38037985183) 已通过 release lint／R8 构建、全部六组设备与 minified 页面流程、统一 gate 和固定签名。产物见 [android-signed-apk](https://github.com/tsonglew/Quodex/actions/runs/38037985183/artifacts/11664782203)。
 
@@ -78,7 +86,7 @@ Android 17 使用官方 SDK 的 `37.0/google_apis` 与 `37.2/google_apis_ps16k` 
 
 ### Android 17 启动就绪
 
-以下保留排查时序；AVD 元数据修复已在 38007906590 及后续六组 CI 中验证，文中的“待验证”描述对应当时状态。当前结果以上方“当前验证状态”为准。
+以下保留排查时序；AVD 元数据修复已在 38007906590 及后续六组 CI 中验证，文中的“待验证”描述对应当时状态。相关证据见上方“历史验证记录（2026-10）”，仅代表所列日期与提交；当前结果请查看[对应提交的 Android CI 运行](https://github.com/tsonglew/Quodex/actions/workflows/android.yml)。
 
 运行 37986219241 的 API 37.0／37.2 在应用测试开始前分别因 input 服务缺失／Broken pipe 失败；四个既有版本设备测试通过。Android 17 改由 `scripts/android17_device_ci.sh` 启动相同官方镜像，`wait_for_android.py` 要求启动标记、核心服务、包查询、settings 与无操作按键命令连续三轮成功，再运行原有完整测试及可选 minified release 检查。启动／logcat 日志随设备证据上传；失败继续使统一 gate 失败，不跳过检查。该启动流程已在运行 38007906590 的完整矩阵中通过，后续组件刷新失败仍需单独排查。
 

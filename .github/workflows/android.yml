@@ -73,7 +73,7 @@ jobs:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
       - name: Install compile platform
-        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;35.0.0'
       - name: Unit tests, lint and APK
         run: ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest --stacktrace
       - name: Package preview APK
@@ -152,7 +152,7 @@ jobs:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
       - name: Install compile platform
-        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;35.0.0'
       - uses: actions/download-artifact@v8
         if: env.BUILD_RELEASE == 'true'
         with:

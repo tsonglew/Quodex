@@ -15,7 +15,7 @@ cat > "$output/AndroidManifest.xml" <<MANIFEST
 <application android:hasCode="false" android:label="Quodex update test" />
 </manifest>
 MANIFEST
-"$build_tools/aapt2" link -I "$sdk/platforms/android-36/android.jar" --manifest "$output/AndroidManifest.xml" -o "$output/unsigned.apk"
+"$build_tools/aapt2" link -I "$sdk/platforms/android-37.0/android.jar" --manifest "$output/AndroidManifest.xml" -o "$output/unsigned.apk"
 "$build_tools/apksigner" sign --ks "$HOME/.android/debug.keystore" --ks-pass pass:android --key-pass pass:android --out "$output/candidate.apk" "$output/unsigned.apk"
 "$build_tools/apksigner" verify "$output/candidate.apk"
 printf '%s\n' "$output/candidate.apk"
