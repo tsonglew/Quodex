@@ -7,6 +7,9 @@ import android.os.SystemClock
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import androidx.work.impl.WorkManagerImpl
+import androidx.work.impl.constraints.ConstraintListener
+import androidx.work.impl.constraints.NetworkState
 import com.tsonglew.quodex.data.Session
 import com.tsonglew.quodex.sync.SyncScheduler
 import kotlinx.coroutines.runBlocking
@@ -14,9 +17,11 @@ import org.junit.Assert.*
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 /** Explicit owned-emulator probe: disables and restores its real network transports. */
 class NetworkConstraintDeviceTest {
+    @android.annotation.SuppressLint("RestrictedApi") // Observe the real scheduler tracker; never override its state.
     @Test fun actualOfflineWorkWaitsThenRefreshesOnceAfterConnectivityReturns() = runBlocking {
         assumeTrue("Requires explicit owned-emulator network probe",
             InstrumentationRegistry.getArguments().getString("networkProbe") == "true")
@@ -25,6 +30,13 @@ class NetworkConstraintDeviceTest {
         val app = context.quotaApp as TestQuotaApplication
         val manager = WorkManager.getInstance(context)
         val network = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val tracker = (manager as WorkManagerImpl).trackers.networkStateTracker
+        val observedNetwork = AtomicReference<NetworkState?>()
+        val listener = object : ConstraintListener<NetworkState> {
+            override fun onConstraintChanged(newValue: NetworkState) {
+                observedNetwork.set(newValue)
+            }
+        }
         fun shell(command: String): String = instrumentation.uiAutomation.executeShellCommand(command).use {
             java.io.FileInputStream(it.fileDescriptor).bufferedReader().use { reader -> reader.readText().trim() }
         }
@@ -43,6 +55,7 @@ class NetworkConstraintDeviceTest {
             fail(message)
         }
         fun work() = manager.getWorkInfosForUniqueWork("codex-manual-sync").get(10, TimeUnit.SECONDS).single()
+        tracker.addListener(listener)
         try {
             await("Probe requires OS-validated internet before changing network settings") {
                 network.getNetworkCapabilities(network.activeNetwork)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
@@ -56,6 +69,12 @@ class NetworkConstraintDeviceTest {
             shell("svc wifi disable")
             shell("svc data disable")
             await("The OS must actually have no active network") { network.activeNetwork == null }
+            // activeNetwork can become null before WorkManager receives onLost (notably API 29).
+            // Keep its real tracker subscribed and await delivery instead of enqueueing against
+            // stale CONNECTED state. No TestDriver or synthetic constraint state is used.
+            await("WorkManager must observe the real network loss before enqueueing") {
+                observedNetwork.get()?.isConnected == false
+            }
             app.usedPercent = 17
             app.settings.syncResult(null, lastAttemptAt = 0)
             SyncScheduler.refresh(context).result.get(10, TimeUnit.SECONDS)
@@ -73,6 +92,7 @@ class NetworkConstraintDeviceTest {
             assertEquals(17.0, app.repository.state.value.snapshot?.windows?.single()?.usedPercent)
             assertNull(app.repository.state.value.failure)
         } finally {
+            tracker.removeListener(listener)
             manager.cancelAllWork().result.get(10, TimeUnit.SECONDS)
             app.repository.logout()
             restore()

@@ -1,5 +1,11 @@
+import contextlib
+import io
+from pathlib import Path
+import subprocess
+import tempfile
 import unittest
-from scripts.native_device_tests import verify
+from unittest.mock import patch
+from scripts.native_device_tests import run_instrumentation, verify
 
 
 def report(passed=18, skipped=2):
@@ -8,6 +14,23 @@ def report(passed=18, skipped=2):
 
 
 class NativeDeviceTests(unittest.TestCase):
+    def test_timeout_preserves_partial_report_and_still_fails(self):
+        partial = report().replace('INSTRUMENTATION_CODE: -1\n', '')
+
+        def timeout(command, **kwargs):
+            kwargs['stdout'].write(partial)
+            raise subprocess.TimeoutExpired(command, kwargs['timeout'])
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'screenshots' / 'native-instrumentation.txt'
+            output = io.StringIO()
+            with patch('scripts.native_device_tests.subprocess.run', side_effect=timeout):
+                with contextlib.redirect_stdout(output), self.assertRaises(subprocess.TimeoutExpired):
+                    run_instrumentation(path)
+            self.assertEqual(partial, path.read_text())
+            self.assertIn(partial, output.getvalue())
+            self.assertNotIn('actual tests passed', output.getvalue())
+
     def test_full_suite_with_conditional_skips(self):
         self.assertEqual(18, verify(report()))
 

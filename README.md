@@ -77,9 +77,11 @@ cd Quodex
 ./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
 
-Debug APK 输出到 `app/build/outputs/apk/debug/app-debug.apk`。技术栈为 Kotlin、Jetpack Compose、Glance、Room、DataStore 和 WorkManager；构建版本由仓库 Gradle 配置管理。
+Debug APK 输出到 `app/build/outputs/apk/debug/app-debug.apk`。技术栈为 Kotlin、Jetpack Compose、Glance、Room、DataStore 和 WorkManager；构建版本由仓库 Gradle 配置管理。CI 与更新安装测试显式使用 SDK Platform 37.0；编译 SDK 升级不改变 Android 10+ 的安装要求或 targetSdk 36。
 
 连接测试模拟器后可运行 `./gradlew connectedDebugAndroidTest`。测试会改变示例模式、账号和显示偏好，请使用专用测试环境。[贡献指南](CONTRIBUTING.md) · [测试说明](docs/TESTING.md) · [CI 与签名发布](docs/CI_CD.md)
+
+CI 保留 Android 29、31、35、36、37.0 与 37.2 的设备检查。Android 17 的完整测试套件上限为 900 秒，超时保留部分报告并判定失败。真实断网探针等待系统与 WorkManager 都确认离线，再验证任务等待及联网后只刷新一次。
 
 ## 一起完善 Quodex
 

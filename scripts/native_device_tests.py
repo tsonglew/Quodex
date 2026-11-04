@@ -16,19 +16,27 @@ def verify(report: str) -> int:
     return passed
 
 
+def run_instrumentation(path: Path) -> None:
+    path.parent.mkdir(exist_ok=True)
+    try:
+        with path.open('w') as output:
+            # The full 85-test Android 17 suite can reach its last test at 600s.
+            # Keep a bounded runtime within the 30-minute job, without rerunning failures.
+            result = subprocess.run(['adb', '-e', 'shell', 'am', 'instrument', '-r', '-w',
+                                     'com.tsonglew.quodex.test/com.tsonglew.quodex.QuotaTestRunner'],
+                                    stdout=output, stderr=subprocess.STDOUT, timeout=900)
+    finally:
+        # Preserve partial runner statuses in the job log even if adb times out.
+        print(path.read_text())
+    report = path.read_text()
+    result.check_returncode()
+    print(f'Native device suite: {verify(report)} actual tests passed')
+
+
 def main() -> None:
     for apk in ('debug/app-debug.apk', 'androidTest/debug/app-debug-androidTest.apk'):
         subprocess.run(['adb', '-e', 'install', '-r', f'app/build/outputs/apk/{apk}'], check=True, timeout=120)
-    path = Path('screenshots/native-instrumentation.txt')
-    path.parent.mkdir(exist_ok=True)
-    with path.open('w') as output:
-        result = subprocess.run(['adb', '-e', 'shell', 'am', 'instrument', '-r', '-w',
-                                 'com.tsonglew.quodex.test/com.tsonglew.quodex.QuotaTestRunner'],
-                                stdout=output, stderr=subprocess.STDOUT, timeout=600)
-    report = path.read_text()
-    print(report)
-    result.check_returncode()
-    print(f'Native device suite: {verify(report)} actual tests passed')
+    run_instrumentation(Path('screenshots/native-instrumentation.txt'))
 
 
 if __name__ == '__main__':
