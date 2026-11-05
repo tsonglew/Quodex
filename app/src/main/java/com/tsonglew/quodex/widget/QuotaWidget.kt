@@ -34,7 +34,9 @@ import kotlinx.coroutines.launch
 import kotlin.math.ceil
 
 open class QuotaWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(DpSize(140.dp, 150.dp), DpSize(140.dp, 230.dp), DpSize(280.dp, 150.dp)))
+    // The bitmap material needs launcher dimensions so resizing preserves its corner/rim geometry.
+    // Content still adapts at the same compact, wide and tall thresholds below.
+    override val sizeMode = SizeMode.Exact
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val app = context.quotaApp
         app.repository.initialize()
@@ -411,7 +413,7 @@ open class QuotaWidget : GlanceAppWidget() {
 }
 
 class SlimQuotaWidget : QuotaWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(DpSize(130.dp, 50.dp), DpSize(130.dp, 70.dp), DpSize(280.dp, 70.dp)))
+    override val sizeMode = SizeMode.Exact
 }
 
 class RefreshWidgetAction : ActionCallback {

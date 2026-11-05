@@ -48,7 +48,7 @@ The requested light secondary ink is already near 4.5:1 on pure white. Keeping t
 
 Contrast checks include primary/secondary text, the existing primary/error colors, and the inner highlight. Foreground blend modes remain normal to preserve native error colors and controls. Original focus and disabled states are retained. The two sliders never override the readability floor, even at zero.
 
-The Glance bitmap cache is bounded to 4MB, with dimensions capped at 1024 pixels. Existing 20dp/28dp radii are preserved for compact, large-font and standard layouts. No new recurring background work is added. Widget accessibility state is evaluated when the widget renders; launcher/OEM behavior still needs coverage beyond the devices listed below.
+The Glance bitmap cache is bounded to 4MB, with dimensions capped at 1024 pixels. Standard and compact widgets request the host's exact available size, retaining their existing content breakpoints while rendering the material for that aspect ratio. This preserves the existing 20dp/28dp radii and rim thickness after resizing instead of stretching a preset bitmap. No new recurring background work is added. Widget accessibility state is evaluated when the widget renders; launcher/OEM behavior still needs coverage beyond the devices listed below.
 
 ## Settings
 
@@ -116,5 +116,7 @@ The PR preserves current master and adds localized settings, the shared material
 The file list above describes the original material change. Integration also changes `app/build.gradle.kts`, the English/Chinese/Japanese string catalogs, `FloatingNavigation.kt`, `HomePinPermissionGuide.kt`, `SubscriptionsPage.kt`, README, this document, the screenshot index, and the documentation index. Local verification of alpha35: **254 JVM tests passed**; Debug/Release Lint each reported **0 errors** (68/69 warnings), Debug and instrumentation APKs and the minified Release APK built successfully. The explicit SDK target still produces minSdk 29, targetSdk 36 and compileSdk 37 in the APK manifest.
 
 The API 37 emulator run reported 13 cases: **12 passed, 1 wide-window assumption skipped**. It covers glass behavior/settings, App flows, two-times font scale and navigation reachability. System UI displayed its own ANR overlay during that run; those screenshots are retained only as local diagnostics. Both glass-specific tests then passed again (2/2), with clean material screenshots, after one explicit Wait action on the known system dialog. The product ANR checks and assertions were not suppressed.
+
+Review caught preset bitmap stretching when a widget is resized beyond its responsive bucket. The fix uses exact host dimensions for quota widgets; the real-host resize/delete/re-add test now includes 140×400dp and checks the rendered background aspect ratio. That test passed on API 37 (1/1), followed by successful unit tests, Debug/Release Lint and all three APK builds for the final code.
 
 [Light settings](screenshots/glass-alpha35/glass-settings-light.png) and [dark settings](screenshots/glass-alpha35/glass-settings-dark.png) are native, unedited alpha35 debug screenshots from the API 37 arm64 emulator in local demo mode. Tint values are 40% light and 130% dark. Logs are under `artifacts/glass-pr/` in the isolated PR worktree. GitHub's six-platform device matrix is checked separately before merge.
