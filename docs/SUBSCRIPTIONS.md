@@ -22,6 +22,8 @@ WorkBuddy 签发的 API key 用于 CodeBuddy CLI，没有据此推断独立的�
 
 ## 连接和手动导入
 
+在“账号”页按订阅额度或 API 账单筛选，选择服务进入明细后连接、刷新、导入或断开。总览显示已连接服务的关键指标，点标题查看完整明细；无需先登录 Codex。
+
 Kimi：在电脑登录 [会员页面](https://www.kimi.com/settings/subscription)，开发者工具 → Application → Local Storage 找到 `access_token`，只复制值。WorkBuddy：在 [国际站用量页面](https://www.workbuddy.ai/profile/plans-usage) 的 Application → Cookies 分别复制 `session`、`session_2` 的值，再从该浏览器 Network 请求头复制 User-Agent，填入三个字段；服务会将会话绑定到浏览器值。App 不收集整份 Cookie 或浏览器配置。
 
 Grok / Cursor：在 [官方用量页](https://grok.com/dashboard/usage) 打开 Network，复制 `usage-status?scope=user` 的 JSON **响应**，使用卡片“导入官网数据”粘贴。不要粘贴请求头、Cookie 或聊天内容。仅保留额度／费用字段；未包含的账户余额显示未知。卡片标注导入时间与手动来源，导入时间不等于数据生成时间，之后必须重新导入更新。导入快照在重启后仍不会自动联网，断开会删除它。格式错误保留原快照。
@@ -32,7 +34,7 @@ xAI：在官方控制台创建具有预付账单读取权限的团队 Management
 
 ## 刷新、缓存和隐私
 
-打开订阅页时查询已连接服务，五分钟内使用缓存；手动导入除外。可手动刷新或取消。临时网络错误、408、429、500／502／503／504 最多尝试三次并遵守 Retry-After；401／403／格式错误不自动重试。失败保留上次成功数据和原始时间。重连成功后才替换旧连接，断开与晚到请求隔离。每项仅保存一个连接，没有跨账号合并或自动续期网页会话。
+进入应用或账号页时查询已连接服务，五分钟内使用缓存；手动导入除外。可手动刷新或取消。临时网络错误、408、429、500／502／503／504 最多尝试三次并遵守 Retry-After；401／403／格式错误不自动重试。失败保留上次成功数据和原始时间。重连成功后才替换旧连接，断开与晚到请求隔离。每项仅保存一个连接，没有跨账号合并或自动续期网页会话。
 
 凭据及对应快照使用 Android Keystore / AES-GCM 加密，禁止网络重定向；不保存原始响应、成员姓名、邮箱或账号列表，不写入诊断。WorkBuddy 原浏览器 User-Agent 与两段会话一起加密，仅发给 workbuddy.ai。导入只保留解析后的数值，不保存原始 JSON。各服务仅前台查询，不新增小组件、Token 图表或后台同步；示例模式不联网。
 
@@ -53,7 +55,7 @@ xAI：在官方控制台创建具有预付账单读取权限的团队 Management
 - Cursor Admin：`POST https://api.cursor.com/teams/spend`，Basic key + 空密码；`page`／`pageSize` 分页，保留分值小数精度。[官方 Admin API](https://cursor.com/docs/account/teams/admin-api.md)。
 - 原有服务依据：[DeepSeek](https://api-docs.deepseek.com/api/get-user-balance/) · [OpenCode Go 历史实现](https://github.com/anomalyco/opencode/blob/d4704347465c1ee63d0c213ed00e648e7f0231c5/packages/console/app/src/routes/zen/go/v1/usage.ts) · [Console API key](https://opencode.ai/v2/docs/console/api/) · [旧 Cursor 控制台响应记录](https://forum.cursor.com/t/cursor-usages-is-not-showing-correct-information/170210)。
 
-本地 290 项 JVM 测试、69 项交付脚本测试、debug／release 构建与 lint 通过；新增 21 项解析、HTTP、分页、导入缓存与并发隔离测试。API 37 上 6 项订阅界面测试和 1 项 320dp／200% 字体检查通过（断开测试修正悬浮导航遮挡后单独重跑通过）。开发者 API 尚未使用真实 key 验收；浏览器外 HTTP 成功也不代表所有 Android 设备与账号均可用。原生界面来源见 [alpha37 截图记录](screenshots/providers-alpha37/README.md)，远端矩阵以 PR 的最终状态为准。
+本地 291 项 JVM 测试、70 项交付脚本测试、debug／release 构建与 lint 通过；新增 21 项解析、HTTP、分页、导入缓存与并发隔离测试。合入三入口导航后，API 37 上 6 项账号／订阅界面测试和 1 项 320dp／200% 字体检查同轮通过；总览核对 WorkBuddy 积分、Kimi API 精度与 Grok 导入来源。开发者 API 尚未使用真实 key 验收；浏览器外 HTTP 成功也不代表所有 Android 设备与账号均可用。原生界面来源见 [alpha37 截图记录](screenshots/providers-alpha37/README.md)，远端矩阵以 PR 的最终状态为准。
 
 ## 历史 alpha32 验证记录
 

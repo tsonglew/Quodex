@@ -22,17 +22,17 @@ class AppFlowTest {
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("dashboard").fetchSemanticsNodes().isNotEmpty() }
         compose.onAllNodesWithText("示例数据 · 非真实额度", substring = false).onFirst().assertIsDisplayed()
         screenshot("quota-light")
-        compose.onNodeWithTag("tab-widgets").performClick()
+        compose.openSettingsPage("desktop")
         compose.onNodeWithTag("add-widget-button").assertExists()
         compose.onNodeWithTag("add-slim-widget-button").assertExists()
         screenshot("widgets-light")
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openSettingsPage("appearance")
         compose.onNodeWithTag("theme-dark").performClick()
         compose.waitForIdle()
         compose.onNodeWithTag("tab-quota").performClick()
         compose.waitForIdle()
         screenshot("quota-dark")
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openCodexAccount()
         compose.onNodeWithTag("logout-button").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("confirm-logout").performClick()
         compose.onNodeWithTag("tab-quota").performClick()
@@ -48,7 +48,7 @@ class AppFlowTest {
         app.availableUpdate = com.tsonglew.quodex.update.AppUpdate(BuildConfig.VERSION_CODE + 1L,
             "0.1.0-alpha22", "https://github.com/tsonglew/Quodex/releases/tag/v0.1.0-alpha22", "a".repeat(40))
         try {
-            compose.onNodeWithTag("tab-settings").performClick()
+            compose.openSettingsPage("updates")
             compose.onNodeWithTag("automatic-app-updates").performScrollToVisible(compose).assertIsOff()
             val before = app.updateRequests.get()
             compose.onNodeWithTag("check-app-update").performScrollToVisible(compose).performClick()
@@ -65,7 +65,7 @@ class AppFlowTest {
     }
 
     @Test fun backgroundGuideCanSwitchBrandsAndCollapse() {
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openSettingsPage("refresh")
         compose.onNodeWithTag("background-guide-toggle").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("background-brand-picker").performScrollToVisible(compose).performClick()
         compose.onNodeWithText("小米 / Redmi / POCO").performClick()
@@ -80,7 +80,7 @@ class AppFlowTest {
     }
 
     @Test fun privacyNoticeIsAvailableOfflineInSettingsAndBeforeLogin() {
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openSettingsPage("support")
         compose.onNodeWithTag("privacy-notice-button").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("privacy-notice-text").assertTextContains("缓存本身不是加密数据库", substring = true)
         saveDeviceScreenshot(compose.activity, "privacy-notice", compose.onNode(isDialog()).captureToImage().asAndroidBitmap())
@@ -98,7 +98,7 @@ class AppFlowTest {
         val app = compose.activity.quotaApp as TestQuotaApplication
         val diagnostics = app.diagnostics
         val requestsBefore = app.usageRequests.get()
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openSettingsPage("support")
         // Exercise asynchronous read/clear continuations across repeated dialog
         // creation; an IO completion previously recomposed on a worker thread.
         repeat(5) {
@@ -132,7 +132,7 @@ class AppFlowTest {
         val activity = compose.activity.getSystemService(android.app.ActivityManager::class.java)
         val app = compose.activity.quotaApp as TestQuotaApplication
         val before = app.usageRequests.get()
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openSettingsPage("support")
         try {
             listOf(false, true, false).forEach { restricted ->
                 shell("cmd appops set $packageName RUN_ANY_IN_BACKGROUND ${if (restricted) "ignore" else "allow"}")

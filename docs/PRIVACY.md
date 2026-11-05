@@ -20,7 +20,7 @@
 
 ## alpha37 源码中的订阅连接
 
-`SubscriptionApi` 仅向所选服务的固定 HTTPS 域名发送只读 GET 或 POST 查询，禁止重定向；Bearer、会话 Cookie 与团队 Basic key 按服务隔离。WorkBuddy 另保存原浏览器 User-Agent 与两段会话，仅用于国际站查询。Grok 手动导入只保存解析后的额度／费用快照，标注导入来源和时间，不保存 JSON 原文，也不自动刷新。Cursor 团队分页只累计费用，不保存姓名、邮箱或成员 ID。完整地址、权限与来源见 [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md)。凭据及对应快照作为一笔 AES-GCM 加密事务保存在 `noBackupFilesDir/subscriptions.enc`，不写入诊断或保存界面状态。每个服务独立断开，设置中的 Codex 退出仅影响 Codex。新服务只在订阅页前台刷新，不加入后台任务或桌面小组件；示例数据不联网。
+`SubscriptionApi` 仅向所选服务的固定 HTTPS 域名发送只读 GET 或 POST 查询，禁止重定向；Bearer、会话 Cookie 与团队 Basic key 按服务隔离。WorkBuddy 另保存原浏览器 User-Agent 与两段会话，仅用于国际站查询。Grok 手动导入只保存解析后的额度／费用快照，标注导入来源和时间，不保存 JSON 原文，也不自动刷新。Cursor 团队分页只累计费用，不保存姓名、邮箱或成员 ID。完整地址、权限与来源见 [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md)。凭据及对应快照作为一笔 AES-GCM 加密事务保存在 `noBackupFilesDir/subscriptions.enc`，不写入诊断或保存界面状态。每个服务独立断开，账号 → Codex 中的退出仅影响 Codex。新服务在进入应用或账号页时前台刷新（五分钟缓存），不加入后台任务或桌面小组件；示例数据不联网。
 
 ## 重置卡明细（2026-11-04，alpha34 源码）
 

@@ -105,6 +105,7 @@ class ResetCreditsUiTest {
         try {
             ActivityScenario.launch(MainActivity::class.java).use {
                 runBlocking { app.repository.connect(Session("fixture-reset-access", "fixture-reset-refresh", "fixture-reset-account", Long.MAX_VALUE)) }
+                compose.openCodexDetails()
                 compose.onNodeWithTag("reset-credits-toggle").performScrollToVisible(compose).performClick()
                 compose.waitUntil(10_000) { app.repository.state.value.snapshot?.resetCreditDetails != null }
                 compose.onNodeWithTag("reset-credits-count").assertTextEquals("2 张可用")

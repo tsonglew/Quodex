@@ -28,6 +28,7 @@ class ApiCreditsUiTest {
                     runBlocking { app.settings.theme(theme) }
                     scenario.recreate()
                     compose.onNodeWithTag("tab-quota").performClick()
+                    compose.openCodexDetails()
                     if (compose.onAllNodesWithTag("api-credits-period").fetchSemanticsNodes().isEmpty())
                         compose.onNodeWithTag("api-credits-toggle").performScrollToVisible(compose).performClick()
                     compose.onNodeWithText("每月 US$100").performScrollToVisible(compose).assertIsDisplayed()

@@ -63,7 +63,7 @@ class UiExperienceTest {
             assertTrue("The regression must leave the first viewport", quotaScroll > 0f)
             compose.onNodeWithTag("refresh-button").assertIsDisplayed()
 
-            compose.onNodeWithTag("tab-settings").performClick()
+            compose.openSettingsPage("support")
             compose.onNodeWithTag("diagnostics-preview").performScrollToVisible(compose)
             val settingsScroll = scrollPosition("settings")
             compose.onNodeWithTag("tab-quota").performClick()
@@ -85,7 +85,7 @@ class UiExperienceTest {
             toggle.assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch))
                 .assertHasClickAction().assertIsOn().assertHeightIsAtLeast(48.dp)
                 .assertTextContains("显示剩余额度")
-                .assertTextContains("同步更新所有桌面小组件。")
+                .assertTextContains("用于 Codex 额度和桌面额度小组件。")
             compose.onAllNodes(hasTestTag("show-remaining-toggle") and isToggleable()).assertCountEquals(1)
 
             // Hit the label, not the visual switch: this catches a callback accidentally
@@ -118,6 +118,10 @@ class UiExperienceTest {
                     }
                 }
                 enterDemo()
+                compose.onNodeWithTag("navigate-back").performClick()
+                assertTextFits()
+                screenshot("navigation-overview-large-font")
+                compose.openCodexDetails()
                 compose.onNodeWithTag("narrow-app").assertWidthIsEqualTo(320.dp)
                 assertTextFits()
                 screenshot("ux-narrow-large-font-quota")
@@ -133,11 +137,14 @@ class UiExperienceTest {
                 compose.onNodeWithTag("tab-subscriptions").performClick()
                 compose.onNodeWithTag("subscription-examples").assertIsNotEnabled()
                 assertTextFits()
+                compose.openProvider("CURSOR")
                 compose.onNode(hasText("官方控制台") and hasAnyAncestor(hasTestTag("subscription-CURSOR")))
                     .performScrollToVisible(compose).assertIsDisplayed()
                 assertTextFits()
                 screenshot("subscriptions-narrow-large-font")
                 for (provider in listOf("KIMI", "WORKBUDDY", "GROK", "KIMI_API", "GROK_API", "CURSOR_BILLING")) {
+                    compose.onNodeWithTag("navigate-back").performClick()
+                    compose.openProvider(provider)
                     compose.onNode(hasText("官方控制台") and hasAnyAncestor(hasTestTag("subscription-$provider")))
                         .performScrollToVisible(compose).assertIsDisplayed()
                     assertTextFits()
@@ -148,14 +155,16 @@ class UiExperienceTest {
                 compose.onNodeWithTag("show-remaining-toggle").performScrollToVisible(compose).assertIsOn()
                 assertTextFits()
                 screenshot("ux-narrow-large-font-settings")
+                compose.openSettingsPage("appearance")
                 compose.onNodeWithTag("theme-dark").performScrollToVisible(compose).performClick()
                 compose.waitUntil(5_000) { runBlocking { app.settings.flow.first() }.theme == "dark" }
                 compose.onNodeWithTag("theme-dark").assertIsSelected()
+                compose.openSettingsPage("updates")
                 compose.onNodeWithTag("automatic-app-updates").performScrollToVisible(compose).assertHasClickAction()
                 assertTextFits()
                 screenshot("ux-narrow-large-font-updates-dark")
 
-                compose.onNodeWithTag("tab-widgets").performClick()
+                compose.openSettingsPage("desktop")
                 compose.onNodeWithTag("add-slim-widget-button").performScrollToVisible(compose).assertIsDisplayed()
                 compose.onNodeWithTag("add-widget-button").performScrollToVisible(compose).assertIsDisplayed()
                 assertTextFits()
@@ -167,7 +176,7 @@ class UiExperienceTest {
     @Test fun floatingDockKeepsItsLastContentAndActionsReachable() {
         ActivityScenario.launch(MainActivity::class.java).use {
             awaitWelcome()
-            compose.onNodeWithTag("tab-settings").performClick()
+            compose.openSettingsPage("desktop")
             val dock = compose.onNodeWithTag("floating-navigation").assertIsDisplayed().getUnclippedBoundsInRoot()
             val page = compose.onNodeWithTag("page-settings").getUnclippedBoundsInRoot()
             assertTrue("Dock floats inside the content width", dock.left > page.left && dock.right < page.right)
@@ -183,7 +192,7 @@ class UiExperienceTest {
             assertTrue("The dock must not intercept swipes in its side margins", scrollPosition("settings") > before)
             screenshot("ux-glass-navigation-light")
             compose.onNodeWithTag("page-settings").performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 100000f) }
-            val footer = compose.onNodeWithText("独立第三方工具", substring = true).getUnclippedBoundsInRoot()
+            val footer = compose.onNodeWithTag("add-desktop-icon").getUnclippedBoundsInRoot()
             assertTrue("Bottom padding keeps the last content above the dock", footer.bottom <= dock.top)
             screenshot("ux-glass-navigation-footer")
             compose.onNodeWithTag("tab-quota").performClick().assertIsSelected()
@@ -201,7 +210,7 @@ class UiExperienceTest {
             enterDemo()
             assertTrue("Content width is capped at 640dp", compose.onNodeWithTag("page-quota").fetchSemanticsNode().size.width <= 640f * app.resources.displayMetrics.density)
             val page = compose.onNodeWithTag("page-quota").fetchSemanticsNode().boundsInRoot
-            val navigation = listOf("quota", "widgets", "settings").map { tab ->
+            val navigation = listOf("quota", "subscriptions", "settings").map { tab ->
                 compose.onNodeWithTag("tab-$tab").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
             }
             navigation.forEach { item ->
@@ -225,6 +234,7 @@ class UiExperienceTest {
     private fun enterDemo() {
         awaitWelcome()
         compose.onNodeWithTag("demo-button").performScrollToVisible(compose).performClick()
+        compose.openCodexDetails()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("token-usage-card").fetchSemanticsNodes().isNotEmpty() }
     }
 

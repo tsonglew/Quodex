@@ -1,6 +1,6 @@
 # alpha37 新增服务原生截图
 
-2026-11-06，`0.1.0-alpha37` debug，Android API 37 arm64 模拟器（1080×2400）。`SubscriptionsUiTest` 通过 Android UiAutomation 直接保存完整屏幕，未裁切、拼接或重绘；画面中的数值均为合成测试数据，正常示例卡保留“示例数据 · 非真实账号”标记。
+2026-11-06，`0.1.0-alpha37` debug，Android API 37 arm64 模拟器（1080×2400）。`SubscriptionsUiTest` 通过 Android UiAutomation 直接保存完整屏幕，未裁切、拼接或重绘；画面中的数值均为合成测试数据，已按总览／账号／设置三入口导航重新拍摄。正常示例卡保留“示例数据 · 非真实账号”标记。
 
 | 卡片 | 浅色 | 深色 |
 | --- | --- | --- |

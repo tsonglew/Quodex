@@ -10,6 +10,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -26,11 +28,13 @@ import com.tsonglew.quodex.i18n.*
 import com.tsonglew.quodex.subscriptions.*
 
 @Composable
-fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
+fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
+    selectedProvider: SubscriptionProvider? = null, examples: Boolean = false,
+    onExamples: (Boolean) -> Unit = {}, onOpen: (String) -> Unit = {}) {
+    val appDemo = appState.demo
     val saved by model.subscriptions.collectAsStateWithLifecycle()
     val storageUnavailable by model.subscriptionStorageUnavailable.collectAsStateWithLifecycle()
     var filter by rememberSaveable { mutableStateOf(0) }
-    var examples by rememberSaveable { mutableStateOf(false) }
     val demo = appDemo || examples
     LaunchedEffect(demo) { if (!demo) model.loadSubscriptions() }
     val texts = localTextResources()
@@ -38,11 +42,14 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
     var connecting by remember { mutableStateOf<SubscriptionProvider?>(null) }
     var confirmReset by remember { mutableStateOf(false) }
     var importingGrok by remember { mutableStateOf(false) }
-    Text(texts(R.string.subscriptions), fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
-    Spacer(Modifier.height(8.dp))
-    Text(texts(R.string.subscriptions_intro), color = MaterialTheme.colorScheme.onSurfaceVariant)
-    TextButton(onClick = { examples = !examples }, enabled = !appDemo, modifier = Modifier.testTag("subscription-examples")) {
-        Text(texts(if (demo) R.string.subscription_real_data else R.string.subscription_examples))
+    if (selectedProvider == null) {
+        Text(texts(R.string.nav_accounts), style = MaterialTheme.typography.headlineSmall)
+        Spacer(Modifier.height(8.dp))
+        Text(texts(R.string.account_intro), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        TextButton(onClick = { onExamples(!examples) }, enabled = !appDemo, modifier = Modifier.testTag("subscription-examples")) {
+            Text(texts(if (demo) R.string.subscription_real_data else R.string.subscription_examples))
+        }
     }
     if (demo) Text(texts(R.string.subscription_sample_notice), color = MaterialTheme.colorScheme.primary)
     if (!demo && storageUnavailable) {
@@ -58,18 +65,40 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
             }
         }
     }
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf(R.string.subscription_filter_all, R.string.subscription_filter_plans, R.string.subscription_filter_api)
-            .forEachIndexed { index, label ->
-                FilterChip(selected = filter == index, onClick = { filter = index },
-                    label = { Text(texts(label)) }, modifier = Modifier.testTag("subscription-filter-$index"))
-            }
-    }
-    if (filter == 2) Text(texts(R.string.subscription_external_api_note), style = MaterialTheme.typography.bodySmall)
     val apiProviders = setOf(SubscriptionProvider.DEEPSEEK, SubscriptionProvider.OPENCODE_ZEN,
         SubscriptionProvider.KIMI_API, SubscriptionProvider.KIMI_API_GLOBAL, SubscriptionProvider.GROK_API,
         SubscriptionProvider.CURSOR_BILLING)
-    SubscriptionProvider.entries.filter { filter == 0 || (it in apiProviders) == (filter == 2) }.forEach { provider ->
+    if (selectedProvider == null) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(R.string.subscription_filter_all, R.string.subscription_filter_plans, R.string.subscription_filter_api)
+                .forEachIndexed { index, label ->
+                    FilterChip(selected = filter == index, onClick = { filter = index },
+                        label = { Text(texts(label)) }, modifier = Modifier.testTag("subscription-filter-$index"))
+                }
+        }
+        if (filter == 2) Text(texts(R.string.subscription_external_api_note), style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(12.dp))
+        SettingsGroup {
+            NavigationRow("Codex", texts(when {
+                appDemo -> R.string.demo_mode
+                appState.failure != null -> R.string.account_attention
+                appState.connected -> R.string.account_connected
+                else -> R.string.not_connected
+            }), { onOpen("codex-account") }, Modifier.testTag("account-codex"), Icons.Outlined.AccountCircle)
+            SubscriptionProvider.entries.filter { filter == 0 || (it in apiProviders) == (filter == 2) }.forEach { provider ->
+                val account = saved.getValue(provider)
+                HorizontalDivider(Modifier.padding(start = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+                NavigationRow(provider.displayName, texts(when {
+                    demo -> R.string.demo_mode
+                    account.busy -> R.string.refreshing_quota
+                    account.failure != null -> R.string.account_attention
+                    account.connected -> R.string.account_connected
+                    else -> R.string.not_connected
+                }), { onOpen("provider:${provider.name}") }, Modifier.testTag("account-${provider.name}"), Icons.Outlined.AccountCircle)
+            }
+        }
+    }
+    listOfNotNull(selectedProvider).forEach { provider ->
         val state = if (demo) SubscriptionState(snapshot = sampleSubscription(provider, now)) else saved.getValue(provider)
         Spacer(Modifier.height(16.dp))
         GlassPanel(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface,
@@ -91,29 +120,9 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
                     snapshot.metrics.forEach { metric ->
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             metric.label?.let { Text(it, style = MaterialTheme.typography.labelLarge) }
-                            Text(if (metric.kind == SubscriptionMetricKind.QUOTA_WINDOW && metric.windowSeconds != null)
-                                texts(when {
-                                    metric.windowSeconds % 86400L == 0L -> R.string.subscription_window_days
-                                    metric.windowSeconds % 3600L == 0L -> R.string.subscription_window_hours
-                                    metric.windowSeconds % 60L == 0L -> R.string.subscription_window_minutes
-                                    else -> R.string.subscription_window_seconds
-                                }, (metric.windowSeconds / when {
-                                    metric.windowSeconds % 86400L == 0L -> 86400L
-                                    metric.windowSeconds % 3600L == 0L -> 3600L
-                                    metric.windowSeconds % 60L == 0L -> 60L
-                                    else -> 1L
-                                }).toString())
-                                else texts(metric.kind.labelResource()), style = MaterialTheme.typography.labelLarge)
+                            Text(metric.displayLabel(texts), style = MaterialTheme.typography.labelLarge)
                             val value = metric.value
-                            Text(when {
-                                value == null -> texts(R.string.subscription_unknown)
-                                metric.currency != null -> "${metric.currency} $value"
-                                metric.unit == SubscriptionMetricUnit.CREDITS -> if (metric.limit != null)
-                                    texts(R.string.subscription_credits_of, value, metric.limit)
-                                    else texts(R.string.subscription_credits, value)
-                                else -> texts(R.string.subscription_used, java.math.BigDecimal(value)
-                                    .setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString())
-                            }, fontSize = 20.sp)
+                            Text(metric.formattedValue(texts), fontSize = 20.sp)
                             if (metric.currency == null && metric.unit == SubscriptionMetricUnit.PERCENT && value != null) LinearProgressIndicator(
                                 progress = { ((value.toDoubleOrNull() ?: 0.0) / 100).coerceIn(0.0, 1.0).toFloat() },
                                 modifier = Modifier.fillMaxWidth())
@@ -142,7 +151,7 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
                         Text(texts(R.string.subscription_import))
                     }
                     Button(onClick = { connecting = provider }, enabled = !state.busy && !storageUnavailable,
-                        modifier = Modifier.fillMaxWidth().testTag("subscription-connect-${provider.name}")) { Text(texts(R.string.subscription_connect)) }
+                        modifier = Modifier.fillMaxWidth().testTag("subscription-connect-${provider.name}")) { Text(texts(if (state.connected) R.string.reconnect else R.string.subscription_connect)) }
                     if (state.connected) {
                         if (!state.imported) OutlinedButton(onClick = { model.refreshSubscription(provider) },
                             enabled = !state.busy && now >= state.retryAt, modifier = Modifier.fillMaxWidth()) { Text(texts(R.string.subscription_refresh)) }
@@ -156,7 +165,8 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
         }
     }
     Spacer(Modifier.height(16.dp))
-    Text(texts(R.string.subscriptions_scope), style = MaterialTheme.typography.bodySmall)
+    if (demo || selectedProvider == null || !saved.getValue(selectedProvider).imported)
+        Text(texts(R.string.subscriptions_scope), style = MaterialTheme.typography.bodySmall)
     if (importingGrok) {
         var raw by remember { mutableStateOf("") }
         GlassAlertDialog(surfaceId = "grok-import", onDismissRequest = { raw = ""; importingGrok = false },
@@ -243,7 +253,7 @@ private fun SubscriptionProvider.descriptionResource() = when (this) {
     SubscriptionProvider.GROK_API -> R.string.subscription_grok_api_description
     SubscriptionProvider.CURSOR_BILLING -> R.string.subscription_cursor_billing_description
 }
-private fun SubscriptionMetricKind.labelResource() = when (this) {
+internal fun SubscriptionMetricKind.labelResource() = when (this) {
     SubscriptionMetricKind.BALANCE -> R.string.subscription_balance
     SubscriptionMetricKind.AVAILABLE -> R.string.subscription_available
     SubscriptionMetricKind.GRANTED -> R.string.subscription_granted
@@ -260,7 +270,7 @@ private fun SubscriptionMetricKind.labelResource() = when (this) {
     SubscriptionMetricKind.EXTRA_BALANCE -> R.string.subscription_extra_balance
     SubscriptionMetricKind.CREDITS_REMAINING -> R.string.subscription_credits_remaining
 }
-private fun FailureKind.subscriptionErrorResource() = when (this) {
+internal fun FailureKind.subscriptionErrorResource() = when (this) {
     FailureKind.AUTH -> R.string.subscription_error_auth
     FailureKind.FORBIDDEN -> R.string.subscription_error_forbidden
     FailureKind.PROTOCOL -> R.string.subscription_error_protocol
@@ -268,7 +278,7 @@ private fun FailureKind.subscriptionErrorResource() = when (this) {
     else -> R.string.subscription_error_network
 }
 
-private fun sampleSubscription(provider: SubscriptionProvider, now: Long) = SubscriptionSnapshot(provider, now, when (provider) {
+internal fun sampleSubscription(provider: SubscriptionProvider, now: Long) = SubscriptionSnapshot(provider, now, when (provider) {
     SubscriptionProvider.DEEPSEEK -> listOf(SubscriptionMetric(SubscriptionMetricKind.BALANCE, "110.00", "CNY"),
         SubscriptionMetric(SubscriptionMetricKind.GRANTED, "10.00", "CNY"), SubscriptionMetric(SubscriptionMetricKind.TOPPED_UP, "100.00", "CNY"))
     SubscriptionProvider.OPENCODE_ZEN -> listOf(SubscriptionMetric(SubscriptionMetricKind.BALANCE, "18.50", "USD"),

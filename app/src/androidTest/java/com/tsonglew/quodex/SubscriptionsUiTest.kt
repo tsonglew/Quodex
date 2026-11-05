@@ -37,6 +37,7 @@ class SubscriptionsUiTest {
 
     @Test fun connectRefreshFailureAndDisconnectKeepOtherServicesIsolated() {
         compose.onNodeWithTag("tab-subscriptions").performClick()
+        compose.openProvider("DEEPSEEK")
         compose.onNodeWithTag("subscription-connect-DEEPSEEK").performScrollTo().performClick()
         compose.onNodeWithTag("subscription-credential").performTextInput("fixture-only-deepseek")
         compose.onAllNodesWithText("连接").onLast().performClick()
@@ -66,13 +67,13 @@ class SubscriptionsUiTest {
             SubscriptionProvider.OPENCODE_GO to "subscriptions-opencode-go",
             SubscriptionProvider.OPENCODE_ZEN to "subscriptions-opencode-zen",
             SubscriptionProvider.CURSOR to "subscriptions-cursor")) {
-            if (provider == SubscriptionProvider.DEEPSEEK)
-                compose.onNodeWithTag("subscription-${provider.name}").performScrollTo()
-            else compose.onNode(hasText("官方控制台") and hasAnyAncestor(hasTestTag("subscription-${provider.name}")))
+            compose.openProvider(provider.name)
+            compose.onNode(hasText("官方控制台") and hasAnyAncestor(hasTestTag("subscription-${provider.name}")))
                 .performScrollToVisible(compose)
             compose.waitForIdle()
             saveDeviceScreenshot(InstrumentationRegistry.getInstrumentation().targetContext, file,
                 compose.onRoot().captureToImage().asAndroidBitmap())
+            compose.onNodeWithTag("navigate-back").performClick()
         }
         assertEquals(requests, app.subscriptionRequests.get())
     }
@@ -84,22 +85,24 @@ class SubscriptionsUiTest {
             compose.onNodeWithTag("tab-subscriptions").performClick()
             compose.onNodeWithTag("subscription-examples").performClick()
             compose.onNodeWithTag("subscription-filter-1").performClick()
-            compose.onNodeWithTag("subscription-KIMI").assertExists()
-            compose.onNodeWithTag("subscription-KIMI_API").assertDoesNotExist()
+            compose.onNodeWithTag("account-KIMI").assertExists()
+            compose.onNodeWithTag("account-KIMI_API").assertDoesNotExist()
             compose.onNodeWithTag("subscription-filter-2").performScrollToVisible(compose).performClick()
-            compose.onNodeWithTag("subscription-KIMI").assertDoesNotExist()
-            compose.onNodeWithTag("subscription-KIMI_API").assertExists()
+            compose.onNodeWithTag("account-KIMI").assertDoesNotExist()
+            compose.onNodeWithTag("account-KIMI_API").assertExists()
             compose.onNodeWithTag("subscription-filter-0").performScrollToVisible(compose).performClick()
             for (theme in listOf("light", "dark")) {
                 runBlocking { app.settings.theme(theme) }
                 for (provider in listOf(SubscriptionProvider.KIMI, SubscriptionProvider.WORKBUDDY,
                     SubscriptionProvider.GROK, SubscriptionProvider.KIMI_API, SubscriptionProvider.GROK_API,
                     SubscriptionProvider.CURSOR_BILLING)) {
+                    compose.openProvider(provider.name)
                     compose.onNode(hasText("官方控制台") and hasAnyAncestor(hasTestTag("subscription-${provider.name}")))
                         .performScrollToVisible(compose).assertIsDisplayed()
                     alignCardForScreenshot(provider)
                     saveDeviceScreenshot(app, "providers-${provider.name.lowercase()}-$theme",
                         requireNotNull(instrumentation.uiAutomation.takeScreenshot()))
+                    compose.onNodeWithTag("navigate-back").performClick()
                 }
             }
             assertEquals(requests, app.subscriptionRequests.get())
@@ -108,6 +111,7 @@ class SubscriptionsUiTest {
 
     @Test fun workbuddySessionFormAndGrokImportAreSeparateFromApiKeys() {
         compose.onNodeWithTag("tab-subscriptions").performClick()
+        compose.openProvider("WORKBUDDY")
         compose.onNodeWithTag("subscription-connect-WORKBUDDY").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("subscription-credential").performTextInput("fixture-session")
         compose.onNodeWithTag("subscription-cookie-chunk").performScrollToVisible(compose).performTextInput("fixture-chunk")
@@ -116,7 +120,10 @@ class SubscriptionsUiTest {
         compose.waitUntil(5000) { app.subscriptions.state.value.getValue(SubscriptionProvider.WORKBUDDY).connected }
         val account = EncryptedSubscriptionStore(app).read().getValue(SubscriptionProvider.WORKBUDDY)
         assertEquals("Synthetic Browser/1.0", WorkBuddySession.parse(account.credential)?.userAgent)
+        runBlocking { app.subscriptions.connect(SubscriptionProvider.KIMI_API, "fixture-kimi-api") }
         val requests = app.subscriptionRequests.get()
+        compose.onNodeWithTag("navigate-back").performClick()
+        compose.openProvider("GROK")
         compose.onNodeWithTag("subscription-import-GROK").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("subscription-import-json").performScrollToVisible(compose).performTextInput(
             """{"availability":"available","weeklyIncludedUsage":{"usedCents":37,"budgetCents":100}}""")
@@ -126,11 +133,20 @@ class SubscriptionsUiTest {
         compose.onNode(hasText("刷新") and hasAnyAncestor(hasTestTag("subscription-GROK"))).assertDoesNotExist()
         compose.onNodeWithText("从官网手动导入，数据可能早于导入时间，不会自动刷新。请核对控制台后重新导入。")
             .performScrollToVisible(compose).assertIsDisplayed()
+        compose.onNodeWithText("打开此页时检查更新，也可手动刷新。桌面小组件目前仅显示 Codex。").assertDoesNotExist()
         alignCardForScreenshot(SubscriptionProvider.GROK)
         saveDeviceScreenshot(app, "providers-grok-manual-import", requireNotNull(instrumentation.uiAutomation.takeScreenshot()))
         val encoded = java.io.File(app.noBackupFilesDir, "subscriptions.enc").readBytes().toString(Charsets.ISO_8859_1)
         assertFalse(encoded.contains("fixture-session"))
         assertFalse(encoded.contains("fixture-chunk"))
+        compose.onNodeWithTag("tab-quota").performClick()
+        compose.onNodeWithTag("overview-WORKBUDDY").assertExists()
+        compose.onNodeWithText("60 / 100 积分").performScrollToVisible(compose).assertIsDisplayed()
+        compose.onNodeWithText("CNY 49.58894").performScrollToVisible(compose).assertIsDisplayed()
+        compose.onNodeWithTag("overview-GROK").assertExists()
+        compose.onNodeWithText("从官网手动导入，数据可能早于导入时间，不会自动刷新。请核对控制台后重新导入。")
+            .performScrollToVisible(compose).assertIsDisplayed()
+        assertEquals(requests, app.subscriptionRequests.get())
     }
 
     private fun alignCardForScreenshot(provider: SubscriptionProvider) {
@@ -149,6 +165,7 @@ class SubscriptionsUiTest {
     @Test fun cancelFirstConnectionDoesNotSaveCredentials() {
         app.subscriptionDelayMillis = 60_000
         compose.onNodeWithTag("tab-subscriptions").performClick()
+        compose.openProvider("DEEPSEEK")
         compose.onNodeWithTag("subscription-connect-DEEPSEEK").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("subscription-credential").performTextInput("fixture-only-cancel")
         compose.onAllNodesWithText("连接").onLast().performClick()
@@ -165,7 +182,7 @@ class SubscriptionsUiTest {
             for ((language, heading, notice) in listOf(
                 Triple("en", "App language", "Sample data · not your account"),
                 Triple("ja", "アプリの言語", "サンプルデータ · 実際のアカウントではありません"))) {
-                compose.onNodeWithTag("tab-settings").performClick()
+                compose.openSettingsPage("language")
                 compose.onNodeWithTag("language-$language").performScrollToVisible(compose).performClick()
                 compose.waitUntil(10_000) { compose.onAllNodesWithText(heading).fetchSemanticsNodes().isNotEmpty() }
                 compose.onNodeWithTag("tab-subscriptions").performClick()

@@ -8,11 +8,11 @@ Quodex 是独立第三方 Android 工具，用于查看 Codex 额度、展示桌
 应用仅使用连接获取额度和账号 token 用量统计，不发送聊天或模型生成请求。登录凭据的权限可能覆盖更多能力，不能视为专用只读凭据。不要向他人提供登录码或令牌。
 
 其他订阅服务
-“订阅”页可按需连接 DeepSeek、OpenCode Go、OpenCode Console（原 Zen）和 Cursor。DeepSeek API 密钥仅发送至 api.deepseek.com/user/balance；OpenCode 密钥仅发送至 opencode.ai/zen/go/v1/usage 或 opencode.ai/console/api/billing/status；Cursor 会话令牌仅作为 WorkosCursorSessionToken Cookie 发送至 cursor.com/api/usage-summary。服务方也会收到 IP 地址等常规网络信息。这些连接仅发起读取请求，不进行模型生成、付款或修改订阅；密钥或会话本身可能具有更广的权限。
+“账号”页可按需连接 DeepSeek、OpenCode Go、OpenCode Console（原 Zen）和 Cursor。DeepSeek API 密钥仅发送至 api.deepseek.com/user/balance；OpenCode 密钥仅发送至 opencode.ai/zen/go/v1/usage 或 opencode.ai/console/api/billing/status；Cursor 会话令牌仅作为 WorkosCursorSessionToken Cookie 发送至 cursor.com/api/usage-summary。服务方也会收到 IP 地址等常规网络信息。这些连接仅发起读取请求，不进行模型生成、付款或修改订阅；密钥或会话本身可能具有更广的权限。
 新增服务的请求范围：Kimi 会员会话 access_token 仅作为 Bearer 发送至 www.kimi.com/apiv2/kimi.gateway.membership.v2.MembershipService/GetSubscriptionStats；Kimi Code key 仅发至 api.kimi.com/coding/v1/usages；国内／国际 Kimi API key 分别仅发至 api.moonshot.cn 或 api.moonshot.ai 的 /v1/users/me/balance，不跨区域回退。WorkBuddy 仅支持国际站，session、session_2 Cookie 与你输入的原浏览器 User-Agent 加密保存并仅发送至 www.workbuddy.ai/billing/meter/get-user-resource，查询有效资源包；不读取其他浏览器数据。Grok／Cursor 共享订阅的 WorkosCursorSessionToken 仅发至 grok.com/dashboard/api/dashboard/ 下的 v2/usage-status 与 get-complat-credit-balance。xAI 团队 Management key 仅发至 management-api.x.ai，验证所属团队后读取预付账单；不保存验证响应中的团队标识。Cursor 团队 Admin key 仅以 Basic 认证发至 api.cursor.com/teams/spend，分页汇总费用，不保存成员姓名、邮箱或标识。上述 POST 接口也仅查询数据，不生成模型内容、充值或修改订阅。
 Grok 官网 JSON 手动导入在本机解析，只保存额度、费用、周期、手动来源和导入时间，不保存原始 JSON 或其中的身份信息；导入时间不等于数据生成时间。导入后不自动联网，重新导入才更新，未提供的余额保持未知。各卡片断开也会删除导入快照。网页接口可能改变或要求验证；应用不会自动绕过网页验证。
-每个服务独立保存一个连接。凭据及对应的余额／用量快照一起使用 Android Keystore 与 AES-GCM 加密存入私有目录，不参与备份。不向诊断记录写入原始响应、凭据、余额或用量。打开订阅页时检查已连接服务（五分钟缓存，手动导入除外），也可手动刷新；临时故障最多尝试三次，遵守 Retry-After。不为这些服务新增后台任务或桌面小组件。错误保留上次成功数据和时间；示例数据明确标注，且不会发送给服务方。
-各服务的“断开连接”删除其本机凭据和快照，不影响其他服务，也不撤销远端密钥。设置中的 Codex 连接操作仅影响 Codex。撤销 API 密钥或会话需在相应官方控制台操作。“官方控制台”按钮会在浏览器中打开服务方页面，由其隐私规则管理。各服务的控制台兼容方式可能变化或需要重新连接。
+每个服务独立保存一个连接。凭据及对应的余额／用量快照一起使用 Android Keystore 与 AES-GCM 加密存入私有目录，不参与备份。不向诊断记录写入原始响应、凭据、余额或用量。进入应用或账号页时检查已连接服务（五分钟缓存，手动导入除外），也可手动刷新；临时故障最多尝试三次，遵守 Retry-After。不为这些服务新增后台任务或桌面小组件。错误保留上次成功数据和时间；示例数据明确标注，且不会发送给服务方。
+各服务的“断开连接”删除其本机凭据和快照，不影响其他服务，也不撤销远端密钥。账号 → Codex 中的连接操作仅影响 Codex。撤销 API 密钥或会话需在相应官方控制台操作。“官方控制台”按钮会在浏览器中打开服务方页面，由其隐私规则管理。各服务的控制台兼容方式可能变化或需要重新连接。
 
 版本检查与通知
 额度、Token 统计、更新检查和 APK 下载遇到临时故障时会有限次数地重试，并遵守服务器要求的等待时间。取消会停止当前操作。中断的 APK 下载从头重新下载，可能增加流量。重试截止时间可能保存在本机；重试不新增请求目的地或上传的数据类别。
@@ -34,7 +34,7 @@ Token 趋势通过 chatgpt.com/backend-api/wham/profiles/me 获取服务端按�
 应用没有内置广告、远程使用分析或自动崩溃上报，也没有 Quodex 自建数据服务器。本机私有目录循环保留最近 200 条诊断事件及最近 7 天按小时统计，包括请求类别与次数、HTTP 状态、更新检查结果与等待截止时间、网络失败、未捕获异常的类别及是否主线程（不含异常消息和堆栈）、成功快照写入次数与最大成功间隔、刷新结果、跳过原因、耗时、缓存年龄、后台调度、组件更新、页面状态及屏幕尺寸和字体比例，不记录令牌、账号标识、额度数值或接口响应正文。设置中可清除记录，并预览后主动通过系统分享诊断报告；报告另含应用版本、Android 版本、网络可用性、省电状态、系统后台受限标记及后台任务状态。分享接收方由你选择，记录不自动上传。不读取联系人、位置或聊天内容，不自动将凭据、账号或额度上传到 GitHub。若你主动提交截图或问题，请先遮挡个人信息，切勿附带登录码、令牌或原始授权响应。
 
 清除与撤销
-设置中 Codex 的“退出并清除本机数据”会删除 Codex 的本机登录文件、额度记录和 token 用量缓存、取消 Codex 额度同步任务，并将组件恢复为未连接；显示偏好、组件布局、更新偏好与公开版本缓存会保留。其他订阅服务的连接与快照仍保留，应到订阅页分别点击“断开连接”清除；这与前文“其他订阅服务”说明中的独立清理范围一致。版本检查独立于账号，可单独关闭自动检查；清除应用数据或卸载可删除其本机记录。此操作不撤销远程授权，也不承诺对存储介质进行物理安全擦除。需要撤销远程连接时，请使用账号服务方提供的管理方式。
+账号 → Codex 中的“退出并清除本机数据”会删除 Codex 的本机登录文件、额度记录和 token 用量缓存、取消 Codex 额度同步任务，并将组件恢复为未连接；显示偏好、组件布局、更新偏好与公开版本缓存会保留。其他订阅服务的连接与快照仍保留，应到账号页分别点击“断开连接”清除；这与前文“其他订阅服务”说明中的独立清理范围一致。版本检查独立于账号，可单独关闭自动检查；清除应用数据或卸载可删除其本机记录。此操作不撤销远程授权，也不承诺对存储介质进行物理安全擦除。需要撤销远程连接时，请使用账号服务方提供的管理方式。
 
 反馈与变更
 可通过 github.com/tsonglew/Quodex/issues 反馈问题，不要在公开问题中提交凭据。若未来新增服务器、分析或数据用途，会先更新本说明与应用实现。

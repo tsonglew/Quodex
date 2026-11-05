@@ -23,7 +23,7 @@ class LocalizationDeviceTest {
         val requests = app.usageRequests.get()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             try {
-                compose.onNodeWithTag("tab-settings").performClick()
+                compose.openSettingsPage("language")
                 select("en", "App language")
                 scenario.onActivity { assertEquals("en", AppLanguages.selectedTag(it)) }
                 scenario.recreate()
@@ -39,7 +39,7 @@ class LocalizationDeviceTest {
                 compose.onAllNodesWithText("サンプルデータ · 実際の使用枠ではありません").onFirst().assertExists()
                 save("language-quota-ja")
 
-                compose.onNodeWithTag("tab-settings").performClick()
+                compose.openSettingsPage("language")
                 select("zh-Hans", "应用语言")
                 assertEquals("每周额度", AndroidTextResources(app)(R.string.weekly_quota))
                 save("language-settings-zh")
@@ -47,7 +47,7 @@ class LocalizationDeviceTest {
                 waitForText("每周额度")
                 assertTrue(app.repository.state.value.demo)
                 assertEquals("Switching the language of cached demo data must not fetch account quota", requests, app.usageRequests.get())
-                compose.onNodeWithTag("tab-settings").performClick()
+                compose.openSettingsPage("language")
                 select("system", "App language")
                 scenario.onActivity { assertEquals("", AppLanguages.selectedTag(it)) }
                 scenario.recreate()
@@ -73,7 +73,7 @@ class LocalizationDeviceTest {
                     Triple("ja", "アプリの言語", "残り"), Triple("zh-Hans", "应用语言", "剩余"))) {
                     ActivityScenario.launch<MainActivity>(android.content.Intent(context, MainActivity::class.java)
                         .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_MULTIPLE_TASK)).use {
-                        compose.onNodeWithTag("tab-settings").performClick()
+                        compose.openSettingsPage("language")
                         select(tag, heading)
                     }
                     val deadline = android.os.SystemClock.uptimeMillis() + 20_000

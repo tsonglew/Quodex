@@ -42,7 +42,9 @@ def navigation_items(tree):
             visit(child, clickable)
 
     visit(tree)
-    for labels in [('Quota', 'Widgets', 'Settings'), ('额度', '小组件', '设置'),
+    for labels in [('Overview', 'Accounts', 'Settings'), ('总览', '账号', '设置'),
+                   ('概要', 'アカウント', '設定'),
+                   ('Quota', 'Widgets', 'Settings'), ('额度', '小组件', '设置'),
                    ('使用枠', 'ウィジェット', '設定')]:
         if all(label in candidates for label in labels):
             items = [max(candidates[label], key=lambda pair: bounds(pair[1])[3]) for label in labels]
@@ -90,31 +92,54 @@ def click(text, scroll=False):
     shell('input', 'tap', str((x1 + x2) // 2), str((y1 + y2) // 2))
 
 
+def click_tab(text):
+    # Page headings can repeat the tab label; always tap the actual navigation item.
+    tree = nodes()
+    item = next((item for label, item in navigation_items(tree) if label.attrib.get('text') == text), None)
+    if item is None:
+        raise AssertionError(f'Release navigation missing: {text}')
+    x1, y1, x2, y2 = bounds(item)
+    shell('input', 'tap', str((x1 + x2) // 2), str((y1 + y2) // 2))
+
+
+def open_settings(destination, tab='Settings'):
+    click_tab(tab)
+    # Reselecting the current destination returns from any saved detail to its index.
+    click_tab(tab)
+    click(destination, scroll=True)
+
+
 def run():
     shell('am', 'start', '-W', '-n', 'com.tsonglew.quodex/.MainActivity')
     click('Explore a demo')
     wait('Sample data · Not your actual quota')
-    click('Widgets')
+    open_settings('Home screen')
     wait('Add standard widget', scroll=True)
-    click('Settings')
+    open_settings('App language')
     click('日本語', scroll=True)
     wait('アプリの言語')
     shell('am', 'force-stop', 'com.tsonglew.quodex')
     shell('am', 'start', '-W', '-n', 'com.tsonglew.quodex/.MainActivity')
+    click_tab('概要')
     wait('サンプルデータ · 実際の使用枠ではありません')
-    click('設定')
+    open_settings('アプリの言語', tab='設定')
     click('简体中文', scroll=True)
     wait('应用语言')
     click('English', scroll=True)
     wait('App language')
+    open_settings('Appearance')
     click('Dark', scroll=True)
+    open_settings('Background refresh')
     wait('Target background interval', scroll=True)
+    open_settings('Help and privacy')
     click('Privacy and data', scroll=True)
     wait('Close')
     click('Close')
+    click_tab('Accounts')
+    click('Codex')
     click('Exit demo mode', scroll=True)
     click('Clear')
-    click('Quota')
+    click_tab('Overview')
     wait('Connect Codex')
     print('RELEASE_SMOKE_OK')
 

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_overview">Overview</string>
+    <string name="nav_accounts">Accounts</string>
+    <string name="nav_back">Back</string>
+    <string name="overview_intro">Usage across your connected services</string>
+    <string name="overview_empty">Connect a service to see its quota or balance here.</string>
+    <string name="overview_manage">Manage accounts</string>
+    <string name="overview_add">Connect a service</string>
+    <string name="overview_details">Usage details</string>
+    <string name="overview_no_data">No usage data yet</string>
+    <string name="account_intro">Manage connections. View usage in Overview.</string>
+    <string name="account_attention">Needs attention</string>
+    <string name="account_codex">Codex account</string>
+    <string name="settings_preferences">Preferences</string>
+    <string name="settings_tools">Tools and support</string>
+    <string name="settings_desktop">Home screen</string>
+    <string name="settings_desktop_summary">Widgets and quota icon</string>
+    <string name="settings_support">Help and privacy</string>
+    <string name="settings_support_summary">Diagnostics, privacy and about</string>
+    <string name="settings_refresh">Background refresh</string>
+    <string name="settings_refresh_scope">Applies to Codex and its home-screen displays. Other services refresh when opened or refreshed manually.</string>
+    <string name="overview_refresh">Refresh connected services</string>
+    <string name="overview_cached">Last saved data</string>
+    <string name="settings_remaining_scope">Applies to Codex and its quota widgets.</string>
+</resources>
