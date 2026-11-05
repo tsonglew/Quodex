@@ -31,6 +31,8 @@
 
 基于 alpha35 将四个入口收为 **总览 / 账号 / 设置**：总览展示已连接服务的关键额度或余额，点服务标题进入明细；账号集中管理 Codex、DeepSeek、OpenCode 和 Cursor 的连接；设置改为紧凑分组列表。小组件和桌面额度图标统一放在 **设置 → 桌面展示**，Codex 退出迁至 **账号 → Codex**。
 
+冷启动时先读取本机连接，再决定是否显示添加服务提示；已有 Codex 摘要可先显示，其他服务的读取不会阻塞它。
+
 | 多服务总览 | 统一账号管理 | 紧凑设置 |
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/navigation-preview/navigation-overview-light.png" width="230" alt="alpha35 基线导航开发版：多服务总览，API 31 模拟器，示例数据" /> | <img src="docs/screenshots/navigation-preview/navigation-accounts-light.png" width="230" alt="alpha35 基线导航开发版：统一账号入口，API 31 模拟器，示例模式" /> | <img src="docs/screenshots/navigation-preview/navigation-settings-light.png" width="230" alt="alpha35 基线导航开发版：紧凑设置列表，API 31 模拟器" /> |

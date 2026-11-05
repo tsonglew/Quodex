@@ -26,6 +26,7 @@ internal fun ServicesOverview(state: AppState, prefs: PreferencesState, model: M
     onOpen: (String) -> Unit, onAccounts: () -> Unit) {
     val texts = localTextResources()
     val saved by model.subscriptions.collectAsStateWithLifecycle()
+    val initialized by model.subscriptionsInitialized.collectAsStateWithLifecycle()
     val storageUnavailable by model.subscriptionStorageUnavailable.collectAsStateWithLifecycle()
     val providers = SubscriptionProvider.entries.filter { state.demo || saved.getValue(it).connected }
     val hasCodex = state.snapshot != null || state.connected
@@ -34,7 +35,10 @@ internal fun ServicesOverview(state: AppState, prefs: PreferencesState, model: M
             modifier = Modifier.semantics { heading() })
         Text(texts(if (state.demo) R.string.sample_data_not_your_actual_quota else R.string.overview_intro),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (!hasCodex && providers.isEmpty()) {
+        if (!state.demo && !initialized && !storageUnavailable) {
+            LinearProgressIndicator(Modifier.fillMaxWidth().testTag("overview-loading"))
+        }
+        if (!hasCodex && providers.isEmpty() && initialized && !storageUnavailable) {
             Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(texts(R.string.overview_empty), style = MaterialTheme.typography.bodyLarge)

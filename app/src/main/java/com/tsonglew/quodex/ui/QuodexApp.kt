@@ -184,7 +184,8 @@ fun QuodexApp(model: MainViewModel) {
                                             provider != null -> SubscriptionsPage(model, clock, state, provider, subscriptionExamples && tab == "subscriptions",
                                                 onExamples = { subscriptionExamples = it })
                                             route == "codex-account" -> CodexAccountSettings(state, model)
-                                            route == "codex" -> key(timeRevision) { Dashboard(state, prefs, model, clock, heatmapLaunch) }
+                                            route == "codex" -> if (!state.initialized) CircularProgressIndicator()
+                                                else key(timeRevision) { Dashboard(state, prefs, model, clock, heatmapLaunch) }
                                             route.isNotEmpty() -> SettingsDetail(route, state, prefs, model, clock, onGlassPreview = { glassPreview = it })
                                             tab == "quota" -> if (!state.initialized) CircularProgressIndicator() else ServicesOverview(state, prefs, model, clock,
                                                 onOpen = { route = it }, onAccounts = { accountsRoute.value = ""; tab = "subscriptions" })

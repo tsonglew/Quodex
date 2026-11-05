@@ -1,6 +1,6 @@
 # 导航与页面职责整理
 
-2026-11-06，基于 alpha35 / `4a9dec4` 的开发预览，尚未合并或发布。
+2026-11-06，基于 alpha35 / `4a9dec4` 的导航改动；[PR #58](https://github.com/tsonglew/Quodex/pull/58) 记录合并状态，安装包以 Releases 实际发布为准。
 
 ## 页面职责
 
@@ -16,13 +16,16 @@
 
 首次进入应用或账号页会检查已连接服务，仍遵循五分钟缓存和原重试策略；首页刷新会刷新已连接服务。示例模式无真实额度请求。各页面独立保留滚动位置；切换标签保留详情，再点当前标签或按返回回到目录。热力图组件继续直接进入 Codex 的 30 天趋势。
 
+冷启动总览等待本机订阅存储读取后才判断是否没有连接；读取失败显示存储错误，已有 Codex 摘要不受等待影响。热力图入口及恢复的 Codex 详情同样等待账号初始化，避免向已连接用户短暂显示连接与示例提示。
+
 ## 截图来源
 
 `NavigationStructureTest` 使用本机示例模式在 API 31 模拟器捕获 `navigation-*.png`。图像未裁切或重绘；这些文件为开发版证据，不代表 alpha35 发布包已经改变导航。浅深色设置、总览和账号截图见 [截图索引](SCREENSHOTS.md#导航开发预览2026-11-06)。
 
 ## 验证
 
-- `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest` 全部通过：254 项 JVM 测试，0 失败；lint 0 错误、75 警告。
+- `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest` 全部通过：255 项 JVM 测试，0 失败；lint 0 错误、75 警告。
+- 合并前修复冷启动初始化提示，并补充延迟读取存储的 JVM 回归；上述构建与检查在修复后再次通过。
 - API 31 共 28 项不同设备回归取得通过结果：导航结构 3、订阅 4、AppFlow 6、UiExperience 5、TokenUsage 6、语言 2、玻璃设置 1、桌面图标设置 1。
 - 手机集合中的宽屏用例按条件跳过后，在 1280×800 / 160dpi 的模拟器窗口单独执行通过。窄屏覆盖 320dp / 200% 系统字体，并核对新总览、服务详情、账号、设置及桌面入口的文字与操作。
 - 最后一次摘要布局调整后，重跑导航 3 项及窄屏 1 项全部通过；最终四张 `navigation-*.png` 来自该轮的 `(2).png` 文件，避免误用 MediaStore 中同名旧图。
