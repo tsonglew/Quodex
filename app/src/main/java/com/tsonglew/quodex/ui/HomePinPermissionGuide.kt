@@ -38,7 +38,7 @@ internal fun rememberHomePinRequest(onRequest: (HomePinTarget) -> Unit): (HomePi
     var pendingTarget by rememberSaveable { mutableStateOf<String?>(null) }
 
     pendingTarget?.let { target ->
-        AlertDialog(
+        GlassAlertDialog(surfaceId = "home-pin-permission", 
             modifier = Modifier.testTag("home-pin-permission-dialog"),
             onDismissRequest = { pendingTarget = null },
             title = { Text(texts(R.string.home_pin_permission_title)) },

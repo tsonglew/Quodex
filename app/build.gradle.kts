@@ -12,13 +12,14 @@ plugins {
 
 android {
     namespace = "com.tsonglew.quodex"
-    compileSdk = 37
+    // The installed Android 17 platform uses the full target hash, including its minor version.
+    compileSdkVersion("android-37.0")
     defaultConfig {
         applicationId = "com.tsonglew.quodex"
         minSdk = 29
         targetSdk = 36
-        versionCode = 34
-        versionName = "0.1.0-alpha34"
+        versionCode = 35
+        versionName = "0.1.0-alpha35"
         resourceConfigurations += listOf("en", "zh", "ja")
         testInstrumentationRunner = "com.tsonglew.quodex.QuotaTestRunner"
     }

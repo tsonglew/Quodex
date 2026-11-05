@@ -51,11 +51,13 @@ internal fun FloatingNavigation(
 ) {
     val colors = MaterialTheme.colorScheme
     val dark = colors.background.luminance() < 0.5f
+    val glass = LocalGlassEnvironment.current
+    val solid = glass.preferences.reduceTransparency || glass.highContrast
     val shape = RoundedCornerShape(50)
     var origin by remember { mutableStateOf(Offset.Zero) }
     val blurRadius = with(LocalDensity.current) { 16.dp.toPx() }
     val blur = remember(blurRadius) { BlurEffect(blurRadius, blurRadius, TileMode.Clamp) }
-    val tint = colors.surface.copy(alpha = if (backdrop.supportsBlur) 0.58f else 0.88f)
+    val tint = colors.surface.copy(alpha = if (solid) 1f else if (backdrop.supportsBlur) 0.58f else 0.88f)
     val rim = remember(dark) { Brush.linearGradient(listOf(
         Color.White.copy(alpha = if (dark) 0.45f else 0.92f),
         Color.White.copy(alpha = 0.08f),
@@ -73,7 +75,7 @@ internal fun FloatingNavigation(
             .shadow(12.dp, shape, clip = false, ambientColor = Color.Black.copy(alpha = 0.16f),
                 spotColor = Color.Black.copy(alpha = 0.22f))
             .clip(shape).border(1.dp, rim, shape)) {
-            if (backdrop.supportsBlur) {
+            if (backdrop.supportsBlur && !solid) {
                 // Blur only the sampled backdrop. Icons, labels and the selection remain sharp.
                 Canvas(Modifier.matchParentSize().graphicsLayer { renderEffect = blur }) {
                     val offset = origin - backdrop.origin
@@ -88,7 +90,7 @@ internal fun FloatingNavigation(
                     Color.Transparent,
                     Color.White.copy(alpha = if (dark) 0.025f else 0.10f),
                 ))
-                onDrawBehind { drawRect(tint); drawRect(sheen) }
+                onDrawBehind { drawRect(tint); if (!solid) drawRect(sheen) }
             })
             Box(Modifier.padding(5.dp)) {
                 Canvas(Modifier.matchParentSize()) {

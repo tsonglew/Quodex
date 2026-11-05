@@ -437,4 +437,10 @@
     <string name="reset_cards_granted">"获得于 %1$s"</string>
     <string name="reset_cards_expires">"到期时间 %1$s"</string>
     <string name="reset_cards_expiry_unknown">"未提供到期时间"</string>
+    <string name="glass_material">"玻璃材质"</string>
+    <string name="glass_material_description">"调整弹窗与桌面额度小组件的底色浓度。文字需要更高对比度时会自动加厚底色。"</string>
+    <string name="reduce_transparency">"减少透明效果"</string>
+    <string name="reduce_transparency_description">"使用不透明底色，关闭折射与色散。"</string>
+    <string name="glass_tint_value">"%1$s · %2$s%%"</string>
+    <string name="glass_tint_accessibility">"%1$s玻璃浓度"</string>
 </resources>

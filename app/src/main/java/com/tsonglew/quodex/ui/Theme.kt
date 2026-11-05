@@ -59,7 +59,7 @@ internal fun quodexColorScheme(dark: Boolean): ColorScheme =
     if (dark) DashboardDarkColors else DashboardLightColors
 
 @Composable
-fun QuotaTheme(mode: String = "system", content: @Composable () -> Unit) {
+fun QuotaTheme(mode: String = "system", glass: com.tsonglew.quodex.data.GlassPreferences = com.tsonglew.quodex.data.GlassPreferences(), content: @Composable () -> Unit) {
     val dark = mode == "dark" || mode == "system" && isSystemInDarkTheme()
     val view = LocalView.current
     SideEffect {
@@ -70,5 +70,7 @@ fun QuotaTheme(mode: String = "system", content: @Composable () -> Unit) {
             }
         }
     }
-    MaterialTheme(colorScheme = quodexColorScheme(dark), content = content)
+    MaterialTheme(colorScheme = quodexColorScheme(dark)) {
+        ProvideGlassMaterial(dark, glass, content)
+    }
 }

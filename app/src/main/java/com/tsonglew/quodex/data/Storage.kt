@@ -84,6 +84,7 @@ data class PreferencesState(
     val desktopIconWindow: String = "short",
     // Unset keeps the pre-existing 7-day bars / 30-day heatmap defaults until a choice is made.
     val tokenChartStyle: TokenChartStyle? = null,
+    val glass: GlassPreferences = GlassPreferences(),
 )
 
 interface SyncSettings {
@@ -109,11 +110,21 @@ class SettingsStore(context: Context) : SyncSettings {
     private val attempt = longPreferencesKey("last_attempt_at")
     private val iconEnabled = booleanPreferencesKey("desktop_icon_enabled")
     private val iconWindow = stringPreferencesKey("desktop_icon_window")
+    private val glassLightTint = floatPreferencesKey("glass_light_tint")
+    private val glassDarkTint = floatPreferencesKey("glass_dark_tint")
+    private val reduceTransparency = booleanPreferencesKey("reduce_transparency")
     val flow = store.data.map { p -> PreferencesState(p[minutes] ?: 30, p[remaining] ?: true, p[theme] ?: "system",
         p[demo] ?: false, p[failure]?.let { runCatching { FailureKind.valueOf(it) }.getOrNull() }, p[retry] ?: 0, p[attempt] ?: 0,
         p[compactTokens] ?: false, p[iconEnabled] ?: true,
         p[iconWindow]?.takeIf { it in listOf("short", "weekly") } ?: "short",
-        TokenChartStyle.entries.firstOrNull { it.name == p[tokenChartStyle] }) }
+        TokenChartStyle.entries.firstOrNull { it.name == p[tokenChartStyle] },
+        GlassPreferences(sanitizeGlassTint(p[glassLightTint] ?: 1f), sanitizeGlassTint(p[glassDarkTint] ?: 1f),
+            p[reduceTransparency] ?: false)) }
+    suspend fun glassTint(dark: Boolean, value: Float) {
+        require(value.isFinite() && value in 0f..1.5f)
+        store.edit { it[if (dark) glassDarkTint else glassLightTint] = value }
+    }
+    suspend fun reduceTransparency(value: Boolean) { store.edit { it[reduceTransparency] = value } }
     override suspend fun read() = flow.first()
     suspend fun refreshMinutes(value: Long) { require(value in listOf(15L, 30L, 60L)); store.edit { it[minutes] = value } }
     suspend fun showRemaining(value: Boolean) {

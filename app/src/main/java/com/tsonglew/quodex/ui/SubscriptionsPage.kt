@@ -119,7 +119,7 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
     }
     Spacer(Modifier.height(16.dp))
     Text(texts(R.string.subscriptions_scope), style = MaterialTheme.typography.bodySmall)
-    if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false },
+    if (confirmReset) GlassAlertDialog(surfaceId = "subscriptions-reset", onDismissRequest = { confirmReset = false },
         title = { Text(texts(R.string.subscription_reset_title)) },
         text = { Text(texts(R.string.subscription_reset_detail), modifier = Modifier.verticalScroll(rememberScrollState())) },
         confirmButton = { TextButton(onClick = { confirmReset = false; model.resetUnreadableSubscriptions() },
@@ -128,7 +128,7 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appDemo: Boolean) {
     connecting?.let { provider ->
         // Never save credentials to saved-instance-state or a persistent text field.
         var input by remember(provider) { mutableStateOf("") }
-        AlertDialog(onDismissRequest = { input = ""; connecting = null },
+        GlassAlertDialog(surfaceId = "subscription-connect", onDismissRequest = { input = ""; connecting = null },
             title = { Text(provider.displayName) },
             text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(texts(provider.helpResource()))

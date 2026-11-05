@@ -140,6 +140,30 @@ class WidgetRenderTest {
                 }
                 resize(140, 230)
                 awaitQuota("38%", true)
+                // A size between/beyond the former responsive buckets must not stretch a
+                // 140x230 bitmap to 140x400, which turns circular corners into ellipses.
+                resize(140, 400)
+                awaitQuota("38%", true)
+                fun backgroundBitmap(view: View): Bitmap? {
+                    if (view is android.widget.ImageView) {
+                        (view.drawable as? android.graphics.drawable.BitmapDrawable)?.let { return it.bitmap }
+                    }
+                    if (view is ViewGroup) for (index in 0 until view.childCount) {
+                        backgroundBitmap(view.getChildAt(index))?.let { return it }
+                    }
+                    return null
+                }
+                var materialFits = false
+                val materialDeadline = System.currentTimeMillis() + 20_000
+                while (!materialFits && System.currentTimeMillis() < materialDeadline) {
+                    scenario.onActivity { activity ->
+                        backgroundBitmap(activity.widgetView)?.let { bitmap ->
+                            materialFits = kotlin.math.abs(bitmap.width.toFloat() / bitmap.height - 140f / 400f) < 0.005f
+                        }
+                    }
+                    if (!materialFits) Thread.sleep(100)
+                }
+                assertTrue("Resized glass material must match the host aspect ratio", materialFits)
                 resize(140, 150)
                 awaitQuota("38%", false)
             }
@@ -421,6 +445,15 @@ class WidgetRenderTest {
     }
 
     private fun withLaidOutWidget(scenario: ActivityScenario<WidgetTestHostActivity>, capture: (WidgetTestHostActivity) -> Unit) {
+        // Layout can finish before the window owns a submitted surface on API 29.
+        // PixelCopy requires an actual rendered frame, not only measured children.
+        val committed = CountDownLatch(1)
+        scenario.onActivity { activity ->
+            val decor = activity.window.decorView
+            decor.viewTreeObserver.registerFrameCommitCallback { committed.countDown() }
+            decor.invalidate()
+        }
+        assertTrue("Widget window must submit a frame before capture", committed.await(5, TimeUnit.SECONDS))
         val deadline = System.currentTimeMillis() + 10_000
         var captured = false
         while (!captured && System.currentTimeMillis() < deadline) {
