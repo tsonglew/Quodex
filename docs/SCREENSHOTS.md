@@ -1,5 +1,9 @@
 # Android 原生截图与动效录屏
 
+## alpha37 Kimi、WorkBuddy、Cursor 与 Grok（2026-11-06）
+
+[来源、浅深色、API 账单、手动导入和大字体界面](screenshots/providers-alpha37/README.md)。来自 alpha37 debug / API 37 模拟器，全部为合成数据，未裁切或重绘；手动导入图使用测试 JSON，不是实际账号。
+
 ## alpha36 全界面玻璃与 API 赠送额度（2026-11-06）
 
 [来源、示例数据与原生验证](screenshots/all-glass-alpha36/README.md)。浅深色额度、订阅、小组件、设置页和 API 赠送卡均由 API 37 arm64 模拟器的 alpha36 debug 构建直接捕获，未裁切或重绘。

@@ -25,7 +25,7 @@
 </p>
 
 > [!NOTE]
-> Quodex 目前处于 **Alpha 预发布**阶段，是独立第三方工具，与 OpenAI、DeepSeek、OpenCode 或 Cursor 无隶属关系。兼容接口、账号覆盖和后台行为的边界见[支持范围](docs/SUPPORT.md)。
+> Quodex 目前处于 **Alpha 预发布**阶段，是独立第三方工具，与 OpenAI、DeepSeek、OpenCode、Kimi、WorkBuddy、Cursor 或 xAI 无隶属关系。兼容接口、账号覆盖和后台行为的边界见[支持范围](docs/SUPPORT.md)。
 
 ## 界面一览
 
@@ -49,7 +49,13 @@
 | --- | --- |
 | <img src="docs/screenshots/all-glass-alpha36/all-glass-quota-light.png" width="240" alt="alpha36 debug 浅色玻璃额度页，含 API 赠送额度卡，示例数据" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-settings-dark.png" width="240" alt="alpha36 debug 深色玻璃设置页，示例模式" /> |
 
-以上为本轮 alpha36 debug / API 37 模拟器原生截图，未裁切或重绘；赠送额度均为合成示例，不代表真实账号。[截图来源与范围](docs/screenshots/all-glass-alpha36/README.md)。
+以上为历史 alpha36 debug / API 37 模拟器原生截图，未裁切或重绘；赠送额度均为合成示例，不代表真实账号。[截图来源与范围](docs/screenshots/all-glass-alpha36/README.md)。
+
+| alpha37 Kimi 会员 | alpha37 WorkBuddy 积分 | alpha37 Grok／Cursor 共享池 |
+| --- | --- | --- |
+| <img src="docs/screenshots/providers-alpha37/providers-kimi-light.png" width="240" alt="alpha37 Kimi 会员用量与额外余额，原生示例数据" /> | <img src="docs/screenshots/providers-alpha37/providers-workbuddy-dark.png" width="240" alt="alpha37 深色 WorkBuddy 资源包积分，原生示例数据" /> | <img src="docs/screenshots/providers-alpha37/providers-grok-light.png" width="240" alt="alpha37 Grok 与 Cursor 共享订阅池，原生示例数据" /> |
+
+本轮 alpha37 debug / API 37 原生截图使用合成示例；不代表真实账号、已发布 APK 或自动连接验收。[截图来源与 API 账单界面](docs/screenshots/providers-alpha37/README.md)。
 
 ## 下载与开始使用
 
@@ -71,15 +77,15 @@
 | **Token 趋势** | 近 7／30 天条形图与日历热力图切换，记住图表偏好；缺失数据与真实零值分别展示。 |
 | **桌面一览** | 标准额度、2×1 紧凑额度、2×2 的 30 天热力图，以及带百分比的桌面额度图标；支持手动刷新。 |
 | **API 赠送额度** | alpha36 新增 ChatGPT Pro／Business API 福利卡：资格、每周期金额、可领取金额和到期时间。实验性只读接入；不表示消费后的剩余余额。[接入边界](docs/API_CREDITS.md) |
-| **订阅查询** | DeepSeek API 余额、OpenCode Go 用量、OpenCode Console（原 Zen）余额、Cursor 个人用量，各自独立连接。 |
+| **订阅与 API 账单** | alpha37 增加 Kimi 会员／Code／国内与国际 API 余额、WorkBuddy 国际站积分、Grok／Cursor 共享订阅池、xAI API 预付余额和 Cursor 团队费用。按“订阅额度”／“API 账单”筛选，独立连接；Grok 支持官网 JSON 手动导入。 |
 | **玻璃材质** | alpha36 源码将额度、Token、重置卡、订阅、设置、页头、导航和全部桌面组件统一为玻璃材质；设置 → 外观分别调整浅深色底色，或启用“减少透明效果”。Android 13+ 支持边缘折射，旧版采用模糊或实色。 |
 | **日常体验** | 简体中文／English／日本語、浅色／深色／跟随系统、大字体与宽屏适配、应用内更新。 |
 
-**玻璃材质。** 文字区域优先保证对比度，低浓度仍保留可读性下限；所有桌面组件使用静态玻璃位图，不读取或模糊壁纸；Token 热力图保持用量配色。“减少透明效果”也适用于既有悬浮导航。alpha36 为本轮源码版本，是否已发布以 Releases 的实际 APK 为准。[实现与验证](docs/LIQUID_GLASS.md)
+**玻璃材质。** 文字区域优先保证对比度，低浓度仍保留可读性下限；所有桌面组件使用静态玻璃位图，不读取或模糊壁纸；Token 热力图保持用量配色。“减少透明效果”也适用于既有悬浮导航。alpha37 为本轮源码版本，是否已发布以 Releases 的实际 APK 为准。[实现与验证](docs/LIQUID_GLASS.md)
 
 **重置卡查询。** 在额度页查看张数，点“查看明细”获取卡片；已展开时，额度刷新后会检查五分钟明细缓存，也可点“刷新明细”。服务端可能只返回部分明细，数量未知不会显示为零；到期时间按手机时区显示，实际可用性以服务端为准。明细失败不影响额度，不新增后台明细请求。使用卡片请前往 Codex。真实账号覆盖仍待验证。
 
-**订阅查询有明确边界。** 新服务仅前台查询，不进入 Codex 桌面组件、Token 图表或后台同步；Console 与 Cursor 为实验性兼容接入，Go 存在接口迁移风险，真实账号覆盖仍待验收。[接入步骤与兼容说明](docs/SUBSCRIPTIONS.md)
+**订阅查询有明确边界。** 新服务仅前台查询，不进入 Codex 桌面组件、Token 图表或后台同步。Grok 原生请求遇到网页验证时需手动导入，导入数据不自动刷新；已迁移的 Cursor 与 Grok 共用额度池，只看一张卡。WorkBuddy 自定义模型的 API 账单归模型服务商，不提供虚构的独立钱包。Kimi／WorkBuddy 网页接口为实验性兼容接入；开发者 API 尚未使用真实密钥验收，Go 存在迁移风险。[接入步骤与兼容说明](docs/SUBSCRIPTIONS.md)
 
 ## 隐私与可靠性
 

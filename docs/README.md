@@ -8,7 +8,7 @@
 | --- | --- |
 | 安装、更新与常见问题 | [使用帮助](RELEASE_MATERIALS.md) |
 | 支持哪些账号与设备 | [支持范围与已知限制](SUPPORT.md) |
-| 连接其他服务 | [DeepSeek、OpenCode 与 Cursor](SUBSCRIPTIONS.md) |
+| 连接其他服务 | [订阅额度与 API 账单：Kimi、WorkBuddy、Cursor、Grok 等](SUBSCRIPTIONS.md) |
 | 桌面组件与后台刷新 | [后台指引](BACKGROUND_GUIDE.md) · [小米桌面权限](HOME_SCREEN_PERMISSION.md) |
 | 图表、语言与界面 | [Token 热力图](TOKEN_HEATMAP.md) · [多语言](LOCALIZATION.md) · [截图索引](SCREENSHOTS.md) |
 | 数据如何处理 | [隐私原文](../app/src/main/res/raw-zh/privacy_notice.txt) · [数据流核对](PRIVACY.md) |

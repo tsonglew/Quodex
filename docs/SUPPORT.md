@@ -1,10 +1,12 @@
 # 支持范围与已知限制
 
-更新：2026-11-03，当前源码版本 0.1.0-alpha32。本文描述已经取得的证据和未完成的验收，实际可安装版本以 GitHub Releases 附件为准，不表示已发布稳定版本。
+更新：2026-11-06，当前源码版本 0.1.0-alpha37。本文描述已经取得的证据和未完成的验收，实际可安装版本以 GitHub Releases 附件为准，不表示已发布稳定版本。
 
-## DeepSeek、OpenCode 与 Cursor
+## 订阅额度与 API 账单
 
-订阅页独立查询 DeepSeek API 余额、OpenCode Go 周期用量、OpenCode Console（原 Zen）余额与 Cursor 个人订阅用量。各服务单独连接、刷新、取消和断开，缓存五分钟；不纳入 Codex 小组件、Token 图表或后台同步。Console／Cursor 为实验性控制台兼容接入，Go 接口存在服务端迁移风险；真实账号权限和长期兼容性仍待验收。接入方式、数据单位、接口依据和验证范围见[订阅服务说明](SUBSCRIPTIONS.md)。
+alpha37 增加 Kimi 会员／Code／国内和国际 API 余额、WorkBuddy 国际站积分、Grok／Cursor 共享订阅池、xAI API 预付余额与 Cursor 团队费用。原有 DeepSeek、OpenCode 和旧 Cursor 连接保留。仅前台查询，五分钟缓存；Grok 手动导入不会自动刷新，原生请求可能被网页验证阻止。WorkBuddy 自带模型 key 的账单归相应模型服务商，不虚构独立钱包。Cursor Admin 显示费用而非剩余额度。各项不进入 Codex 小组件、Token 图表或后台同步。
+
+Kimi、WorkBuddy 已核对登录网页及浏览器外只读 HTTP；开发者 API 尚未用真实 key 验收。私有接口、套餐与地区覆盖可能变化。具体输入、数据单位与证据见[订阅与 API 账单说明](SUBSCRIPTIONS.md)。
 
 ## Token 使用趋势
 

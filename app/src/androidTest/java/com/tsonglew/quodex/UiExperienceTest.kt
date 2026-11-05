@@ -137,6 +137,12 @@ class UiExperienceTest {
                     .performScrollToVisible(compose).assertIsDisplayed()
                 assertTextFits()
                 screenshot("subscriptions-narrow-large-font")
+                for (provider in listOf("KIMI", "WORKBUDDY", "GROK", "KIMI_API", "GROK_API", "CURSOR_BILLING")) {
+                    compose.onNode(hasText("官方控制台") and hasAnyAncestor(hasTestTag("subscription-$provider")))
+                        .performScrollToVisible(compose).assertIsDisplayed()
+                    assertTextFits()
+                }
+                screenshot("providers-narrow-large-font")
 
                 compose.onNodeWithTag("tab-settings").performClick()
                 compose.onNodeWithTag("show-remaining-toggle").performScrollToVisible(compose).assertIsOn()

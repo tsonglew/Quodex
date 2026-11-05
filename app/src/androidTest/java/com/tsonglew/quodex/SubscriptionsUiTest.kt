@@ -1,6 +1,7 @@
 package com.tsonglew.quodex
 
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -59,7 +60,7 @@ class SubscriptionsUiTest {
         val requests = app.subscriptionRequests.get()
         compose.onNodeWithTag("tab-subscriptions").performClick()
         compose.onNodeWithTag("subscription-examples").performClick()
-        compose.onNodeWithText("示例数据 · 非真实账号").assertIsDisplayed()
+        compose.onAllNodesWithText("示例数据 · 非真实账号").onFirst().assertIsDisplayed()
         for ((provider, file) in listOf(
             SubscriptionProvider.DEEPSEEK to "subscriptions-deepseek",
             SubscriptionProvider.OPENCODE_GO to "subscriptions-opencode-go",
@@ -74,6 +75,75 @@ class SubscriptionsUiTest {
                 compose.onRoot().captureToImage().asAndroidBitmap())
         }
         assertEquals(requests, app.subscriptionRequests.get())
+    }
+
+    @Test fun newProviderFiltersAndGlassCardsKeepTheirSourceMeaning() {
+        val requests = app.subscriptionRequests.get()
+        val previous = runBlocking { app.settings.read() }
+        try {
+            compose.onNodeWithTag("tab-subscriptions").performClick()
+            compose.onNodeWithTag("subscription-examples").performClick()
+            compose.onNodeWithTag("subscription-filter-1").performClick()
+            compose.onNodeWithTag("subscription-KIMI").assertExists()
+            compose.onNodeWithTag("subscription-KIMI_API").assertDoesNotExist()
+            compose.onNodeWithTag("subscription-filter-2").performScrollToVisible(compose).performClick()
+            compose.onNodeWithTag("subscription-KIMI").assertDoesNotExist()
+            compose.onNodeWithTag("subscription-KIMI_API").assertExists()
+            compose.onNodeWithTag("subscription-filter-0").performScrollToVisible(compose).performClick()
+            for (theme in listOf("light", "dark")) {
+                runBlocking { app.settings.theme(theme) }
+                for (provider in listOf(SubscriptionProvider.KIMI, SubscriptionProvider.WORKBUDDY,
+                    SubscriptionProvider.GROK, SubscriptionProvider.KIMI_API, SubscriptionProvider.GROK_API,
+                    SubscriptionProvider.CURSOR_BILLING)) {
+                    compose.onNode(hasText("官方控制台") and hasAnyAncestor(hasTestTag("subscription-${provider.name}")))
+                        .performScrollToVisible(compose).assertIsDisplayed()
+                    alignCardForScreenshot(provider)
+                    saveDeviceScreenshot(app, "providers-${provider.name.lowercase()}-$theme",
+                        requireNotNull(instrumentation.uiAutomation.takeScreenshot()))
+                }
+            }
+            assertEquals(requests, app.subscriptionRequests.get())
+        } finally { runBlocking { app.settings.theme(previous.theme) } }
+    }
+
+    @Test fun workbuddySessionFormAndGrokImportAreSeparateFromApiKeys() {
+        compose.onNodeWithTag("tab-subscriptions").performClick()
+        compose.onNodeWithTag("subscription-connect-WORKBUDDY").performScrollToVisible(compose).performClick()
+        compose.onNodeWithTag("subscription-credential").performTextInput("fixture-session")
+        compose.onNodeWithTag("subscription-cookie-chunk").performScrollToVisible(compose).performTextInput("fixture-chunk")
+        compose.onNodeWithTag("subscription-browser-agent").performScrollToVisible(compose).performTextInput("Synthetic Browser/1.0")
+        compose.onAllNodesWithText("连接").onLast().performClick()
+        compose.waitUntil(5000) { app.subscriptions.state.value.getValue(SubscriptionProvider.WORKBUDDY).connected }
+        val account = EncryptedSubscriptionStore(app).read().getValue(SubscriptionProvider.WORKBUDDY)
+        assertEquals("Synthetic Browser/1.0", WorkBuddySession.parse(account.credential)?.userAgent)
+        val requests = app.subscriptionRequests.get()
+        compose.onNodeWithTag("subscription-import-GROK").performScrollToVisible(compose).performClick()
+        compose.onNodeWithTag("subscription-import-json").performScrollToVisible(compose).performTextInput(
+            """{"availability":"available","weeklyIncludedUsage":{"usedCents":37,"budgetCents":100}}""")
+        compose.onAllNodesWithText("导入官网数据").onLast().performClick()
+        compose.waitUntil(5000) { app.subscriptions.state.value.getValue(SubscriptionProvider.GROK).imported }
+        assertEquals(requests, app.subscriptionRequests.get())
+        compose.onNode(hasText("刷新") and hasAnyAncestor(hasTestTag("subscription-GROK"))).assertDoesNotExist()
+        compose.onNodeWithText("从官网手动导入，数据可能早于导入时间，不会自动刷新。请核对控制台后重新导入。")
+            .performScrollToVisible(compose).assertIsDisplayed()
+        alignCardForScreenshot(SubscriptionProvider.GROK)
+        saveDeviceScreenshot(app, "providers-grok-manual-import", requireNotNull(instrumentation.uiAutomation.takeScreenshot()))
+        val encoded = java.io.File(app.noBackupFilesDir, "subscriptions.enc").readBytes().toString(Charsets.ISO_8859_1)
+        assertFalse(encoded.contains("fixture-session"))
+        assertFalse(encoded.contains("fixture-chunk"))
+    }
+
+    private fun alignCardForScreenshot(provider: SubscriptionProvider) {
+        val card = compose.onNodeWithTag("subscription-${provider.name}").fetchSemanticsNode()
+        val viewport = generateSequence(card.parent) { it.parent }
+            .first { it.config.contains(SemanticsActions.ScrollBy) }
+        val delta = card.positionInRoot.y - viewport.positionInRoot.y - 16f * compose.density.density
+        compose.onNode(SemanticsMatcher("subscription scroll ancestor") { it.id == viewport.id })
+            .performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, delta) }
+        compose.waitForIdle()
+        // Let the finite material transition and platform compositor finish before full-screen capture.
+        Thread.sleep(700)
+        compose.waitForIdle()
     }
 
     @Test fun cancelFirstConnectionDoesNotSaveCredentials() {
@@ -101,7 +171,7 @@ class SubscriptionsUiTest {
                 compose.onNodeWithTag("tab-subscriptions").performClick()
                 if (compose.onAllNodesWithText(notice).fetchSemanticsNodes().isEmpty())
                     compose.onNodeWithTag("subscription-examples").performScrollToVisible(compose).performClick()
-                compose.onNodeWithText(notice).performScrollToVisible(compose).assertIsDisplayed()
+                compose.onAllNodesWithText(notice).onFirst().performScrollToVisible(compose).assertIsDisplayed()
                 compose.onNodeWithTag("tab-subscriptions").assertIsSelected()
                 saveDeviceScreenshot(app, "subscriptions-$language", compose.onRoot().captureToImage().asAndroidBitmap())
             }
