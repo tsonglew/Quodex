@@ -8,6 +8,31 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class GlassTokensTest {
+    @Test fun semanticContainersRetainTheirHueAndActualInkContrastIncludingSolidFallback() {
+        for (dark in listOf(false, true)) for (amount in listOf(0f, 1f, 1.5f)) {
+            val scheme = quodexColorScheme(dark)
+            val scene = glassSceneColors(dark)
+            val stats = requireNotNull(GlassBackdropStats.from(List(15) { scene[it % scene.size] }))
+            for ((container, ink) in listOf(scheme.primaryContainer to scheme.onPrimaryContainer,
+                scheme.secondaryContainer to scheme.onSecondaryContainer,
+                scheme.tertiaryContainer to scheme.onTertiaryContainer, scheme.errorContainer to scheme.onErrorContainer)) {
+                val tokens = resolveGlassTokens(dark, GlassPreferences(amount, amount), stats,
+                    containerColor = container, contentColor = ink)
+                assertEquals(container, tokens.tint.copy(alpha = 1f))
+                for ((from, to) in scene.zipWithNext()) for (step in 0..20) {
+                    val behind = processedGlassColor(androidx.compose.ui.graphics.lerp(from, to, step / 20f), tokens.saturation, tokens.brightness)
+                    val base = tokens.tint.compositeOver(behind)
+                    val lit = Color.White.copy(alpha = tokens.highlight).compositeOver(base)
+                    assertTrue("dark=$dark amount=$amount container=$container", glassContrast(ink, base) >= 4.5f && glassContrast(ink, lit) >= 4.5f)
+                }
+                val solid = resolveGlassTokens(dark, GlassPreferences(amount, amount, true), stats,
+                    containerColor = container, contentColor = ink)
+                assertEquals(container, solid.tint)
+                assertTrue(glassContrast(ink, solid.tint) >= 4.5f)
+            }
+        }
+    }
+
     @Test fun sharedPageScenePreservesThemeInkAndTextContrastAtEveryTint() {
         for (dark in listOf(false, true)) for (amount in listOf(0f, 1f, 1.5f)) {
             val colors = glassSceneColors(dark)

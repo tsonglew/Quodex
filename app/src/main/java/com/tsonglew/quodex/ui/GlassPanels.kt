@@ -51,7 +51,11 @@ internal fun GlassPanel(
     contentColor: Color = contentColorFor(color),
     content: @Composable () -> Unit,
 ) {
-    val material = rememberGlassSurface("page-panels", shape, source = LocalGlassScene.current)
+    val scheme = MaterialTheme.colorScheme
+    val semantic = color in listOf(scheme.primaryContainer, scheme.secondaryContainer,
+        scheme.tertiaryContainer, scheme.errorContainer)
+    val material = rememberGlassSurface("page-panels", shape, source = LocalGlassScene.current,
+        containerColor = color.takeIf { semantic }, contentColor = contentColor.takeIf { semantic })
     Surface(modifier = modifier.then(material.modifier), shape = shape, color = Color.Transparent,
         contentColor = contentColor, tonalElevation = 0.dp, content = content)
 }

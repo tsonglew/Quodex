@@ -47,10 +47,11 @@ class CodexApi(
     private val resetCreditsCooldown = AtomicReference<Pair<String, ApiFailure>?>(null)
     private suspend fun send(request: Request): Reply = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         suspendCancellableCoroutine { cont ->
-            val operation = when (request.url.toString()) {
-                usageUrl -> 0L
-                tokenUsageUrl -> 2L
-                resetCreditsUrl -> 3L
+            val operation = when {
+                request.url.toString() == usageUrl -> 0L
+                request.url.toString() == tokenUsageUrl -> 2L
+                request.url.toString() == resetCreditsUrl -> 3L
+                request.url.encodedPath.endsWith("/benefits/chatgpt_api_credits_promo") -> 4L
                 else -> 1L
             }
             val started = System.nanoTime()

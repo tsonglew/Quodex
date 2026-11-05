@@ -90,7 +90,8 @@ internal data class GlassSurfaceMaterial(val modifier: Modifier, val tokens: Gla
 @OptIn(FlowPreview::class)
 @Composable
 internal fun rememberGlassSurface(id: String, shape: Shape, lens: Boolean = true, active: Boolean = true,
-    source: GlassBackdrop? = LocalGlassBackdrop.current): GlassSurfaceMaterial {
+    source: GlassBackdrop? = LocalGlassBackdrop.current,
+    containerColor: Color? = null, contentColor: Color? = null): GlassSurfaceMaterial {
     val environment = LocalGlassEnvironment.current
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -136,12 +137,12 @@ internal fun rememberGlassSurface(id: String, shape: Shape, lens: Boolean = true
             catch (_: Exception) { stats = null; waitingForSample = false }
         }
     }
-    val target = remember(environment, stats, previousInk, supported, waitingForSample) {
+    val target = remember(environment, stats, previousInk, supported, waitingForSample, containerColor, contentColor) {
         resolveGlassTokens(environment.dark, environment.preferences, stats, previousInk,
             forceSolid = !supported || stats == null, restorePreviousInk = supported && waitingForSample,
             // The source is a page containing text/controls, not a known continuous image.
             // Fifteen samples can miss white glyphs and tiny black details between grid points.
-            protectUnsampledDetail = source?.knownStats == null)
+            protectUnsampledDetail = source?.knownStats == null, containerColor = containerColor, contentColor = contentColor)
     }
     LaunchedEffect(target.lightInk, stats != null, inkKey) {
         if (stats != null) {
