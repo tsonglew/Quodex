@@ -53,7 +53,7 @@ xAI：在官方控制台创建具有预付账单读取权限的团队 Management
 - Cursor Admin：`POST https://api.cursor.com/teams/spend`，Basic key + 空密码；`page`／`pageSize` 分页，保留分值小数精度。[官方 Admin API](https://cursor.com/docs/account/teams/admin-api.md)。
 - 原有服务依据：[DeepSeek](https://api-docs.deepseek.com/api/get-user-balance/) · [OpenCode Go 历史实现](https://github.com/anomalyco/opencode/blob/d4704347465c1ee63d0c213ed00e648e7f0231c5/packages/console/app/src/routes/zen/go/v1/usage.ts) · [Console API key](https://opencode.ai/v2/docs/console/api/) · [旧 Cursor 控制台响应记录](https://forum.cursor.com/t/cursor-usages-is-not-showing-correct-information/170210)。
 
-本地 290 项 JVM 测试、67 项交付脚本测试、debug／release 构建与 lint 通过；新增 21 项解析、HTTP、分页、导入缓存与并发隔离测试。API 37 上 6 项订阅界面测试和 1 项 320dp／200% 字体检查通过（断开测试修正悬浮导航遮挡后单独重跑通过）。开发者 API 尚未使用真实 key 验收；浏览器外 HTTP 成功也不代表所有 Android 设备与账号均可用。原生界面来源见 [alpha37 截图记录](screenshots/providers-alpha37/README.md)，远端矩阵以 PR 的最终状态为准。
+本地 290 项 JVM 测试、69 项交付脚本测试、debug／release 构建与 lint 通过；新增 21 项解析、HTTP、分页、导入缓存与并发隔离测试。API 37 上 6 项订阅界面测试和 1 项 320dp／200% 字体检查通过（断开测试修正悬浮导航遮挡后单独重跑通过）。开发者 API 尚未使用真实 key 验收；浏览器外 HTTP 成功也不代表所有 Android 设备与账号均可用。原生界面来源见 [alpha37 截图记录](screenshots/providers-alpha37/README.md)，远端矩阵以 PR 的最终状态为准。
 
 ## 历史 alpha32 验证记录
 
