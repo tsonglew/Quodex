@@ -93,8 +93,9 @@ fun QuodexApp(model: MainViewModel) {
     val destinations = listOf(Triple("quota", texts(R.string.quota), Icons.Outlined.Dashboard),
         Triple("subscriptions", texts(R.string.subscriptions), Icons.Outlined.AccountBalanceWallet),
         Triple("widgets", texts(R.string.widgets), Icons.Outlined.Widgets), Triple("settings", texts(R.string.settings), Icons.Outlined.Settings))
-    QuotaTheme(prefs.theme) {
-        BoxWithConstraints(Modifier.fillMaxSize()) {
+    var glassPreview by remember { mutableStateOf<GlassPreferences?>(null) }
+    QuotaTheme(prefs.theme, glassPreview ?: prefs.glass) {
+        BoxWithConstraints(Modifier.fillMaxSize().captureGlassBackdrop()) {
             val useRail = maxWidth >= 600.dp && maxHeight >= 480.dp
             var dockHeight by remember { mutableStateOf(100.dp) }
             val density = LocalDensity.current
@@ -142,7 +143,7 @@ fun QuodexApp(model: MainViewModel) {
                                             "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock, heatmapLaunch) }
                                             "widgets" -> WidgetPage(state, prefs)
                                             "subscriptions" -> SubscriptionsPage(model, clock, state.demo)
-                                            else -> SettingsPage(state, prefs, model, clock)
+                                            else -> SettingsPage(state, prefs, model, clock, onGlassPreview = { glassPreview = it })
                                         }
                                         // Content scrolls behind the dock; only its end needs clearance.
                                         Spacer(Modifier.height(28.dp + if (useRail) 0.dp else dockHeight))
@@ -158,7 +159,7 @@ fun QuodexApp(model: MainViewModel) {
         }
         InAppUpdateDialog()
         operationError?.let { message ->
-            AlertDialog(onDismissRequest = model::dismissError,
+            GlassAlertDialog(surfaceId = "operation-error", onDismissRequest = model::dismissError,
                 title = { Text(texts(R.string.operation_incomplete)) }, text = { Text(message.resolve(texts)) },
                 confirmButton = { TextButton(onClick = model::dismissError) { Text(texts(R.string.got_it)) } })
         }
@@ -317,7 +318,7 @@ private fun Notice(title: String, subtitle: String, icon: ImageVector) {
 private fun LoginDialog(login: LoginState, cancel: () -> Unit, retry: () -> Unit) {
     val texts = localTextResources()
     val context = LocalContext.current
-    AlertDialog(onDismissRequest = cancel, title = { Text(texts(R.string.connect_codex)) }, text = {
+    GlassAlertDialog(surfaceId = "login", onDismissRequest = cancel, title = { Text(texts(R.string.connect_codex)) }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(texts(R.string.complete_device_sign_in_on_openai_s), lineHeight = 22.sp)
             Text(texts(R.string.first_enable_device_code_sign_in_in), fontSize = 12.sp,
@@ -379,7 +380,7 @@ internal fun DiagnosticEntry(compact: Boolean = false) {
     }, modifier = Modifier.testTag("diagnostics-preview")) { Text(texts(R.string.preview_diagnostic_report)) }
     TextButton(onClick = { scope.launch(Dispatchers.Main.immediate) { val result = withContext(Dispatchers.IO) { runCatching { context.quotaApp.diagnostics.clear() } }; result.onFailure { failed = true } } }, modifier = Modifier.testTag("diagnostics-clear")) { Text(texts(R.string.clear_diagnostic_records)) }
     report?.let { text ->
-        AlertDialog(onDismissRequest = { report = null }, title = { Text(texts(R.string.diagnostic_report)) },
+        GlassAlertDialog(surfaceId = "diagnostic-report", onDismissRequest = { report = null }, title = { Text(texts(R.string.diagnostic_report)) },
             text = { SelectionContainer { Text(text, fontSize = 12.sp, modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()).testTag("diagnostics-report")) } },
             confirmButton = { TextButton(onClick = {
                 runCatching { context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
@@ -388,7 +389,7 @@ internal fun DiagnosticEntry(compact: Boolean = false) {
             }) { Text(texts(R.string.share)) } },
             dismissButton = { TextButton(onClick = { report = null }, modifier = Modifier.testTag("diagnostics-close")) { Text(texts(R.string.close)) } })
     }
-    if (failed) AlertDialog(onDismissRequest = { failed = false }, title = { Text(texts(R.string.diagnostic_action_incomplete)) },
+    if (failed) GlassAlertDialog(surfaceId = "diagnostic-error", onDismissRequest = { failed = false }, title = { Text(texts(R.string.diagnostic_action_incomplete)) },
         text = { Text(texts(R.string.check_available_storage_or_the_sharing_app)) },
         confirmButton = { TextButton(onClick = { failed = false }) { Text(texts(R.string.got_it)) } })
 }

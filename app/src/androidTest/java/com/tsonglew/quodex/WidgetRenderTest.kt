@@ -421,6 +421,15 @@ class WidgetRenderTest {
     }
 
     private fun withLaidOutWidget(scenario: ActivityScenario<WidgetTestHostActivity>, capture: (WidgetTestHostActivity) -> Unit) {
+        // Layout can finish before the window owns a submitted surface on API 29.
+        // PixelCopy requires an actual rendered frame, not only measured children.
+        val committed = CountDownLatch(1)
+        scenario.onActivity { activity ->
+            val decor = activity.window.decorView
+            decor.viewTreeObserver.registerFrameCommitCallback { committed.countDown() }
+            decor.invalidate()
+        }
+        assertTrue("Widget window must submit a frame before capture", committed.await(5, TimeUnit.SECONDS))
         val deadline = System.currentTimeMillis() + 10_000
         var captured = false
         while (!captured && System.currentTimeMillis() < deadline) {

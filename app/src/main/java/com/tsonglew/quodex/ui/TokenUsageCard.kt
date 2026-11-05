@@ -159,7 +159,7 @@ fun TokenUsageCard(
         }
     }
     if (details && trend != null) {
-        AlertDialog(onDismissRequest = { details = false }, title = { Text(if (demo) texts(R.string.demo_daily_tokens) else texts(R.string.daily_tokens)) },
+        GlassAlertDialog(surfaceId = "token-details", onDismissRequest = { details = false }, title = { Text(if (demo) texts(R.string.demo_daily_tokens) else texts(R.string.daily_tokens)) },
             text = {
                 LazyColumn(Modifier.fillMaxWidth().heightIn(max = 360.dp).testTag("token-trend-day-list")) {
                     itemsIndexed(trend.days.asReversed(), key = { _, day -> day.date.toString() }) { index, day ->

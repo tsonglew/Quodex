@@ -115,7 +115,7 @@ internal fun WidgetPage(state: AppState, prefs: PreferencesState) {
     }
 
     manualWidget?.let { widgetName ->
-        AlertDialog(onDismissRequest = { manualWidget = null }, title = { Text(texts(R.string.add_from_home_screen)) }, text = {
+        GlassAlertDialog(surfaceId = "add-widget-help", onDismissRequest = { manualWidget = null }, title = { Text(texts(R.string.add_from_home_screen)) }, text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(texts(R.string.your_launcher_did_not_accept_direct_adding))
                 Text(texts(R.string.press_and_hold_an_empty_area_of, widgetName))

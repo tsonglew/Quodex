@@ -138,7 +138,7 @@ fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long,
         Spacer(Modifier.height(12.dp))
         ResetCreditsCard(state, now, onLoadResetCredits)
     }
-    if (showUpdateInfo) AlertDialog(onDismissRequest = { showUpdateInfo = false },
+    if (showUpdateInfo) GlassAlertDialog(surfaceId = "quota-update-info", onDismissRequest = { showUpdateInfo = false },
         title = { Text(texts(R.string.about_quota_updates)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()).testTag("quota-update-info-content"),

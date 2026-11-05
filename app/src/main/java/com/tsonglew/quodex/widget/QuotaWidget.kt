@@ -29,6 +29,7 @@ import com.tsonglew.quodex.data.*
 import com.tsonglew.quodex.quotaApp
 import com.tsonglew.quodex.sync.SyncScheduler
 import com.tsonglew.quodex.ui.quodexColorScheme
+import com.tsonglew.quodex.ui.resolveGlassTokens
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
 
@@ -40,17 +41,19 @@ open class QuotaWidget : GlanceAppWidget() {
         val widgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
         val preferences = app.settings.widgetSettingsFlow(widgetId)
         val initialPreferences = app.settings.widgetSettings(widgetId)
+        val initialMaterial = app.settings.read()
         provideContent {
             val state by app.repository.state.collectAsState()
             val config by preferences.collectAsState(initialPreferences)
+            val materialPreferences by app.settings.flow.collectAsState(initialMaterial)
             val timeRevision by app.wallClockRevision.collectAsState()
             val localeRevision by app.localeRevision.collectAsState()
-            androidx.compose.runtime.key(timeRevision, localeRevision) { Content(state, config.first, config.second, context) }
+            androidx.compose.runtime.key(timeRevision, localeRevision) { Content(state, config.first, config.second, context, materialPreferences.glass) }
         }
     }
 
     @Composable
-    private fun Content(state: AppState, remaining: Boolean, theme: String, context: Context) {
+    private fun Content(state: AppState, remaining: Boolean, theme: String, context: Context, glass: GlassPreferences) {
         val texts = AndroidTextResources(LocalContext.current)
         val size = LocalSize.current
         androidx.compose.runtime.LaunchedEffect(size, state, remaining, theme) {
@@ -65,9 +68,14 @@ open class QuotaWidget : GlanceAppWidget() {
         val systemDark = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES
         val dark = theme == "dark" || theme == "system" && systemDark
         val colors = quodexColorScheme(dark)
-        val background = ColorProvider(colors.background)
-        val foreground = ColorProvider(colors.onSurface)
-        val muted = ColorProvider(colors.onSurfaceVariant)
+        val highContrast = android.os.Build.VERSION.SDK_INT >= 36 &&
+            context.getSystemService(android.view.accessibility.AccessibilityManager::class.java).isHighContrastTextEnabled
+        val material = resolveGlassTokens(dark, glass, forceSolid = highContrast)
+        val radius = if (context.resources.configuration.fontScale > 1.3f || size.height < 100.dp) 20f else 28f
+        val background = ImageProvider(WidgetGlassMaterial.bitmap(size.width.value, size.height.value,
+            context.resources.displayMetrics.density, radius, material))
+        val foreground = ColorProvider(material.primary)
+        val muted = ColorProvider(material.secondary)
         val track = ColorProvider(colors.surfaceVariant)
         val accent = ColorProvider(colors.primary)
         val largeFont = context.resources.configuration.fontScale > 1.3f
@@ -81,7 +89,7 @@ open class QuotaWidget : GlanceAppWidget() {
             return
         }
         val notice = state.snapshot?.quotaNotice(texts)
-        Column(GlanceModifier.fillMaxSize().appWidgetBackground().background(background).cornerRadius(28.dp)
+        Column(GlanceModifier.fillMaxSize().appWidgetBackground().background(background, ContentScale.FillBounds).cornerRadius(28.dp)
             .padding(horizontal = 12.dp, vertical = if (notice != null) 8.dp else 12.dp)) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 OpenAppArea(GlanceModifier.defaultWeight().height(controlHeight(context, 20.sp)), summary) {
@@ -152,7 +160,7 @@ open class QuotaWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun LargeFontContent(state: AppState, remaining: Boolean, background: ColorProvider,
+    private fun LargeFontContent(state: AppState, remaining: Boolean, background: ImageProvider,
         foreground: ColorProvider, muted: ColorProvider, track: ColorProvider, accent: ColorProvider, summary: String) {
         val texts = AndroidTextResources(LocalContext.current)
         val size = LocalSize.current
@@ -164,7 +172,7 @@ open class QuotaWidget : GlanceAppWidget() {
             if (compact) entries.filter { it.id.startsWith("codex:") || it.id.startsWith("demo:") } else entries
         }.take(if (!compact && (size.width >= 280.dp || size.height >= 230.dp)) 2 else 1)
         val timestamp = snapshot?.let { absoluteTime(it.fetchedAt, true) } ?: texts(R.string.tap_to_connect)
-        Column(GlanceModifier.fillMaxSize().appWidgetBackground().background(background).cornerRadius(20.dp)
+        Column(GlanceModifier.fillMaxSize().appWidgetBackground().background(background, ContentScale.FillBounds).cornerRadius(20.dp)
             .padding(horizontal = 6.dp, vertical = if (compact) 2.dp else 6.dp)
             .semantics { contentDescription = summary }) {
             if (compact) {
@@ -310,7 +318,7 @@ open class QuotaWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun CompactContent(state: AppState, remaining: Boolean, background: ColorProvider, foreground: ColorProvider,
+    private fun CompactContent(state: AppState, remaining: Boolean, background: ImageProvider, foreground: ColorProvider,
         muted: ColorProvider, track: ColorProvider, accent: ColorProvider, summary: String) {
         val texts = AndroidTextResources(LocalContext.current)
         val short = LocalSize.current.height < 70.dp
@@ -336,7 +344,7 @@ open class QuotaWidget : GlanceAppWidget() {
             state.failure != null -> texts(R.string.cached_value, absoluteTime(snapshot.fetchedAt, true))
             else -> texts(R.string.updated_value, absoluteTime(snapshot.fetchedAt, true))
         }
-        Column(GlanceModifier.fillMaxSize().appWidgetBackground().background(background).cornerRadius(20.dp)
+        Column(GlanceModifier.fillMaxSize().appWidgetBackground().background(background, ContentScale.FillBounds).cornerRadius(20.dp)
             .padding(horizontal = 8.dp, vertical = if (short) 4.dp else 6.dp)) {
             OpenAppArea(GlanceModifier.fillMaxWidth().defaultWeight(), summary) {
                 Column(GlanceModifier.fillMaxSize()) {

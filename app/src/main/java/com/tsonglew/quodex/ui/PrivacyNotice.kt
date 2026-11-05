@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
@@ -28,7 +27,7 @@ internal fun PrivacyNoticeEntry() {
         val notice = remember(context, texts.locale) {
             AppLanguages.contextForResources(context).resources.openRawResource(R.raw.privacy_notice).bufferedReader().use { it.readText() }
         }
-        AlertDialog(onDismissRequest = { visible = false }, title = { Text(texts(R.string.privacy_and_data)) }, text = {
+        GlassAlertDialog(surfaceId = "privacy", onDismissRequest = { visible = false }, title = { Text(texts(R.string.privacy_and_data)) }, text = {
             SelectionContainer {
                 Text(notice, fontSize = 13.sp, lineHeight = 22.sp,
                     modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()).testTag("privacy-notice-text"))

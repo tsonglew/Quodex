@@ -440,4 +440,10 @@
     <string name="reset_cards_granted">"Granted %1$s"</string>
     <string name="reset_cards_expires">"Expires %1$s"</string>
     <string name="reset_cards_expiry_unknown">"Expiry time not provided"</string>
+    <string name="glass_material">"Glass material"</string>
+    <string name="glass_material_description">"Adjust the tint of dialogs and home-screen quota widgets. The background becomes denser when text needs more contrast."</string>
+    <string name="reduce_transparency">"Reduce transparency"</string>
+    <string name="reduce_transparency_description">"Use opaque surfaces and turn off refraction and color splitting."</string>
+    <string name="glass_tint_value">"%1$s · %2$s%%"</string>
+    <string name="glass_tint_accessibility">"%1$s glass tint"</string>
 </resources>

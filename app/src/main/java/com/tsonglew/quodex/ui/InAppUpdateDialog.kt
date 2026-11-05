@@ -54,7 +54,7 @@ internal fun InAppUpdateDialog(updater: InAppUpdate = LocalContext.current.quota
         else updater.report(UiText(R.string.installation_is_not_yet_allowed_tap_install))
     }
     if (!state.visible) return
-    AlertDialog(onDismissRequest = updater::dismiss,
+    GlassAlertDialog(surfaceId = "app-update", onDismissRequest = updater::dismiss,
         title = { Text(texts(R.string.update_quodex)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()).testTag("in-app-update-dialog"),

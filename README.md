@@ -39,6 +39,12 @@
 
 重置卡界面来自 alpha34 开发版的原生组件截图，使用合成示例数据，不代表真实账号权益。[截图来源与验收范围](docs/screenshots/reset-credits-alpha34/README.md)。功能是否已发布请以 Releases 中的实际 APK 为准。
 
+| alpha35 玻璃材质 · 浅色 | alpha35 玻璃材质 · 深色 |
+| :---: | :---: |
+| <img src="docs/screenshots/glass-alpha35/glass-settings-light.png" width="240" alt="alpha35 debug 浅色玻璃材质设置，API 37 模拟器，本机示例模式" /> | <img src="docs/screenshots/glass-alpha35/glass-settings-dark.png" width="240" alt="alpha35 debug 深色玻璃材质设置，API 37 模拟器，本机示例模式" /> |
+
+本轮截图来自 alpha35 debug / API 37 模拟器，在本机示例模式中直接捕获，未裁切或重绘；不代表已发布 APK。[材质与验证范围](docs/LIQUID_GLASS.md)。
+
 ## 下载与开始使用
 
 1. 在 [GitHub Releases](https://github.com/tsonglew/Quodex/releases) 选择包含 APK 附件的发布记录，下载 `Quodex-<版本>.apk`。需要核验时，同页提供 `SHA256SUMS` 和 `provenance.json`。
@@ -59,7 +65,10 @@
 | **Token 趋势** | 近 7／30 天条形图与日历热力图切换，记住图表偏好；缺失数据与真实零值分别展示。 |
 | **桌面一览** | 标准额度、2×1 紧凑额度、2×2 的 30 天热力图，以及带百分比的桌面额度图标；支持手动刷新。 |
 | **订阅查询** | DeepSeek API 余额、OpenCode Go 用量、OpenCode Console（原 Zen）余额、Cursor 个人用量，各自独立连接。 |
+| **玻璃材质** | alpha35 源码新增弹窗与菜单材质、额度组件高光；设置 → 外观分别调整浅深色底色，或启用“减少透明效果”。Android 13+ 支持边缘折射，旧版采用模糊或实色。 |
 | **日常体验** | 简体中文／English／日本語、浅色／深色／跟随系统、大字体与宽屏适配、应用内更新。 |
+
+**玻璃材质。** 文字区域优先保证对比度，低浓度仍保留可读性下限；桌面额度组件不读取或模糊壁纸，Token 热力图组件保持实色。“减少透明效果”也适用于既有悬浮导航。alpha35 为本轮源码版本，是否已发布以 Releases 的实际 APK 为准。[实现与验证](docs/LIQUID_GLASS.md)
 
 **重置卡查询。** 在额度页查看张数，点“查看明细”获取卡片；已展开时，额度刷新后会检查五分钟明细缓存，也可点“刷新明细”。服务端可能只返回部分明细，数量未知不会显示为零；到期时间按手机时区显示，实际可用性以服务端为准。明细失败不影响额度，不新增后台明细请求。使用卡片请前往 Codex。真实账号覆盖仍待验证。
 
@@ -84,7 +93,7 @@ cd Quodex
 ./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
 
-Debug APK 输出到 `app/build/outputs/apk/debug/app-debug.apk`。技术栈为 Kotlin、Jetpack Compose、Glance、Room、DataStore 和 WorkManager；构建版本由仓库 Gradle 配置管理。CI 与更新安装测试显式使用 SDK Platform 37.0；编译 SDK 升级不改变 Android 10+ 的安装要求或 targetSdk 36。
+Debug APK 输出到 `app/build/outputs/apk/debug/app-debug.apk`。技术栈为 Kotlin、Jetpack Compose、Glance、Room、DataStore 和 WorkManager；构建版本由仓库 Gradle 配置管理。CI 与更新安装测试显式使用 SDK Platform 37.0；使用明确的 `android-37.0` 编译目标；不改变 Android 10+ 的安装要求或 targetSdk 36。
 
 连接测试模拟器后可运行 `./gradlew connectedDebugAndroidTest`。测试会改变示例模式、账号和显示偏好，请使用专用测试环境。[贡献指南](CONTRIBUTING.md) · [测试说明](docs/TESTING.md) · [CI 与签名发布](docs/CI_CD.md)
 

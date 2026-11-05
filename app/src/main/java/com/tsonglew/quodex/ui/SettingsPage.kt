@@ -29,7 +29,8 @@ import com.tsonglew.quodex.data.userMessage
 /** Settings use the same quiet, rounded panels as the quota overview. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainViewModel, now: Long = java.time.Instant.now().epochSecond) {
+internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainViewModel, now: Long = java.time.Instant.now().epochSecond,
+    onGlassPreview: (com.tsonglew.quodex.data.GlassPreferences?) -> Unit = {}) {
     val texts = localTextResources()
     val colors = MaterialTheme.colorScheme
     val updates by model.updates.collectAsStateWithLifecycle()
@@ -56,6 +57,7 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
                         modifier = Modifier.heightIn(min = 48.dp).testTag("theme-$id"))
                 }
             }
+            GlassSettings(prefs.glass, onGlassPreview, model::glassTint, model::reduceTransparency)
             Spacer(Modifier.height(14.dp))
             HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.55f))
             Spacer(Modifier.height(18.dp))
@@ -127,14 +129,14 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
             lineHeight = 20.sp, color = colors.onSurfaceVariant)
     }
 
-    if (showRefreshInfo) AlertDialog(onDismissRequest = { showRefreshInfo = false },
+    if (showRefreshInfo) GlassAlertDialog(surfaceId = "refresh-info", onDismissRequest = { showRefreshInfo = false },
         title = { Text(texts(R.string.background_refresh_details)) },
         text = {
             Text(texts(R.string.battery_and_network_conditions_may_delay_background),
                 modifier = Modifier.verticalScroll(rememberScrollState()), lineHeight = 24.sp)
         }, confirmButton = { TextButton(onClick = { showRefreshInfo = false }) { Text(texts(R.string.got_it)) } })
 
-    if (confirmLogout) AlertDialog(onDismissRequest = { confirmLogout = false },
+    if (confirmLogout) GlassAlertDialog(surfaceId = "logout", onDismissRequest = { confirmLogout = false },
         title = { Text(texts(R.string.clear_local_connection)) },
         text = {
             Text(texts(R.string.local_credentials_quota_cache_and_background_quota),

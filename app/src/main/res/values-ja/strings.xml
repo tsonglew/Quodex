@@ -437,4 +437,10 @@
     <string name="reset_cards_granted">"付与日時：%1$s"</string>
     <string name="reset_cards_expires">"有効期限：%1$s"</string>
     <string name="reset_cards_expiry_unknown">"有効期限は不明です"</string>
+    <string name="glass_material">"ガラス素材"</string>
+    <string name="glass_material_description">"ダイアログとホーム画面の利用枠ウィジェットの色の濃さを調整します。文字のコントラストが不足すると背景が自動的に濃くなります。"</string>
+    <string name="reduce_transparency">"透明度を下げる"</string>
+    <string name="reduce_transparency_description">"不透明な背景を使い、屈折と色分離を無効にします。"</string>
+    <string name="glass_tint_value">"%1$s · %2$s%%"</string>
+    <string name="glass_tint_accessibility">"%1$sのガラスの濃さ"</string>
 </resources>

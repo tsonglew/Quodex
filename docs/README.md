@@ -21,7 +21,7 @@
 | 了解当前工作 | [开发计划](DEVELOPMENT_PLAN.md) · [开发进度](PROGRESS.md) · [验收清单](DEVELOPMENT_CHECKLIST.md) |
 | 构建、测试、发布 | [测试](TESTING.md) · [CI、签名与发布](CI_CD.md) |
 | 了解接口与兼容边界 | [Codex 接入](CODEX_INTEGRATION.md) · [维护策略](COMPATIBILITY_POLICY.md) · [网络重试](NETWORK_RETRIES.md) |
-| 维护界面与品牌 | [UI 规格](UI_SPEC.md) · [UI/UX](UI_UX.md) · [品牌](BRANDING.md) |
+| 维护界面与品牌 | [玻璃材质](LIQUID_GLASS.md) · [UI 规格](UI_SPEC.md) · [UI/UX](UI_UX.md) · [品牌](BRANDING.md) |
 | 维护项目入口与 GitHub | [仓库展示与协作配置](PROJECT_PRESENTATION.md) |
 
 ## 历史记录

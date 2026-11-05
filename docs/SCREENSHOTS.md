@@ -1,5 +1,9 @@
 # Android 原生截图与动效录屏
 
+## alpha35 玻璃材质（2026-11-05）
+
+[浅色设置](screenshots/glass-alpha35/glass-settings-light.png) · [深色设置](screenshots/glass-alpha35/glass-settings-dark.png)。来源为 alpha35 debug / API 37 arm64 模拟器，由 `GlassMaterialDeviceTest` 在本机示例模式中通过原生屏幕捕获保存；没有裁切、生成或重绘。滑块分别设为 40% 和 130%，截图用于展示独立偏好及实际玻璃表面。它们不代表签名发布包或真实账号验收。[实现与本轮验证](LIQUID_GLASS.md)。
+
 ## alpha33 更新等待提示（2026-11-03）
 
 [原生截图](screenshots/updates-alpha33/update-cooldown.png)来自 alpha33 debug、API 37 模拟器，使用测试注入的等待截止时间。展示应用更新卡片、具体重试时间和等待期间禁用的检查按钮；并非真实服务端限流或已发布 APK 的截图。到期后的按钮恢复由设备测试断言。

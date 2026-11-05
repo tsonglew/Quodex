@@ -105,7 +105,7 @@ internal fun BackgroundGuide() {
                         shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)) {
                         Text(texts(guide.label), fontSize = 13.sp, lineHeight = 20.sp)
                     }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    GlassDropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         BackgroundBrand.entries.forEach { item ->
                             DropdownMenuItem(text = { Text(texts(item.label), fontSize = 13.sp, lineHeight = 20.sp) },
                                 onClick = { selected = item.name; menu = false })
