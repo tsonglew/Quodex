@@ -148,7 +148,7 @@ internal fun SettingsPage(state: AppState, prefs: PreferencesState, model: MainV
 
 @Composable
 private fun SettingsPanel(content: @Composable ColumnScope.() -> Unit) {
-    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
+    GlassPanel(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().padding(20.dp), content = content)
     }
 }

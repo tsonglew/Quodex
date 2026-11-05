@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 internal fun PanelHeading(title: String, icon: ImageVector, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+        GlassPanel(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
             Icon(icon, null, Modifier.padding(9.dp).size(18.dp), tint = MaterialTheme.colorScheme.primary)
         }
         Text(title, Modifier.weight(1f).semantics { heading() }, fontSize = 15.sp,

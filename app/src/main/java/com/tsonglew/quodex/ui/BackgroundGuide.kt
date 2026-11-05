@@ -84,7 +84,7 @@ internal fun BackgroundGuide() {
         onDispose { lifecycle.removeObserver(observer) }
     }
     val guide = BackgroundBrand.valueOf(selected)
-    Surface(shape = RoundedCornerShape(24.dp), color = colors.surface) {
+    GlassPanel(shape = RoundedCornerShape(24.dp), color = colors.surface) {
         Column(Modifier.fillMaxWidth().padding(20.dp)) {
             Text(texts(R.string.background_updates), fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.semantics { heading() })

@@ -95,7 +95,7 @@ fun QuodexApp(model: MainViewModel) {
         Triple("widgets", texts(R.string.widgets), Icons.Outlined.Widgets), Triple("settings", texts(R.string.settings), Icons.Outlined.Settings))
     var glassPreview by remember { mutableStateOf<GlassPreferences?>(null) }
     QuotaTheme(prefs.theme, glassPreview ?: prefs.glass) {
-        BoxWithConstraints(Modifier.fillMaxSize().captureGlassBackdrop()) {
+        BoxWithConstraints(Modifier.fillMaxSize().captureGlassBackdrop().glassSceneBackground()) {
             val useRail = maxWidth >= 600.dp && maxHeight >= 480.dp
             var dockHeight by remember { mutableStateOf(100.dp) }
             val density = LocalDensity.current
@@ -104,8 +104,9 @@ fun QuodexApp(model: MainViewModel) {
             val bringIntoView = remember(useRail, dockHeight, density) {
                 DockBringIntoViewSpec(if (useRail) 0f else with(density) { dockHeight.toPx() })
             }
-            Scaffold(contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal), containerColor = MaterialTheme.colorScheme.background, topBar = {
-                Surface(color = MaterialTheme.colorScheme.background) {
+            Scaffold(contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                containerColor = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground, topBar = {
+                GlassPanel(color = MaterialTheme.colorScheme.background) {
                     Row(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
                         .heightIn(min = 68.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("Quodex", Modifier.weight(1f), fontSize = 24.sp, letterSpacing = (-0.6).sp, fontWeight = FontWeight.Bold)
@@ -119,7 +120,7 @@ fun QuodexApp(model: MainViewModel) {
             }) { padding ->
                 Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
                     Row(Modifier.fillMaxSize().then(if (useRail) Modifier else Modifier.navigationBackdropSource(backdrop))) {
-                        if (useRail) NavigationRail(Modifier.fillMaxHeight(), containerColor = MaterialTheme.colorScheme.surface,
+                        if (useRail) NavigationRail(Modifier.fillMaxHeight().then(rememberGlassSurface("navigation-rail", androidx.compose.ui.graphics.RectangleShape, source = LocalGlassScene.current).modifier), containerColor = Color.Transparent,
                             windowInsets = WindowInsets(0)) {
                             destinations.forEach { (id, label, icon) ->
                                 NavigationRailItem(selected = tab == id, onClick = { tab = id }, icon = { Icon(icon, null) },
@@ -196,7 +197,7 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
     val texts = localTextResources()
     if (state.snapshot == null) {
         PageTitle(texts(R.string.keep_track_of_your_quota), texts(R.string.see_your_remaining_codex_quota_and_reset))
-        Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface) {
+        GlassPanel(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Code, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp))
@@ -217,7 +218,7 @@ private fun Dashboard(state: AppState, prefs: PreferencesState, model: MainViewM
         return
     }
     Column(Modifier.testTag("dashboard")) {
-        QuotaOverview(state, prefs, now, onReconnect = model::startLogin, onLoadResetCredits = model::loadResetCredits)
+        QuotaOverview(state, prefs, now, onReconnect = model::startLogin, onLoadResetCredits = model::loadResetCredits, onLoadApiCredits = model::loadApiCredits)
         Spacer(Modifier.height(16.dp))
         TokenUsageCard(state.snapshot.tokenUsage, state.tokenLoading, state.tokenFailure, state.demo, model::refreshTokenUsage,
             prefs.compactTokens, model::compactTokens, heatmapLaunch, prefs.tokenChartStyle, model::tokenChartStyle)
@@ -303,7 +304,7 @@ private fun DetailRow(icon: ImageVector, title: String, subtitle: String) {
 
 @Composable
 private fun Notice(title: String, subtitle: String, icon: ImageVector) {
-    Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f), shape = RoundedCornerShape(16.dp)) {
+    GlassPanel(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f), shape = RoundedCornerShape(16.dp)) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(12.dp)); Column {

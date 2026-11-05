@@ -34,7 +34,7 @@ fun ResetCreditsCard(state: AppState, now: Long, onLoad: (Boolean) -> Unit) {
     LaunchedEffect(expanded, snapshot.accountId, snapshot.fetchedAt) {
         if (expanded && state.connected && !state.demo) onLoad(false)
     }
-    Surface(Modifier.fillMaxWidth().testTag("reset-credits-card"), shape = RoundedCornerShape(24.dp), color = colors.surface) {
+    GlassPanel(Modifier.fillMaxWidth().testTag("reset-credits-card"), shape = RoundedCornerShape(24.dp), color = colors.surface) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(Icons.Outlined.ConfirmationNumber, null, tint = colors.primary, modifier = Modifier.size(22.dp))
@@ -100,7 +100,7 @@ private fun ResetCreditRow(credit: ResetCredit, now: Long) {
     val colors = MaterialTheme.colorScheme
     fun date(value: Long) = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm", Locale.ROOT)
         .withZone(ZoneId.systemDefault()).format(Instant.ofEpochSecond(value))
-    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = colors.surfaceContainerLow) {
+    GlassPanel(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = colors.surfaceContainerLow) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(credit.title ?: texts(R.string.reset_cards_default_name), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             Text(texts(when (credit.status) {

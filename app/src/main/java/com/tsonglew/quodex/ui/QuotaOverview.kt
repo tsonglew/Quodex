@@ -39,7 +39,7 @@ import com.tsonglew.quodex.data.*
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long,
-    onLoadResetCredits: (Boolean) -> Unit = {}, onReconnect: () -> Unit) {
+    onLoadResetCredits: (Boolean) -> Unit = {}, onLoadApiCredits: (Boolean) -> Unit = {}, onReconnect: () -> Unit) {
     val texts = localTextResources()
     val snapshot = state.snapshot ?: return
     val colors = MaterialTheme.colorScheme
@@ -61,17 +61,17 @@ fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long,
             }
         }
         Spacer(Modifier.height(16.dp))
-        Surface(shape = RoundedCornerShape(24.dp), color = colors.surfaceContainerHigh) {
+        GlassPanel(shape = RoundedCornerShape(24.dp), color = colors.surfaceContainerHigh) {
             Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Surface(shape = RoundedCornerShape(16.dp), color = colors.primaryContainer) {
+                    GlassPanel(shape = RoundedCornerShape(16.dp), color = colors.primaryContainer) {
                         Icon(Icons.Outlined.Code, null, Modifier.padding(14.dp).size(26.dp), tint = colors.onPrimaryContainer)
                     }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text("Codex", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                             snapshot.plan?.let { plan ->
-                                Surface(color = colors.surface, shape = RoundedCornerShape(50)) {
+                                GlassPanel(color = colors.surface, shape = RoundedCornerShape(50)) {
                                     Text(plan.uppercase(), Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                         fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = colors.primary)
                                 }
@@ -100,7 +100,7 @@ fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long,
                 windows.chunked(columns).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         row.forEach { window -> key(window.id) {
-                            Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(24.dp),
+                            GlassPanel(modifier = Modifier.weight(1f), shape = RoundedCornerShape(24.dp),
                                 color = colors.surface) {
                                 Column(Modifier.padding(18.dp)) {
                                     if (window === primary) PrimaryQuotaWindow(window, prefs.showRemaining, now)
@@ -136,6 +136,8 @@ fun QuotaOverview(state: AppState, prefs: PreferencesState, now: Long,
             }
         }
         Spacer(Modifier.height(12.dp))
+        ApiCreditsCard(state, now, onLoadApiCredits)
+        Spacer(Modifier.height(16.dp))
         ResetCreditsCard(state, now, onLoadResetCredits)
     }
     if (showUpdateInfo) GlassAlertDialog(surfaceId = "quota-update-info", onDismissRequest = { showUpdateInfo = false },

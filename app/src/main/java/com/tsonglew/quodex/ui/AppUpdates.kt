@@ -38,7 +38,7 @@ import com.tsonglew.quodex.update.UpdateState
 @Composable
 internal fun AvailableUpdateNotice(update: AppUpdate) {
     val texts = localTextResources()
-    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+    GlassPanel(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(texts(R.string.version_value_is_available, update.versionName), fontWeight = FontWeight.SemiBold)
             Text(texts(R.string.download_in_the_app_then_follow_android), fontSize = 13.sp)
@@ -73,7 +73,7 @@ internal fun AppUpdatesCard(state: UpdateState, onCheck: () -> Unit, onEnabled: 
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    Surface(shape = RoundedCornerShape(24.dp), color = colors.surface) {
+    GlassPanel(shape = RoundedCornerShape(24.dp), color = colors.surface) {
         Column(Modifier.fillMaxWidth().padding(20.dp)) {
             Text(texts(R.string.app_updates), fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.semantics { heading() })

@@ -443,4 +443,20 @@
     <string name="reduce_transparency_description">"使用不透明底色，关闭折射与色散。"</string>
     <string name="glass_tint_value">"%1$s · %2$s%%"</string>
     <string name="glass_tint_accessibility">"%1$s玻璃浓度"</string>
+
+    <string name="api_credits_title">ChatGPT API 赠送额度</string>
+    <string name="api_credits_description">符合条件的 Pro 或 Business 订阅赠送的 API 使用额度。</string>
+    <string name="api_credits_unknown">尚未查询赠送额度</string>
+    <string name="api_credits_eligible">符合领取条件</string>
+    <string name="api_credits_ineligible">当前暂不符合领取条件</string>
+    <string name="api_credits_benefit">订阅赠送福利</string>
+    <string name="api_credits_expired">福利已过期 · 请刷新确认</string>
+    <string name="api_credits_monthly">每月 US$%1$s</string>
+    <string name="api_credits_annual">每年 US$%1$s</string>
+    <string name="api_credits_claimable">本周期可领取：US$%1$s</string>
+    <string name="api_credits_expires">到期时间：%1$s</string>
+    <string name="api_credits_balance_unknown">剩余余额：接口未提供。福利金额未扣除 API 消费，请在 API Platform 账单中核对余额。</string>
+    <string name="api_credits_unavailable">暂时无法读取福利。实验性账单接口可能需要浏览器验证或其他登录方式，请打开账单核对。</string>
+    <string name="api_credits_open_billing">打开 ChatGPT 账单</string>
+    <string name="api_credits_read_only">仅查询。Quodex 不会绑定组织、领取额度、取消福利或修改账单。</string>
 </resources>

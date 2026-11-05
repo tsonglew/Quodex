@@ -32,6 +32,36 @@ class GlassMaterialDeviceTest {
     @get:Rule val compose = createEmptyComposeRule()
     private val app get() = InstrumentationRegistry.getInstrumentation().targetContext.quotaApp as TestQuotaApplication
 
+    @Test fun glassPagesRemainReachableInBothThemes() {
+        val previous = runBlocking { app.settings.read() }
+        try {
+            runBlocking {
+                app.repository.demo(); app.settings.theme("light")
+                app.settings.glassTint(false, 1f); app.settings.glassTint(true, 1f)
+                app.settings.reduceTransparency(false)
+            }
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                for (theme in listOf("light", "dark")) {
+                    runBlocking { app.settings.theme(theme) }
+                    scenario.recreate()
+                    for (tab in listOf("quota", "subscriptions", "widgets", "settings")) {
+                        compose.onNodeWithTag("tab-$tab").performClick()
+                        compose.onNodeWithTag("page-$tab").assertIsDisplayed()
+                        screenshot("all-glass-$tab-$theme")
+                    }
+                }
+            }
+        } finally {
+            runBlocking {
+                app.settings.theme(previous.theme)
+                app.settings.glassTint(false, previous.glass.lightTint)
+                app.settings.glassTint(true, previous.glass.darkTint)
+                app.settings.reduceTransparency(previous.glass.reduceTransparency)
+                app.repository.logout()
+            }
+        }
+    }
+
     @Test fun appearanceSettingsPersistIndependentlyAndReducedTransparencyKeepsControlsAccessible() {
         val previous = runBlocking { app.settings.read() }
         try {

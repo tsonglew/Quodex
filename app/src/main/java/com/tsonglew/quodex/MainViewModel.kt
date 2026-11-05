@@ -72,6 +72,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun refresh() { launchOperation { withContext(Dispatchers.IO) { app.diagnostics.record(com.tsonglew.quodex.diagnostics.DiagnosticEvent.MANUAL_REFRESH) }; app.repository.refresh(true); app.updateWidgets(); loadTokenTrend(force = true) } }
     private fun loadTokenTrend(force: Boolean = false) { launchOperation { app.repository.refreshTokenUsage(force); app.updateWidgets() } }
     fun refreshTokenUsage() { loadTokenTrend(force = true) }
+    fun loadApiCredits(force: Boolean = false) { launchOperation { app.repository.refreshApiCredits(force) } }
     fun loadResetCredits(force: Boolean = false) { launchOperation { app.repository.refreshResetCredits(force) } }
     fun demo() { launchOperation { cancelLogin(); app.repository.demo(); app.reconcileSync(); app.updateWidgets() } }
     fun logout() { cancelLogin(); app.scope.launch { runUiOperation(::reportError) { app.repository.logout(); app.reconcileSync(); app.updateWidgets() } } }

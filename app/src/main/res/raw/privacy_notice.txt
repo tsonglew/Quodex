@@ -1,5 +1,5 @@
 Quodex Privacy Notice
-Updated: November 4, 2026
+Updated: November 6, 2026
 
 Quodex is an independent third-party Android tool for viewing Codex quota and widgets, plus DeepSeek, OpenCode and Cursor balances or subscription usage. It is not affiliated with these providers. Compatibility integrations remain experimental.
 
@@ -38,3 +38,5 @@ Sign out and clear local data removes local sign-in files, quota records, and to
 
 Feedback and changes
 Report issues at github.com/tsonglew/Quodex/issues without posting credentials in public. If servers, analytics, or new data uses are added in the future, this notice and the app will be updated first.
+
+ChatGPT API credits: expanding the card makes a read-only GET to chatgpt.com/backend-api/product-account-links/accounts/{account_id}/benefits/chatgpt_api_credits_promo with the existing Codex credentials. Eligibility, reason code, benefit and claimable amounts, currency, cadence, expiry and fetch time are stored with the account snapshot in the local unencrypted database. The five-minute cache and Retry-After are independent of quota refresh. Account changes, logout and demo mode clear or isolate this cache. No background benefit requests, credit claims, organization linking, billing changes or chat reads are performed. This experimental service may reject Codex credentials or require browser verification; an unavailable remaining balance is never inferred as zero.

@@ -35,6 +35,7 @@ data class UsageSnapshot(
     val limitReached: Boolean? = null,
     val tokenUsage: TokenUsageSnapshot? = null,
     val resetCreditDetails: ResetCreditsSnapshot? = null,
+    val apiCreditDetails: ApiCreditsSnapshot? = null,
 ) {
     fun quotaNotice(texts: TextResources): QuotaNotice? {
         val mainWindows = windows.filter { it.id.startsWith("codex:") || it.id.startsWith("demo:") }
@@ -136,7 +137,7 @@ fun resetLabel(window: QuotaWindow, texts: TextResources, now: Long = Instant.no
 fun demoSnapshot(now: Long) = UsageSnapshot("demo", "plus", listOf(
     QuotaWindow("demo:weekly", "Weekly quota", 38.0, 604800, now + 3 * 86400 + 18 * 3600),
     QuotaWindow("demo:session", "5-hour quota", 64.0, 18000, now + 2 * 3600 + 14 * 60),
-), now, 2, resetCreditDetails = demoResetCredits(now))
+), now, 2, resetCreditDetails = demoResetCredits(now), apiCreditDetails = demoApiCredits(now))
 
 /** Reconstruct built-in labels so old snapshots follow the newly selected language. */
 fun QuotaWindow.displayName(texts: TextResources): String {

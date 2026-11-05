@@ -1,5 +1,5 @@
 Quodex 隐私说明
-更新日期：2026-11-04
+更新日期：2026-11-06
 
 Quodex 是独立第三方 Android 工具，用于查看 Codex 额度、展示桌面小组件，以及查询 DeepSeek、OpenCode 和 Cursor 的余额或订阅用量，与这些服务提供方无隶属关系。兼容接入仍处于实验阶段。
 
@@ -36,3 +36,5 @@ Token 趋势通过 chatgpt.com/backend-api/wham/profiles/me 获取服务端按�
 
 反馈与变更
 可通过 github.com/tsonglew/Quodex/issues 反馈问题，不要在公开问题中提交凭据。若未来新增服务器、分析或数据用途，会先更新本说明与应用实现。
+
+ChatGPT API 赠送额度：展开卡片后，使用当前 Codex 登录凭据向 chatgpt.com/backend-api/product-account-links/accounts/{account_id}/benefits/chatgpt_api_credits_promo 发起只读 GET 查询。仅保存领取资格、原因代码、每周期福利金额、可领取金额、币种、周期、到期与查询时间，随当前账号快照保存在本机非加密数据库。缓存五分钟，单独刷新并遵守 Retry-After；切换账号、退出或示例模式清理或隔离缓存。不新增后台查询，不领取额度、绑定组织或修改账单，不读取聊天内容。该实验性接口可能不接受 Codex 登录或需要浏览器验证；未返回的剩余余额不推算为零。

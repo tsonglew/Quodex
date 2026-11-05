@@ -34,7 +34,7 @@ import kotlin.math.min
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-internal class GlassBackdrop(val layer: GraphicsLayer) {
+internal class GlassBackdrop(val layer: GraphicsLayer, val knownStats: GlassBackdropStats? = null) {
     var generation by mutableLongStateOf(0L)
     var origin by mutableStateOf(Offset.Zero)
 }
@@ -47,11 +47,17 @@ internal data class GlassEnvironment(
 
 internal val LocalGlassEnvironment = staticCompositionLocalOf { GlassEnvironment() }
 internal val LocalGlassBackdrop = staticCompositionLocalOf<GlassBackdrop?> { null }
+internal val LocalGlassScene = staticCompositionLocalOf<GlassBackdrop?> { null }
 
 @Composable
 internal fun ProvideGlassMaterial(dark: Boolean, preferences: GlassPreferences, content: @Composable () -> Unit) {
     val layer = rememberGraphicsLayer()
     val backdrop = remember(layer) { GlassBackdrop(layer) }
+    val sceneLayer = rememberGraphicsLayer()
+    val sceneColors = glassSceneColors(dark)
+    val scene = remember(sceneLayer, dark) {
+        GlassBackdrop(sceneLayer, GlassBackdropStats.from(List(15) { sceneColors[it % sceneColors.size] }))
+    }
     val context = LocalContext.current
     val manager = remember(context) { context.getSystemService(AccessibilityManager::class.java) }
     var highContrast by remember { mutableStateOf(Build.VERSION.SDK_INT >= 36 && manager.isHighContrastTextEnabled) }
@@ -62,7 +68,7 @@ internal fun ProvideGlassMaterial(dark: Boolean, preferences: GlassPreferences, 
             onDispose { manager.removeHighContrastTextStateChangeListener(listener) }
         } else onDispose { }
     }
-    CompositionLocalProvider(LocalGlassBackdrop provides backdrop,
+    CompositionLocalProvider(LocalGlassBackdrop provides backdrop, LocalGlassScene provides scene,
         LocalGlassEnvironment provides GlassEnvironment(dark, preferences, highContrast), content = content)
 }
 
@@ -83,9 +89,9 @@ internal data class GlassSurfaceMaterial(val modifier: Modifier, val tokens: Gla
 
 @OptIn(FlowPreview::class)
 @Composable
-internal fun rememberGlassSurface(id: String, shape: Shape, lens: Boolean = true, active: Boolean = true): GlassSurfaceMaterial {
+internal fun rememberGlassSurface(id: String, shape: Shape, lens: Boolean = true, active: Boolean = true,
+    source: GlassBackdrop? = LocalGlassBackdrop.current): GlassSurfaceMaterial {
     val environment = LocalGlassEnvironment.current
-    val source = LocalGlassBackdrop.current
     val context = LocalContext.current
     val density = LocalDensity.current
     val direction = LocalLayoutDirection.current
@@ -94,7 +100,7 @@ internal fun rememberGlassSurface(id: String, shape: Shape, lens: Boolean = true
     val inkKey = "$id:${if (environment.dark) "dark" else "light"}"
     var previousInk by remember(inkKey) { mutableStateOf(inkStore.getBoolean(inkKey, environment.dark)) }
     var bounds by remember { mutableStateOf(Rect.Zero) }
-    var stats by remember { mutableStateOf<GlassBackdropStats?>(null) }
+    var stats by remember(source) { mutableStateOf(source?.knownStats) }
     var waitingForSample by remember { mutableStateOf(true) }
     val sampleLayer = rememberGraphicsLayer()
     val materialLayer = rememberGraphicsLayer()
@@ -102,8 +108,11 @@ internal fun rememberGlassSurface(id: String, shape: Shape, lens: Boolean = true
     val reduced = environment.preferences.reduceTransparency || environment.highContrast
     val supported = active && Build.VERSION.SDK_INT >= 31 && source != null && !reduced
     LaunchedEffect(source, supported, environment.dark, density, direction) {
-        stats = null
+        stats = source?.knownStats
         waitingForSample = supported
+        // The page scene is a known continuous gradient: all panels share its conservative
+        // color bounds and ink decision, with no per-card GPU readback or scroll sampling.
+        if (source?.knownStats != null) { waitingForSample = false; return@LaunchedEffect }
         if (!supported) return@LaunchedEffect
         snapshotFlow { Triple(source.generation, source.origin, bounds) }.debounce(120).collectLatest { (revision, origin, rect) ->
             if (revision == 0L || rect.width <= 0 || rect.height <= 0) return@collectLatest
@@ -132,7 +141,7 @@ internal fun rememberGlassSurface(id: String, shape: Shape, lens: Boolean = true
             forceSolid = !supported || stats == null, restorePreviousInk = supported && waitingForSample,
             // The source is a page containing text/controls, not a known continuous image.
             // Fifteen samples can miss white glyphs and tiny black details between grid points.
-            protectUnsampledDetail = true)
+            protectUnsampledDetail = source?.knownStats == null)
     }
     LaunchedEffect(target.lightInk, stats != null, inkKey) {
         if (stats != null) {

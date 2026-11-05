@@ -24,35 +24,42 @@ import com.tsonglew.quodex.quotaApp
 import com.tsonglew.quodex.sync.SyncScheduler
 import com.tsonglew.quodex.ui.TokenHeatmapRenderer
 import com.tsonglew.quodex.ui.quodexColorScheme
+import com.tsonglew.quodex.ui.resolveGlassTokens
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import java.time.Instant
 
 class TokenHeatmapWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(DpSize(110.dp, 110.dp), DpSize(160.dp, 160.dp),
-        DpSize(220.dp, 160.dp), DpSize(280.dp, 180.dp), DpSize(360.dp, 220.dp)))
+    override val sizeMode = SizeMode.Exact
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val app = context.quotaApp
         app.repository.initialize()
         val widgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
         val initial = app.settings.widgetSettings(widgetId)
+        val initialPreferences = app.settings.read()
         provideContent {
             val state by app.repository.state.collectAsState()
             val settings by app.settings.widgetSettingsFlow(widgetId).collectAsState(initial)
+            val preferences by app.settings.flow.collectAsState(initialPreferences)
             val locale by app.localeRevision.collectAsState()
             val time by app.wallClockRevision.collectAsState()
-            key(locale, time) { Content(state, settings.second, context) }
+            key(locale, time) { Content(state, settings.second, context, preferences.glass) }
         }
     }
 
-    @Composable private fun Content(state: AppState, theme: String, context: Context) {
+    @Composable private fun Content(state: AppState, theme: String, context: Context, glass: GlassPreferences) {
         val texts = AndroidTextResources(context)
         val size = LocalSize.current
         val systemDark = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES
         val dark = theme == "dark" || theme == "system" && systemDark
         val colors = quodexColorScheme(dark)
-        val foreground = ColorProvider(colors.onSurface)
-        val muted = ColorProvider(colors.onSurfaceVariant)
+        val highContrast = android.os.Build.VERSION.SDK_INT >= 36 &&
+            context.getSystemService(android.view.accessibility.AccessibilityManager::class.java).isHighContrastTextEnabled
+        val material = resolveGlassTokens(dark, glass, forceSolid = highContrast)
+        val background = ImageProvider(WidgetGlassMaterial.bitmap(size.width.value, size.height.value,
+            context.resources.displayMetrics.density, 24f, material))
+        val foreground = ColorProvider(material.primary)
+        val muted = ColorProvider(material.secondary)
         val large = context.resources.configuration.fontScale > 1.3f
         val square = size.width < 220.dp
         val tokens = if (state.demo) demoTokenUsage() else state.snapshot?.tokenUsage
@@ -72,7 +79,7 @@ class TokenHeatmapWidget : GlanceAppWidget() {
             exactTokenCount(trend.total), trend.knownDays, status) else texts(R.string.token_heatmap_unavailable)) +
             if (tokens != null && !state.demo) " " + texts(R.string.fetched_at_value, absoluteTime(tokens.fetchedAt, true)) else ""
         val launch = actionStartActivity(widgetLaunchIntent(context).putExtra(EXTRA_TOKEN_HEATMAP_LAUNCH, true))
-        Column(GlanceModifier.fillMaxSize().appWidgetBackground().background(ColorProvider(colors.background)).cornerRadius(24.dp).padding(if (square) 6.dp else 12.dp)) {
+        Column(GlanceModifier.fillMaxSize().appWidgetBackground().background(background, ContentScale.FillBounds).cornerRadius(24.dp).padding(if (square) 6.dp else 12.dp)) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(if (totalInHeading) formatTokenCount(trend!!.total, true) else texts(if (square && (size.width < 160.dp || large)) R.string.token_heatmap_widget_title_compact else R.string.token_heatmap_widget_title), GlanceModifier.defaultWeight(),
                     style = TextStyle(color = foreground, fontSize = if (totalInHeading) { if (large) 8.sp else 14.sp } else if (square) { if (large) 7.sp else 11.sp } else if (large) 10.sp else 14.sp,

@@ -446,4 +446,20 @@
     <string name="reduce_transparency_description">"Use opaque surfaces and turn off refraction and color splitting."</string>
     <string name="glass_tint_value">"%1$s · %2$s%%"</string>
     <string name="glass_tint_accessibility">"%1$s glass tint"</string>
+
+    <string name="api_credits_title">ChatGPT API credits</string>
+    <string name="api_credits_description">API credits granted by an eligible Pro or Business subscription.</string>
+    <string name="api_credits_unknown">Benefit not checked</string>
+    <string name="api_credits_eligible">Eligible to claim</string>
+    <string name="api_credits_ineligible">Not currently eligible to claim</string>
+    <string name="api_credits_benefit">Subscription benefit</string>
+    <string name="api_credits_expired">Benefit expired · refresh to confirm</string>
+    <string name="api_credits_monthly">US$%1$s / month</string>
+    <string name="api_credits_annual">US$%1$s / year</string>
+    <string name="api_credits_claimable">Claimable this cycle: US$%1$s</string>
+    <string name="api_credits_expires">Expires: %1$s</string>
+    <string name="api_credits_balance_unknown">Remaining balance: unavailable. Benefit amounts do not subtract API usage. Check API Platform billing for the balance.</string>
+    <string name="api_credits_unavailable">Could not read this benefit. The experimental billing service may require browser verification or a different login. Open billing to check.</string>
+    <string name="api_credits_open_billing">Open ChatGPT billing</string>
+    <string name="api_credits_read_only">Read only. Quodex does not link organizations, claim credits, cancel benefits, or change billing.</string>
 </resources>

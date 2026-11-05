@@ -8,6 +8,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class GlassTokensTest {
+    @Test fun sharedPageScenePreservesThemeInkAndTextContrastAtEveryTint() {
+        for (dark in listOf(false, true)) for (amount in listOf(0f, 1f, 1.5f)) {
+            val colors = glassSceneColors(dark)
+            val stats = requireNotNull(GlassBackdropStats.from(List(15) { colors[it % colors.size] }))
+            val tokens = resolveGlassTokens(dark, GlassPreferences(amount, amount), stats)
+            assertEquals("All neighboring panels use the theme ink", dark, tokens.lightInk)
+            for ((from, to) in colors.zipWithNext()) for (step in 0..20) {
+                val color = androidx.compose.ui.graphics.lerp(from, to, step / 20f)
+                val base = tokens.tint.compositeOver(processedGlassColor(color, tokens.saturation, tokens.brightness))
+                for (ink in listOf(tokens.primary, tokens.secondary, quodexColorScheme(dark).primary, quodexColorScheme(dark).error)) {
+                    assertTrue("dark=$dark amount=$amount gradient=$step", glassContrast(ink, base) >= 4.5f)
+                }
+            }
+        }
+    }
+
     @Test fun unknownWallpaperRemainsReadableAcrossBothThemesAndTintExtremes() {
         for (dark in listOf(false, true)) for (amount in listOf(0f, 0.5f, 1f, 1.5f)) {
             val tokens = resolveGlassTokens(dark, GlassPreferences(amount, amount))

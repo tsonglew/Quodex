@@ -1,4 +1,15 @@
-# Android liquid glass
+# 全界面玻璃材质（alpha36）
+
+alpha36 将页面卡片、设置分组、提示、页头、侧栏和 Token 热力图桌面组件加入同一玻璃材质。保留原有布局、字号、图标、间距和圆角；API 赠送额度卡是本次新增功能。
+
+页面背景使用现有主题的蓝／紫颜色生成柔和渐变。卡片共享单独记录的背景层，不捕获自身，也不逐卡片进行 GPU 像素采样；弹窗仍采样真实页面。API 33+ 使用边缘折射与色散，API 31–32 使用模糊高光，API 29–30 使用实色。小于 32dp 的表面不使用边缘透镜。错误色、交互反馈和图表数据配色保留。所有桌面组件使用静态玻璃位图，不读取桌面壁纸。
+
+浅色、深色浓度继续独立保存；减少透明效果和系统高对比度使用实色。对共享渐变在两种主题、0／1／1.5 浓度下检查主要、次要、强调与错误文字的 4.5:1 对比度。
+
+页面覆盖：`QuotaOverview`、`TokenUsageCard`、`ResetCreditsCard`、`ApiCreditsCard`、`SubscriptionsPage`、`SettingsPage`、`AppUpdates`、`WidgetPage`、`DesktopIconSettings`、`BackgroundGuide`、`PanelHeading` 和 `QuodexApp` 页头／侧栏。共用 `GlassPanels.kt` 与 `GlassMaterial.kt`。
+
+## alpha35 历史实现与验证记录
+
 
 This changes overlay materials and adds appearance controls. Existing layout, spacing, typography, icons, corner radii, copy, touch targets, and business behavior are preserved. This alpha35 integration is based on current master; the existing floating glass navigation, subscriptions, reset cards, heatmaps and localization remain in place.
 

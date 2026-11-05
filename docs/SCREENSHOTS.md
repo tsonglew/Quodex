@@ -1,5 +1,9 @@
 # Android 原生截图与动效录屏
 
+## alpha36 全界面玻璃与 API 赠送额度（2026-11-06）
+
+[来源、示例数据与原生验证](screenshots/all-glass-alpha36/README.md)。浅深色额度、订阅、小组件、设置页和 API 赠送卡均由 API 37 arm64 模拟器的 alpha36 debug 构建直接捕获，未裁切或重绘。
+
 ## alpha35 玻璃材质（2026-11-05）
 
 [浅色设置](screenshots/glass-alpha35/glass-settings-light.png) · [深色设置](screenshots/glass-alpha35/glass-settings-dark.png)。来源为 alpha35 debug / API 37 arm64 模拟器，由 `GlassMaterialDeviceTest` 在本机示例模式中通过原生屏幕捕获保存；没有裁切、生成或重绘。滑块分别设为 40% 和 130%，截图用于展示独立偏好及实际玻璃表面。它们不代表签名发布包或真实账号验收。[实现与本轮验证](LIQUID_GLASS.md)。
