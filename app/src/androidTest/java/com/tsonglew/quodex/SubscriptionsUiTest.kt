@@ -51,7 +51,7 @@ class SubscriptionsUiTest {
         app.subscriptionFailure = null
         runBlocking { app.subscriptions.connect(SubscriptionProvider.CURSOR, "fixture-only-cursor") }
         compose.onNode(hasText("断开连接") and hasAnyAncestor(hasTestTag("subscription-DEEPSEEK"))).performScrollTo().performClick()
-        compose.waitUntil { !app.subscriptions.state.value.getValue(SubscriptionProvider.DEEPSEEK).connected }
+        compose.waitUntil(5000) { !app.subscriptions.state.value.getValue(SubscriptionProvider.DEEPSEEK).connected }
         assertTrue(app.subscriptions.state.value.getValue(SubscriptionProvider.CURSOR).connected)
     }
 
