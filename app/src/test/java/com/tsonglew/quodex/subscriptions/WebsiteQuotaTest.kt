@@ -101,6 +101,39 @@ class WebsiteQuotaTest {
         }
     }
 
+    @Test fun supplementaryWalletFailuresKeepSuccessfulGrokQuotaAndSpending() = runBlocking {
+        for ((status, body, attempts) in listOf(Triple(403, "", 1), Triple(503, "", 3),
+            Triple(200, "not-json", 1), Triple(200, "{}", 1))) {
+            MockWebServer().use { server ->
+                server.enqueue(MockResponse().setBody(grok))
+                repeat(attempts) { server.enqueue(MockResponse().setResponseCode(status).setBody(body)) }
+                val result = api(server).fetch(SubscriptionProvider.GROK, "private-session")
+                assertEquals(listOf("37", "1.234", null), result.metrics.map { it.value })
+                assertEquals(SubscriptionMetricKind.EXTRA_BALANCE, result.metrics.last().kind)
+                assertEquals(1 + attempts, server.requestCount)
+            }
+        }
+    }
+
+    @Test fun optionalWalletCooldownDoesNotThrottleThePrimaryQuota() = runBlocking {
+        MockWebServer().use { server ->
+            var clock = 1000L
+            val source = SubscriptionApi(endpoints = mapOf(SubscriptionProvider.GROK to server.url("/").toString()),
+                now = { clock }, retry = RequestRetry(now = { clock }, pause = {}))
+            server.enqueue(MockResponse().setBody(grok))
+            server.enqueue(MockResponse().setResponseCode(429).setHeader("Retry-After", "600"))
+            assertNull(source.fetch(SubscriptionProvider.GROK, "private-session").metrics.last().value)
+            server.enqueue(MockResponse().setBody(grok))
+            assertEquals("37", source.fetch(SubscriptionProvider.GROK, "private-session").metrics.first().value)
+            assertEquals(3, server.requestCount) // Quota updates; the wallet deadline is respected.
+            clock = 1600L
+            server.enqueue(MockResponse().setBody(grok))
+            server.enqueue(MockResponse().setBody("""{"usdRemainingCents":"1250"}"""))
+            assertEquals("12.50", source.fetch(SubscriptionProvider.GROK, "private-session").metrics.last().value)
+            assertEquals(5, server.requestCount)
+        }
+    }
+
     private class Store : SubscriptionStore {
         var accounts = emptyMap<SubscriptionProvider, SubscriptionAccount>()
         override fun read() = accounts

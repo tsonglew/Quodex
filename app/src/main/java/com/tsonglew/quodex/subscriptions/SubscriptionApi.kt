@@ -14,6 +14,7 @@ import kotlinx.serialization.json.*
 import java.io.IOException
 import java.time.Instant
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -44,6 +45,8 @@ class SubscriptionApi(
     private val http = client.newBuilder().followRedirects(false).followSslRedirects(false)
         .retryOnConnectionFailure(false).cookieJar(CookieJar.NO_COOKIES)
         .callTimeout(30, TimeUnit.SECONDS).connectTimeout(15, TimeUnit.SECONDS).build()
+
+    private val grokWalletRetryAt = AtomicLong()
 
     override suspend fun fetch(provider: SubscriptionProvider, credential: String): SubscriptionSnapshot {
         require(validCredential(provider, credential))
@@ -113,10 +116,23 @@ class SubscriptionApi(
         val base = endpoints.getValue(provider).toHttpUrl()
         val usageUrl = base.newBuilder().addPathSegment("v2").addPathSegment("usage-status").addQueryParameter("scope", "user").build()
         val usage = objectFrom(read(request(provider, credential).url(usageUrl).build()))
-        val balanceUrl = base.newBuilder().addPathSegment("get-complat-credit-balance").build()
-        val balance = objectFrom(read(request(provider, credential).url(balanceUrl)
-            .post("{}".toRequestBody("application/json".toMediaType())).build()))
-        return JsonObject(usage + ("accountBalance" to balance)).toString()
+        val quotaOnly = usage.toString()
+        // Validate the primary response before attempting a supplementary wallet read.
+        SubscriptionParser.parse(provider, quotaOnly, now())
+        if (now() < grokWalletRetryAt.get()) return quotaOnly
+        return try {
+            val balanceUrl = base.newBuilder().addPathSegment("get-complat-credit-balance").build()
+            val balance = objectFrom(read(request(provider, credential).url(balanceUrl)
+                .post("{}".toRequestBody("application/json".toMediaType())).build()))
+            val combined = JsonObject(usage + ("accountBalance" to balance)).toString()
+            // Invalid wallet fields are also optional; preserve valid quota and spending.
+            SubscriptionParser.parse(provider, combined, now())
+            combined
+        } catch (cancel: CancellationException) { throw cancel }
+        catch (failure: ApiFailure) {
+            failure.retryAt?.let { deadline -> grokWalletRetryAt.updateAndGet { maxOf(it, deadline) } }
+            quotaOnly
+        }
     }
 
     private suspend fun workbuddyResources(credential: String): String {
