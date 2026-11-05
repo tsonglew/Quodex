@@ -124,7 +124,12 @@ class QuotaOverviewUiTest {
         val sample = parse("""{"rate_limit":{"primary_window":{"used_percent":38,"limit_window_seconds":604800}}}""")
             .copy(resetCredits = 2)
         withOverview(sample, demo = true) {
-            compose.onAllNodesWithText("示例数据 · 非真实额度").assertCountEquals(2)
+            val sampleNotice = hasText("示例数据 · 非真实额度")
+            val resetCard = hasAnyAncestor(hasTestTag("reset-credits-card"))
+            val apiCard = hasAnyAncestor(hasTestTag("api-credits-card"))
+            compose.onNode(sampleNotice and resetCard).assertExists()
+            compose.onNode(sampleNotice and apiCard).assertExists()
+            compose.onNode(sampleNotice and !resetCard and !apiCard).assertExists()
             compose.onNodeWithText("示例更新于 ${absoluteTime(NOW, true)}").assertExists()
             compose.onNodeWithText("2 张可用").assertExists()
             val meter = compose.onNodeWithTag("quota-meter-codex:primary_window")
