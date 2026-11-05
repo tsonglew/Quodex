@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_overview">总览</string>
+    <string name="nav_accounts">账号</string>
+    <string name="nav_back">返回</string>
+    <string name="overview_intro">查看已连接服务的用量</string>
+    <string name="overview_empty">连接服务后，在这里查看额度或余额。</string>
+    <string name="overview_manage">管理账号</string>
+    <string name="overview_add">连接服务</string>
+    <string name="overview_details">用量明细</string>
+    <string name="overview_no_data">暂无用量数据</string>
+    <string name="account_intro">统一管理服务连接，用量在总览查看。</string>
+    <string name="account_attention">连接需处理</string>
+    <string name="account_codex">Codex 账号</string>
+    <string name="settings_preferences">偏好</string>
+    <string name="settings_tools">工具与支持</string>
+    <string name="settings_desktop">桌面展示</string>
+    <string name="settings_desktop_summary">小组件与额度图标</string>
+    <string name="settings_support">帮助与隐私</string>
+    <string name="settings_support_summary">问题排查、隐私与关于</string>
+    <string name="settings_refresh">后台刷新</string>
+    <string name="settings_refresh_scope">适用于 Codex 及其桌面展示；其他服务在打开页面或手动刷新时更新。</string>
+    <string name="overview_refresh">刷新已连接服务</string>
+    <string name="overview_cached">上次保存的数据</string>
+    <string name="settings_remaining_scope">用于 Codex 额度和桌面额度小组件。</string>
+</resources>

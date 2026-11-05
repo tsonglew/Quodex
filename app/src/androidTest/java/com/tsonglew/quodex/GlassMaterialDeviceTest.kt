@@ -42,7 +42,7 @@ class GlassMaterialDeviceTest {
                 app.repository.demo()
             }
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-                compose.onNodeWithTag("tab-settings").performClick()
+                compose.openSettingsPage("appearance")
                 compose.onNodeWithTag("glass-settings").performScrollToVisible(compose).performClick()
                 compose.onNodeWithTag("glass-light-tint").performSemanticsAction(SemanticsActions.SetProgress) { it(0.4f) }
                 compose.waitUntil(5_000) { runBlocking { app.settings.read().glass.lightTint == 0.4f } }
@@ -56,7 +56,7 @@ class GlassMaterialDeviceTest {
                 compose.onNodeWithTag("glass-settings-close").performClick()
                 compose.onNodeWithTag("theme-dark").performScrollToVisible(compose).performClick()
                 scenario.recreate()
-                compose.onNodeWithTag("tab-settings").performClick()
+                compose.openSettingsPage("appearance")
                 compose.onNodeWithTag("glass-settings").performScrollToVisible(compose).performClick()
                 compose.onNodeWithTag("reduce-transparency").assertIsOn().performClick()
                 compose.onNodeWithTag("glass-dark-tint").assertIsEnabled()

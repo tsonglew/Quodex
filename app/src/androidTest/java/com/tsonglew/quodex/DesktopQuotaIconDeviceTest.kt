@@ -64,7 +64,7 @@ class DesktopQuotaIconDeviceTest {
 
     @Test fun settingsPreviewSelectsWindowAndCanRestoreOriginalLogo() {
         runBlocking { app.repository.demo(demoSnapshot(java.time.Instant.now().epochSecond)) }
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openSettingsPage("desktop")
         compose.onNodeWithTag("desktop-icon-preview").performScrollToVisible(compose)
         compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("Quodex · 示例 · 5 小时额度 剩余 36%").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("desktop-icon-window-weekly").performScrollToVisible(compose).performClick()
@@ -81,7 +81,7 @@ class DesktopQuotaIconDeviceTest {
         app.settings.desktopIconWindow("weekly")
         app.usedPercent = 38
         app.repository.connect(Session("test-access", "test-refresh", "test-account", Long.MAX_VALUE))
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openSettingsPage("desktop")
         compose.onNodeWithTag("add-desktop-icon").performScrollToVisible(compose).performClick()
         if (shortcuts.pinnedShortcuts.none { it.id == DesktopQuotaIcon.SHORTCUT_ID }) confirmPinDialog()
         waitFor { shortcuts.pinnedShortcuts.any { it.id == DesktopQuotaIcon.SHORTCUT_ID } }
