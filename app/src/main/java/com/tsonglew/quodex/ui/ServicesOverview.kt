@@ -38,12 +38,15 @@ internal fun ServicesOverview(state: AppState, prefs: PreferencesState, model: M
         if (!state.demo && !initialized && !storageUnavailable) {
             LinearProgressIndicator(Modifier.fillMaxWidth().testTag("overview-loading"))
         }
-        if (!hasCodex && providers.isEmpty() && initialized && !storageUnavailable) {
+        if (storageUnavailable && !state.demo) {
+            Text(texts(R.string.subscription_storage_unreadable), color = MaterialTheme.colorScheme.error)
+        }
+        if (!hasCodex && providers.isEmpty() && (initialized || storageUnavailable)) {
             Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(texts(R.string.overview_empty), style = MaterialTheme.typography.bodyLarge)
+                    if (!storageUnavailable) Text(texts(R.string.overview_empty), style = MaterialTheme.typography.bodyLarge)
                     Button(onClick = onAccounts, modifier = Modifier.fillMaxWidth().testTag("connect-service")) {
-                        Text(texts(R.string.overview_add))
+                        Text(texts(if (storageUnavailable) R.string.overview_manage else R.string.overview_add))
                     }
                     ConnectButton(texts(R.string.connect_codex), model::startLogin,
                         modifier = Modifier.fillMaxWidth().testTag("connect-button"))
@@ -52,9 +55,6 @@ internal fun ServicesOverview(state: AppState, prefs: PreferencesState, model: M
                     }
                 }
             }
-        }
-        if (storageUnavailable && !state.demo) {
-            Text(texts(R.string.subscription_storage_unreadable), color = MaterialTheme.colorScheme.error)
         }
         if (hasCodex) {
             val snapshot = state.snapshot
