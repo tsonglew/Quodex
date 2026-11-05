@@ -240,3 +240,7 @@ API 31 ARM64 模拟器中，`TokenUsageDeviceTest` 最终 3 项通过（7.120 �
 本地 152 项 JVM 回归、debug lint（0 错误、43 项既有警告）、App 与测试 APK 构建通过。API 31 的 `StorageDeviceTest` 两项偏好测试通过，覆盖独立配置、相反实例值的全局同步、主题保留、未配置实例继承、重新读取和再次统一。新增 `WidgetDisplayPreferenceTest` 实际点击 App 开关，在两个标准组件和一个紧凑组件中验证剩余 62%→已用 38%→剩余 62%，检查标签、主题与请求计数；不由测试额外调用刷新来完成切换。最终专项通过（5.465 秒），已查看 `used.png`／`remaining.png`，三组件的数字、进度条与口径一致。
 
 证据位于本机忽略目录 `artifacts/widget-display-validation/`：`gradle.log`、`device-build-capture.log`、`device-tests.txt`（两项偏好通过与首轮宿主失败）、`widget-test-capture.txt` 和两张最终截图。测试宿主与 App 使用独立任务，避免 ActivityScenario 清理 App 任务时同时销毁模拟桌面；返回宿主并确认窗口焦点，等待绘制帧后截图。早期空白／旧帧截图不作为视觉通过证据。本次未运行远端 CI 或 OEM Launcher 验收。
+
+## 2026-11-06 导航开发预览
+
+基于 alpha35，254 项 JVM 测试通过；debug lint 0 错误、75 警告，App 与设备测试 APK 构建通过。API 31 共 28 项不同设备回归通过，覆盖三入口、服务连接与隔离、页面返回与恢复、320dp／200% 字体、1280×800 宽屏、趋势、语言、外观和桌面图标配置。宽屏先在手机集合中按条件跳过，再单独改变临时模拟器配置验证通过。完整来源、最终截图与范围见 [导航验证](NAVIGATION.md)。尚未合并、发布或部署官网预览。

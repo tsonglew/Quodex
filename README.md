@@ -27,6 +27,18 @@
 > [!NOTE]
 > Quodex 目前处于 **Alpha 预发布**阶段，是独立第三方工具，与 OpenAI、DeepSeek、OpenCode 或 Cursor 无隶属关系。兼容接口、账号覆盖和后台行为的边界见[支持范围](docs/SUPPORT.md)。
 
+## 导航与玻璃界面（alpha36 源码）
+
+沿用主分支新的三个入口 **总览 / 账号 / 设置**：总览展示已连接服务的关键额度或余额，点服务标题进入明细；账号集中管理 Codex、DeepSeek、OpenCode 和 Cursor 的连接；设置改为紧凑分组列表。小组件和桌面额度图标统一放在 **设置 → 桌面展示**，Codex 退出迁至 **账号 → Codex**。
+
+冷启动时先读取本机连接，再决定是否显示添加服务提示；已有 Codex 摘要可先显示，其他服务的读取不会阻塞它。
+
+| 多服务总览 | 统一账号管理 | 紧凑设置 |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/all-glass-alpha36/all-glass-quota-light.png" width="230" alt="alpha36 debug：多服务总览，API 37 模拟器，示例数据" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-subscriptions-light.png" width="230" alt="alpha36 debug：统一账号入口，API 37 模拟器，示例模式" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-settings-light.png" width="230" alt="alpha36 debug：紧凑设置列表，API 37 模拟器" /> |
+
+截图直接来自融合导航改版的本次 debug 构建，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。当前已发布包仍为 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1)，保留四页导航。
+
 ## 界面一览
 
 | 订阅与余额 | Codex 用量趋势 | 桌面小组件 |
@@ -47,7 +59,7 @@
 
 | alpha36 全界面玻璃 · 浅色 | alpha36 全界面玻璃 · 深色 |
 | --- | --- |
-| <img src="docs/screenshots/all-glass-alpha36/all-glass-quota-light.png" width="240" alt="alpha36 debug 浅色玻璃额度页，含 API 赠送额度卡，示例数据" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-settings-dark.png" width="240" alt="alpha36 debug 深色玻璃设置页，示例模式" /> |
+| <img src="docs/screenshots/all-glass-alpha36/all-glass-quota-light.png" width="240" alt="alpha36 debug 浅色玻璃多服务总览，示例数据" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-settings-dark.png" width="240" alt="alpha36 debug 深色玻璃设置页，示例模式" /> |
 
 以上为本轮 alpha36 debug / API 37 模拟器原生截图，未裁切或重绘；赠送额度均为合成示例，不代表真实账号。[截图来源与范围](docs/screenshots/all-glass-alpha36/README.md)。
 
@@ -55,7 +67,7 @@
 
 1. 在 [GitHub Releases](https://github.com/tsonglew/Quodex/releases) 选择包含 APK 附件的发布记录，下载 `Quodex-<版本>.apk`。需要核验时，同页提供 `SHA256SUMS` 和 `provenance.json`。
 2. 在 **Android 10 或更高版本**安装。系统可能要求允许浏览器安装应用；Quodex 尚未上架 Google Play。
-3. 打开 App，可先体验**示例模式**，再连接 Codex；其他服务在“订阅”页单独连接，不要求先登录 Codex。
+3. 打开 App，可先体验**示例模式**，再连接 Codex；源码版在“账号”页选择其他服务后单独连接，不要求先登录 Codex。
 4. 从系统桌面添加额度或 Token 小组件，也可在设置中添加桌面额度图标。小米／Redmi／POCO 用户可参考[桌面权限指引](docs/HOME_SCREEN_PERMISSION.md)。
 
 已有用户可在 **设置 → 应用更新**中检查、下载并安装更新。alpha33 源码改为读取独立的公开更新索引，正常检查不消耗 GitHub REST API 的共享 IP 配额；主来源连接失败时保留 API 备用通道，两者分别遵守等待时间。服务端要求等待时显示具体重试时间，到期后恢复检查按钮。alpha31／alpha32 若被旧接口限流，可从 Releases 下载已发布的新版本覆盖安装，保留本机数据。安装由 Android 弹窗确认；正式签名包与本地 debug 包不能直接相互覆盖。
@@ -77,7 +89,7 @@
 
 **玻璃材质。** 文字区域优先保证对比度，低浓度仍保留可读性下限；所有桌面组件使用静态玻璃位图，不读取或模糊壁纸；Token 热力图保持用量配色。“减少透明效果”也适用于既有悬浮导航。alpha36 为本轮源码版本，是否已发布以 Releases 的实际 APK 为准。[实现与验证](docs/LIQUID_GLASS.md)
 
-**重置卡查询。** 在额度页查看张数，点“查看明细”获取卡片；已展开时，额度刷新后会检查五分钟明细缓存，也可点“刷新明细”。服务端可能只返回部分明细，数量未知不会显示为零；到期时间按手机时区显示，实际可用性以服务端为准。明细失败不影响额度，不新增后台明细请求。使用卡片请前往 Codex。真实账号覆盖仍待验证。
+**重置卡查询。** 在总览 → Codex 明细查看张数，点“查看明细”获取卡片；已展开时，额度刷新后会检查五分钟明细缓存，也可点“刷新明细”。服务端可能只返回部分明细，数量未知不会显示为零；到期时间按手机时区显示，实际可用性以服务端为准。明细失败不影响额度，不新增后台明细请求。使用卡片请前往 Codex。真实账号覆盖仍待验证。
 
 **订阅查询有明确边界。** 新服务仅前台查询，不进入 Codex 桌面组件、Token 图表或后台同步；Console 与 Cursor 为实验性兼容接入，Go 存在接口迁移风险，真实账号覆盖仍待验收。[接入步骤与兼容说明](docs/SUBSCRIPTIONS.md)
 

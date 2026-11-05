@@ -25,6 +25,34 @@ class SubscriptionRepositoryTest {
         override fun reset() { write(emptyMap()); failRead = false; resets++ }
     }
 
+    @Test fun initializationWaitsForSavedAccountsBeforeReportingReady() = runBlocking {
+        val saved = MemoryStore().apply {
+            accounts = mapOf(provider to SubscriptionAccount("saved-key", snapshot()))
+        }
+        val started = CompletableDeferred<Unit>()
+        val finish = java.util.concurrent.CountDownLatch(1)
+        val store = object : SubscriptionStore by saved {
+            override fun read(): Map<SubscriptionProvider, SubscriptionAccount> {
+                started.complete(Unit)
+                check(finish.await(5, java.util.concurrent.TimeUnit.SECONDS))
+                return saved.read()
+            }
+        }
+        val repo = SubscriptionRepository({ _, _ -> error("must use cache") }, store)
+        val loading = launch { repo.initialize() }
+        try {
+            withTimeout(5_000) { started.await() }
+            assertFalse(repo.initialized.value)
+            assertFalse(repo.storageUnavailable.value)
+        } finally {
+            finish.countDown()
+        }
+        loading.join()
+        assertTrue(repo.initialized.value)
+        assertTrue(repo.state.value.getValue(provider).connected)
+        assertEquals(saved.accounts.getValue(provider).snapshot, repo.state.value.getValue(provider).snapshot)
+    }
+
     @Test fun restartRestoresEachProviderWithoutExposingCredentialsInUi() = runBlocking {
         val store = MemoryStore()
         val repo = SubscriptionRepository({ p, _ -> snapshot(p) }, store)
@@ -127,9 +155,11 @@ class SubscriptionRepositoryTest {
         val repo = SubscriptionRepository({ p, _ -> calls++; snapshot(p) }, store)
         repo.connect(provider, "new-key")
         assertTrue(repo.storageUnavailable.value)
+        assertFalse(repo.initialized.value)
         assertEquals(0, calls)
         repo.resetUnreadableStorage()
         assertFalse(repo.storageUnavailable.value)
+        assertTrue(repo.initialized.value)
         assertEquals(1, store.resets)
         repo.connect(provider, "new-key")
         assertTrue(repo.state.value.getValue(provider).connected)

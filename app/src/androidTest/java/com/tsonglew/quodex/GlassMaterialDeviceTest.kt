@@ -44,11 +44,16 @@ class GlassMaterialDeviceTest {
                 for (theme in listOf("light", "dark")) {
                     runBlocking { app.settings.theme(theme) }
                     scenario.recreate()
-                    for (tab in listOf("quota", "subscriptions", "widgets", "settings")) {
+                    for (tab in listOf("quota", "subscriptions", "settings")) {
+                        compose.onNodeWithTag("tab-$tab").performClick()
+                        // Selecting an already selected tab returns from its remembered detail route.
                         compose.onNodeWithTag("tab-$tab").performClick()
                         compose.onNodeWithTag("page-$tab").assertIsDisplayed()
                         screenshot("all-glass-$tab-$theme")
                     }
+                    compose.openSettingsPage("desktop")
+                    compose.onNodeWithTag("page-settings").assertIsDisplayed()
+                    screenshot("all-glass-widgets-$theme")
                 }
             }
         } finally {
@@ -72,7 +77,7 @@ class GlassMaterialDeviceTest {
                 app.repository.demo()
             }
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-                compose.onNodeWithTag("tab-settings").performClick()
+                compose.openSettingsPage("appearance")
                 compose.onNodeWithTag("glass-settings").performScrollToVisible(compose).performClick()
                 compose.onNodeWithTag("glass-light-tint").performSemanticsAction(SemanticsActions.SetProgress) { it(0.4f) }
                 compose.waitUntil(5_000) { runBlocking { app.settings.read().glass.lightTint == 0.4f } }
@@ -86,7 +91,7 @@ class GlassMaterialDeviceTest {
                 compose.onNodeWithTag("glass-settings-close").performClick()
                 compose.onNodeWithTag("theme-dark").performScrollToVisible(compose).performClick()
                 scenario.recreate()
-                compose.onNodeWithTag("tab-settings").performClick()
+                compose.openSettingsPage("appearance")
                 compose.onNodeWithTag("glass-settings").performScrollToVisible(compose).performClick()
                 compose.onNodeWithTag("reduce-transparency").assertIsOn().performClick()
                 compose.onNodeWithTag("glass-dark-tint").assertIsEnabled()

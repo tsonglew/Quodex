@@ -20,6 +20,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val state = app.repository.state
     val updates = app.updates.state
     val subscriptions = app.subscriptions.state
+    val subscriptionsInitialized = app.subscriptions.initialized
     val subscriptionStorageUnavailable = app.subscriptions.storageUnavailable
     fun loadSubscriptions() {
         SubscriptionProvider.entries.forEach { provider ->

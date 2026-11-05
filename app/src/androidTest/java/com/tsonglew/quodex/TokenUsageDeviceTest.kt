@@ -89,13 +89,14 @@ class TokenUsageDeviceTest {
         compose.onNodeWithTag("token-trend-total").assertTextEquals("57,000")
         compose.onNodeWithText("仍显示上次获取的数据。", substring = true).performScrollToVisible(compose).assertIsDisplayed()
         screenshot("token-trend-cached-error")
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openCodexAccount()
         compose.onNodeWithTag("logout-button").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("confirm-logout").performClick()
         compose.onNodeWithTag("tab-quota").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("connect-button").fetchSemanticsNodes().isNotEmpty() }
         assertNull(app.repository.state.value.snapshot)
         runBlocking { app.repository.connect(Session("test-access", "test-refresh", "another-test-account", Long.MAX_VALUE)) }
+        compose.openCodexDetails()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("token-usage-card").fetchSemanticsNodes().isNotEmpty() }
         assertNull(app.repository.state.value.snapshot?.tokenUsage)
         compose.onNodeWithTag("token-trend-total").assertDoesNotExist()
@@ -104,8 +105,9 @@ class TokenUsageDeviceTest {
     @Test fun demoTrendSwitchesPeriodsInDarkThemeWithoutRequestingAccountUsage() {
         val requests = app.tokenUsageRequests.get()
         compose.onNodeWithTag("demo-button").performClick()
+        compose.openCodexDetails()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("token-usage-card").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openSettingsPage("appearance")
         compose.onNodeWithTag("theme-dark").performClick()
         compose.onNodeWithTag("tab-quota").performClick()
         compose.onNodeWithTag("token-trend-30").performScrollToVisible(compose).performClick().assertIsSelected()
@@ -120,6 +122,7 @@ class TokenUsageDeviceTest {
 
     @Test fun calendarUsesCardWidthAndAdaptsHeightToTheSelectedPeriod() {
         compose.onNodeWithTag("demo-button").performClick()
+        compose.openCodexDetails()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("token-usage-card").fetchSemanticsNodes().isNotEmpty() }
         chooseChart("heatmap")
         var sevenDayHeight = 0
@@ -158,7 +161,7 @@ class TokenUsageDeviceTest {
         compose.onNodeWithTag("token-trend-30").assertIsSelected()
         // A later tab change must not be overridden by the consumed launch request.
         compose.onNodeWithTag("tab-settings").performClick()
-        compose.onNodeWithTag("logout-button").assertExists()
+        compose.onNodeWithTag("settings-appearance").assertExists()
     }
 
     @Test fun bothPeriodsSwitchChartTypesWithoutRequestsAndChoiceSurvivesRecreation() {
@@ -204,6 +207,7 @@ class TokenUsageDeviceTest {
             app.repository.connect(Session("test-access", "test-refresh", "test-account", Long.MAX_VALUE))
             app.repository.refreshTokenUsage(force = true)
         }
+        compose.openCodexDetails()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("token-trend-chart").fetchSemanticsNodes().isNotEmpty() }
     }
 
