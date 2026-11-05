@@ -20,7 +20,7 @@
 
 ## alpha32 源码中的订阅连接
 
-`SubscriptionApi` 仅向所选服务的固定 HTTPS 域名发 GET 请求，禁止重定向；Cursor 使用单一会话 Cookie，其余使用 Bearer API key。完整地址、权限与来源见 [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md)。凭据及对应快照作为一笔 AES-GCM 加密事务保存在 `noBackupFilesDir/subscriptions.enc`，不写入诊断或保存界面状态。每个服务独立断开，设置中的 Codex 退出仅影响 Codex。新服务只在订阅页前台刷新，不加入后台任务或桌面小组件；示例数据不联网。
+`SubscriptionApi` 仅向所选服务的固定 HTTPS 域名发 GET 请求，禁止重定向；Cursor 使用单一会话 Cookie，其余使用 Bearer API key。完整地址、权限与来源见 [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md)。凭据及对应快照作为一笔 AES-GCM 加密事务保存在 `noBackupFilesDir/subscriptions.enc`，不写入诊断或保存界面状态。每个服务独立断开，账号 → Codex 中的退出仅影响 Codex。导航开发版在进入应用或账号页面时前台刷新这些服务（五分钟缓存），也可手动刷新，不加入后台任务或桌面小组件；示例数据不联网。
 
 ## 重置卡明细（2026-11-04，alpha34 源码）
 

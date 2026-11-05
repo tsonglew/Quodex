@@ -9,7 +9,7 @@ ui = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ui)
 
 
-def screen(target='[300,1010][700,1060]', labels=('Quota', 'Widgets', 'Settings'), rail=False):
+def screen(target='[300,1010][700,1060]', labels=('Overview', 'Accounts', 'Settings'), rail=False):
     root = ET.fromstring('<hierarchy><node text="Settings" bounds="[20,20][200,80]" />'
                          f'<node text="Privacy and data" bounds="{target}" /></hierarchy>')
     for index, label in enumerate(labels):
@@ -37,12 +37,18 @@ class ReleaseUiSmokeTests(unittest.TestCase):
         self.assertFalse(ui.covered_by_navigation(ui.find('Privacy and data', tree), tree))
 
     def test_localized_tabs_remain_clickable_despite_repeated_heading(self):
-        for labels in [('Quota', 'Widgets', 'Settings'), ('额度', '小组件', '设置'), ('使用枠', 'ウィジェット', '設定')]:
+        for labels in [('Overview', 'Accounts', 'Settings'), ('总览', '账号', '设置'), ('概要', 'アカウント', '設定'),
+                       ('Quota', 'Widgets', 'Settings'), ('额度', '小组件', '设置'), ('使用枠', 'ウィジェット', '設定')]:
             tree = screen(labels=labels)
             tabs = ui.navigation_items(tree)
             self.assertEqual(3, len(tabs))
             for label, _ in tabs:
                 self.assertFalse(ui.covered_by_navigation(label, tree))
+
+    def test_tab_click_uses_navigation_bounds_instead_of_repeated_heading(self):
+        with patch.object(ui, 'nodes', return_value=screen()), patch.object(ui, 'shell') as shell:
+            ui.click_tab('Settings')
+        self.assertEqual(call('input', 'tap', '770', '1050'), shell.call_args)
 
     def test_dialog_without_navigation_and_wide_rail_are_not_treated_as_bottom_overlay(self):
         dialog = ET.fromstring('<hierarchy><node text="Close" bounds="[300,1010][700,1060]" /></hierarchy>')

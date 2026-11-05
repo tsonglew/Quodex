@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_overview">概要</string>
+    <string name="nav_accounts">アカウント</string>
+    <string name="nav_back">戻る</string>
+    <string name="overview_intro">接続中のサービスの使用状況</string>
+    <string name="overview_empty">サービスを接続すると、利用枠や残高をここで確認できます。</string>
+    <string name="overview_manage">アカウント管理</string>
+    <string name="overview_add">サービスを接続</string>
+    <string name="overview_details">使用状況の詳細</string>
+    <string name="overview_no_data">使用データはまだありません</string>
+    <string name="account_intro">サービスの接続を管理します。使用状況は概要で確認できます。</string>
+    <string name="account_attention">接続の確認が必要</string>
+    <string name="account_codex">Codex アカウント</string>
+    <string name="settings_preferences">環境設定</string>
+    <string name="settings_tools">ツールとサポート</string>
+    <string name="settings_desktop">ホーム画面</string>
+    <string name="settings_desktop_summary">ウィジェットと利用枠アイコン</string>
+    <string name="settings_support">ヘルプとプライバシー</string>
+    <string name="settings_support_summary">診断、プライバシー、アプリについて</string>
+    <string name="settings_refresh">バックグラウンド更新</string>
+    <string name="settings_refresh_scope">Codex とそのホーム画面表示に適用します。他のサービスは画面を開いたとき、または手動で更新されます。</string>
+    <string name="overview_refresh">接続中のサービスを更新</string>
+    <string name="overview_cached">前回保存したデータ</string>
+    <string name="settings_remaining_scope">Codex と利用枠ウィジェットに適用します。</string>
+</resources>

@@ -155,3 +155,14 @@ APK SHA-256：`103210317eb8b455dcb1bb4d44ad93ab24eb3ee6b624b0be4ded147ef52d634f`
 ## 重置卡信息（alpha34 开发版，2026-11-04）
 
 [原生组件截图与来源](screenshots/reset-credits-alpha34/README.md)：中文、英文、日语，浅色和深色的重置卡数量与展开明细。均为模拟器合成示例数据，不代表真实账号；保留的 alpha31／32／33 截图仍为历史资料。
+
+## 导航开发预览（2026-11-06）
+
+基于 alpha35，API 31 模拟器直接捕获的 debug 全屏图，示例数据，尚未发布。
+
+- [多服务总览](screenshots/navigation-preview/navigation-overview-light.png)
+- [账号](screenshots/navigation-preview/navigation-accounts-light.png)
+- [紧凑设置／浅色](screenshots/navigation-preview/navigation-settings-light.png)
+- [紧凑设置／深色](screenshots/navigation-preview/navigation-settings-dark.png)
+
+[路径与验证范围](NAVIGATION.md)。此前截图保留对应历史版本含义。

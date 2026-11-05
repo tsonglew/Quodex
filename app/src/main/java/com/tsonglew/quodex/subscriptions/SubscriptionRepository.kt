@@ -19,7 +19,8 @@ class SubscriptionRepository(
     private val locks = SubscriptionProvider.entries.associateWith { Mutex() }
     private val generations = SubscriptionProvider.entries.associateWith { AtomicLong() }
     private var accounts: Map<SubscriptionProvider, SubscriptionAccount> = emptyMap()
-    private var initialized = false
+    private val mutableInitialized = MutableStateFlow(false)
+    val initialized = mutableInitialized.asStateFlow()
     private var storageFailed = false
     private val mutableStorageUnavailable = MutableStateFlow(false)
     val storageUnavailable = mutableStorageUnavailable.asStateFlow()
@@ -28,16 +29,16 @@ class SubscriptionRepository(
 
     suspend fun initialize() = withContext(Dispatchers.IO) {
         storageLock.withLock {
-            if (initialized) return@withLock
+            if (initialized.value) return@withLock
             try {
                 accounts = store.read()
                 require(accounts.all { (provider, account) -> account.snapshot.provider == provider })
                 mutable.value = SubscriptionProvider.entries.associateWith { provider ->
                     SubscriptionState(accounts.containsKey(provider), accounts[provider]?.snapshot)
                 }
-                initialized = true
                 storageFailed = false
                 mutableStorageUnavailable.value = false
+                mutableInitialized.value = true
             } catch (cancel: CancellationException) { throw cancel }
             catch (_: Exception) {
                 storageFailed = true
@@ -51,15 +52,15 @@ class SubscriptionRepository(
     suspend fun resetUnreadableStorage() = withContext(Dispatchers.IO) {
         initialize() // Retry first: a transient Keystore/storage failure may have recovered.
         storageLock.withLock {
-            if (initialized || !storageFailed) return@withLock
+            if (initialized.value || !storageFailed) return@withLock
             try {
                 store.reset()
                 accounts = emptyMap()
                 generations.values.forEach { it.incrementAndGet() }
-                initialized = true
                 storageFailed = false
                 mutableStorageUnavailable.value = false
                 mutable.value = SubscriptionProvider.entries.associateWith { SubscriptionState() }
+                mutableInitialized.value = true
             } catch (cancel: CancellationException) { throw cancel }
             catch (_: Exception) {
                 mutable.update { it.mapValues { (_, value) -> value.copy(failure = FailureKind.STORAGE) } }

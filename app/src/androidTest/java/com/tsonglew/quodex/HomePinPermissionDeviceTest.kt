@@ -41,12 +41,12 @@ class HomePinPermissionDeviceTest {
                 QuodexApp(model)
             }
         }
-        compose.onNodeWithTag("tab-widgets").performClick()
+        compose.openSettingsPage("desktop")
         for (tag in listOf("add-widget-button", "add-slim-widget-button", "add-heatmap-widget-button")) {
             compose.onNodeWithTag(tag).performScrollToVisible(compose).performClick()
             checkSettingsAndDismiss(settings)
         }
-        compose.onNodeWithTag("tab-settings").performClick()
+        compose.openSettingsPage("desktop")
         compose.waitUntil(5_000) { model.desktopIconAvailability.value.supported }
         val alreadyPinned = model.desktopIconAvailability.value.pinned
         compose.onNodeWithTag("add-desktop-icon").performScrollToVisible(compose).performClick()

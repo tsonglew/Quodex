@@ -27,6 +27,18 @@
 > [!NOTE]
 > Quodex 目前处于 **Alpha 预发布**阶段，是独立第三方工具，与 OpenAI、DeepSeek、OpenCode 或 Cursor 无隶属关系。兼容接口、账号覆盖和后台行为的边界见[支持范围](docs/SUPPORT.md)。
 
+## 导航整理（开发预览，尚未发布）
+
+基于 alpha35 将四个入口收为 **总览 / 账号 / 设置**：总览展示已连接服务的关键额度或余额，点服务标题进入明细；账号集中管理 Codex、DeepSeek、OpenCode 和 Cursor 的连接；设置改为紧凑分组列表。小组件和桌面额度图标统一放在 **设置 → 桌面展示**，Codex 退出迁至 **账号 → Codex**。
+
+冷启动时先读取本机连接，再决定是否显示添加服务提示；已有 Codex 摘要可先显示，其他服务的读取不会阻塞它。
+
+| 多服务总览 | 统一账号管理 | 紧凑设置 |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/navigation-preview/navigation-overview-light.png" width="230" alt="alpha35 基线导航开发版：多服务总览，API 31 模拟器，示例数据" /> | <img src="docs/screenshots/navigation-preview/navigation-accounts-light.png" width="230" alt="alpha35 基线导航开发版：统一账号入口，API 31 模拟器，示例模式" /> | <img src="docs/screenshots/navigation-preview/navigation-settings-light.png" width="230" alt="alpha35 基线导航开发版：紧凑设置列表，API 31 模拟器" /> |
+
+截图直接来自本次 debug 构建，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。当前已发布包仍为 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1)，保留四页导航。
+
 ## 界面一览
 
 | 订阅与余额 | Codex 用量趋势 | 桌面小组件 |

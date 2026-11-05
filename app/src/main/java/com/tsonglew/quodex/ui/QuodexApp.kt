@@ -1,6 +1,9 @@
 package com.tsonglew.quodex.ui
 
 import com.tsonglew.quodex.i18n.*
+import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import com.tsonglew.quodex.subscriptions.SubscriptionProvider
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Canvas
@@ -67,11 +70,26 @@ fun QuodexApp(model: MainViewModel) {
         while (true) { value = Instant.now().epochSecond; delay(30_000) }
     }
     var tab by rememberSaveable { mutableStateOf("quota") }
+    val overviewRoute = rememberSaveable { mutableStateOf("") }
+    val accountsRoute = rememberSaveable { mutableStateOf("") }
+    val settingsRoute = rememberSaveable { mutableStateOf("") }
+    var route by when (tab) {
+        "quota" -> overviewRoute
+        "subscriptions" -> accountsRoute
+        else -> settingsRoute
+    }
+    var subscriptionExamples by rememberSaveable { mutableStateOf(false) }
+    val subscriptions by model.subscriptions.collectAsStateWithLifecycle()
+    LaunchedEffect(state.initialized, state.demo) {
+        if (state.initialized && !state.demo) model.loadSubscriptions()
+    }
+    BackHandler(route.isNotEmpty()) { route = "" }
     val heatmapLaunch by model.heatmapLaunch.collectAsStateWithLifecycle()
     var handledHeatmapLaunch by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(heatmapLaunch) {
         if (heatmapLaunch != null && heatmapLaunch != handledHeatmapLaunch) {
             tab = "quota"
+            overviewRoute.value = "codex"
             handledHeatmapLaunch = heatmapLaunch
         }
     }
@@ -90,9 +108,23 @@ fun QuodexApp(model: MainViewModel) {
         }
     }
     val pageStates = rememberSaveableStateHolder()
-    val destinations = listOf(Triple("quota", texts(R.string.quota), Icons.Outlined.Dashboard),
-        Triple("subscriptions", texts(R.string.subscriptions), Icons.Outlined.AccountBalanceWallet),
-        Triple("widgets", texts(R.string.widgets), Icons.Outlined.Widgets), Triple("settings", texts(R.string.settings), Icons.Outlined.Settings))
+    val destinations = listOf(Triple("quota", texts(R.string.nav_overview), Icons.Outlined.Dashboard),
+        Triple("subscriptions", texts(R.string.nav_accounts), Icons.Outlined.AccountCircle),
+        Triple("settings", texts(R.string.settings), Icons.Outlined.Settings))
+    val selectTab: (String) -> Unit = { if (tab == it) route = ""; tab = it }
+    val provider = route.removePrefix("provider:").takeIf { route.startsWith("provider:") }
+        ?.let { name -> SubscriptionProvider.entries.firstOrNull { it.name == name } }
+    val routeTitle = when (route) {
+        "codex" -> "Codex"
+        "codex-account" -> texts(R.string.account_codex)
+        "appearance" -> texts(R.string.appearance)
+        "language" -> texts(R.string.app_language)
+        "refresh" -> texts(R.string.settings_refresh)
+        "desktop" -> texts(R.string.settings_desktop)
+        "updates" -> texts(R.string.app_updates)
+        "support" -> texts(R.string.settings_support)
+        else -> provider?.displayName ?: "Quodex"
+    }
     var glassPreview by remember { mutableStateOf<GlassPreferences?>(null) }
     QuotaTheme(prefs.theme, glassPreview ?: prefs.glass) {
         BoxWithConstraints(Modifier.fillMaxSize().captureGlassBackdrop()) {
@@ -108,11 +140,20 @@ fun QuodexApp(model: MainViewModel) {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Row(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
                         .heightIn(min = 68.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Quodex", Modifier.weight(1f), fontSize = 24.sp, letterSpacing = (-0.6).sp, fontWeight = FontWeight.Bold)
-                        if (tab == "quota" && state.snapshot != null) FilledTonalIconButton(onClick = model::refresh,
-                            enabled = !state.syncing && !state.demo, modifier = Modifier.testTag("refresh-button")) {
+                        if (route.isNotEmpty()) IconButton(onClick = { route = "" }, modifier = Modifier.testTag("navigate-back")) {
+                            Icon(Icons.AutoMirrored.Outlined.ArrowBack, texts(R.string.nav_back))
+                        }
+                        Text(if (route.isEmpty()) "Quodex" else routeTitle, Modifier.weight(1f),
+                            fontSize = if (route.isEmpty()) 24.sp else 20.sp, fontWeight = FontWeight.Bold)
+                        val overviewRefresh = tab == "quota" && route.isEmpty()
+                        if (tab == "quota" && (route.isEmpty() || route == "codex") &&
+                            (state.snapshot != null || (overviewRefresh && subscriptions.values.any { it.connected }))) FilledTonalIconButton(onClick = {
+                            if (state.connected) model.refresh()
+                            if (overviewRefresh) subscriptions.filterValues { it.connected }.keys.forEach(model::refreshSubscription)
+                        }, enabled = !state.syncing && subscriptions.values.none { overviewRefresh && it.busy } && !state.demo,
+                            modifier = Modifier.testTag("refresh-button")) {
                             if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp).semantics { contentDescription = texts(R.string.refreshing_quota) }, strokeWidth = 2.dp)
-                            else Icon(Icons.Outlined.Refresh, texts(R.string.refresh_quota))
+                            else Icon(Icons.Outlined.Refresh, texts(if (overviewRefresh) R.string.overview_refresh else R.string.refresh_quota))
                         }
                     }
                 }
@@ -122,7 +163,7 @@ fun QuodexApp(model: MainViewModel) {
                         if (useRail) NavigationRail(Modifier.fillMaxHeight(), containerColor = MaterialTheme.colorScheme.surface,
                             windowInsets = WindowInsets(0)) {
                             destinations.forEach { (id, label, icon) ->
-                                NavigationRailItem(selected = tab == id, onClick = { tab = id }, icon = { Icon(icon, null) },
+                                NavigationRailItem(selected = tab == id, onClick = { selectTab(id) }, icon = { Icon(icon, null) },
                                     colors = NavigationRailItemDefaults.colors(
                                         selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                         selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -132,18 +173,25 @@ fun QuodexApp(model: MainViewModel) {
                         }
                         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
                             // Keep each destination's render nodes separate as well as its saved state.
-                            key(tab) { pageStates.SaveableStateProvider(tab) {
+                            key(tab, route) { pageStates.SaveableStateProvider("$tab/$route") {
                                 CompositionLocalProvider(LocalBringIntoViewSpec provides bringIntoView) {
                                     Column(Modifier.widthIn(max = 640.dp).fillMaxSize()
                                         .revealOnEnter(if (tab == "quota") state.snapshot != null else Unit).testTag("page-$tab")
                                         .verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
                                         Spacer(Modifier.height(16.dp))
                                         if (tab != "settings") updates.saved.available?.let { AvailableUpdateNotice(it) }
-                                        when (tab) {
-                                            "quota" -> if (!state.initialized) CircularProgressIndicator() else key(timeRevision) { Dashboard(state, prefs, model, clock, heatmapLaunch) }
-                                            "widgets" -> WidgetPage(state, prefs)
-                                            "subscriptions" -> SubscriptionsPage(model, clock, state.demo)
-                                            else -> SettingsPage(state, prefs, model, clock, onGlassPreview = { glassPreview = it })
+                                        when {
+                                            provider != null -> SubscriptionsPage(model, clock, state, provider, subscriptionExamples && tab == "subscriptions",
+                                                onExamples = { subscriptionExamples = it })
+                                            route == "codex-account" -> CodexAccountSettings(state, model)
+                                            route == "codex" -> if (!state.initialized) CircularProgressIndicator()
+                                                else key(timeRevision) { Dashboard(state, prefs, model, clock, heatmapLaunch) }
+                                            route.isNotEmpty() -> SettingsDetail(route, state, prefs, model, clock, onGlassPreview = { glassPreview = it })
+                                            tab == "quota" -> if (!state.initialized) CircularProgressIndicator() else ServicesOverview(state, prefs, model, clock,
+                                                onOpen = { route = it }, onAccounts = { accountsRoute.value = ""; tab = "subscriptions" })
+                                            tab == "subscriptions" -> SubscriptionsPage(model, clock, state, examples = subscriptionExamples,
+                                                onExamples = { subscriptionExamples = it }, onOpen = { route = it })
+                                            else -> SettingsPage(prefs, model, onOpen = { route = it })
                                         }
                                         // Content scrolls behind the dock; only its end needs clearance.
                                         Spacer(Modifier.height(28.dp + if (useRail) 0.dp else dockHeight))
@@ -152,7 +200,7 @@ fun QuodexApp(model: MainViewModel) {
                             } }
                         }
                     }
-                    if (!useRail) FloatingNavigation(destinations, tab, { tab = it }, backdrop,
+                    if (!useRail) FloatingNavigation(destinations, tab, selectTab, backdrop,
                         Modifier.align(Alignment.BottomCenter).onSizeChanged { dockHeight = with(density) { it.height.toDp() } })
                 }
             }

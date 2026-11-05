@@ -36,6 +36,7 @@ class SubscriptionsUiTest {
 
     @Test fun connectRefreshFailureAndDisconnectKeepOtherServicesIsolated() {
         compose.onNodeWithTag("tab-subscriptions").performClick()
+        compose.openProvider("DEEPSEEK")
         compose.onNodeWithTag("subscription-connect-DEEPSEEK").performScrollTo().performClick()
         compose.onNodeWithTag("subscription-credential").performTextInput("fixture-only-deepseek")
         compose.onAllNodesWithText("连接").onLast().performClick()
@@ -65,13 +66,13 @@ class SubscriptionsUiTest {
             SubscriptionProvider.OPENCODE_GO to "subscriptions-opencode-go",
             SubscriptionProvider.OPENCODE_ZEN to "subscriptions-opencode-zen",
             SubscriptionProvider.CURSOR to "subscriptions-cursor")) {
-            if (provider == SubscriptionProvider.DEEPSEEK)
-                compose.onNodeWithTag("subscription-${provider.name}").performScrollTo()
-            else compose.onNode(hasText("官方控制台") and hasAnyAncestor(hasTestTag("subscription-${provider.name}")))
+            compose.openProvider(provider.name)
+            compose.onNode(hasText("官方控制台") and hasAnyAncestor(hasTestTag("subscription-${provider.name}")))
                 .performScrollToVisible(compose)
             compose.waitForIdle()
             saveDeviceScreenshot(InstrumentationRegistry.getInstrumentation().targetContext, file,
                 compose.onRoot().captureToImage().asAndroidBitmap())
+            compose.onNodeWithTag("navigate-back").performClick()
         }
         assertEquals(requests, app.subscriptionRequests.get())
     }
@@ -79,6 +80,7 @@ class SubscriptionsUiTest {
     @Test fun cancelFirstConnectionDoesNotSaveCredentials() {
         app.subscriptionDelayMillis = 60_000
         compose.onNodeWithTag("tab-subscriptions").performClick()
+        compose.openProvider("DEEPSEEK")
         compose.onNodeWithTag("subscription-connect-DEEPSEEK").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("subscription-credential").performTextInput("fixture-only-cancel")
         compose.onAllNodesWithText("连接").onLast().performClick()
@@ -95,7 +97,7 @@ class SubscriptionsUiTest {
             for ((language, heading, notice) in listOf(
                 Triple("en", "App language", "Sample data · not your account"),
                 Triple("ja", "アプリの言語", "サンプルデータ · 実際のアカウントではありません"))) {
-                compose.onNodeWithTag("tab-settings").performClick()
+                compose.openSettingsPage("language")
                 compose.onNodeWithTag("language-$language").performScrollToVisible(compose).performClick()
                 compose.waitUntil(10_000) { compose.onAllNodesWithText(heading).fetchSemanticsNodes().isNotEmpty() }
                 compose.onNodeWithTag("tab-subscriptions").performClick()
