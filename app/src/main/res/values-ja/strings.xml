@@ -443,4 +443,20 @@
     <string name="reduce_transparency_description">"不透明な背景を使い、屈折と色分離を無効にします。"</string>
     <string name="glass_tint_value">"%1$s · %2$s%%"</string>
     <string name="glass_tint_accessibility">"%1$sのガラスの濃さ"</string>
+
+    <string name="api_credits_title">ChatGPT API クレジット</string>
+    <string name="api_credits_description">対象の Pro・Business サブスクリプションによる API 特典です。</string>
+    <string name="api_credits_unknown">特典は未確認です</string>
+    <string name="api_credits_eligible">受け取り対象です</string>
+    <string name="api_credits_ineligible">現在は受け取り対象外です</string>
+    <string name="api_credits_benefit">サブスクリプション特典</string>
+    <string name="api_credits_expired">特典の期限切れ · 更新して確認</string>
+    <string name="api_credits_monthly">月額 US$%1$s</string>
+    <string name="api_credits_annual">年額 US$%1$s</string>
+    <string name="api_credits_claimable">今期の受取可能額：US$%1$s</string>
+    <string name="api_credits_expires">有効期限：%1$s</string>
+    <string name="api_credits_balance_unknown">残高：取得できません。特典額は API 使用分を差し引いた残高ではありません。API Platform の請求画面で確認してください。</string>
+    <string name="api_credits_unavailable">特典を読み取れません。試験的な請求サービスではブラウザーでの確認や別のログインが必要な場合があります。請求画面で確認してください。</string>
+    <string name="api_credits_open_billing">ChatGPT の請求画面を開く</string>
+    <string name="api_credits_read_only">読み取り専用です。組織の連携、クレジット受け取り、特典の解約、請求設定の変更は行いません。</string>
 </resources>

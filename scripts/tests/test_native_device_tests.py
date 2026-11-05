@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
-from scripts.native_device_tests import run_instrumentation, verify
+from scripts.native_device_tests import main, run_instrumentation, verify
 
 
 def report(passed=18, skipped=2):
@@ -30,6 +30,24 @@ class NativeDeviceTests(unittest.TestCase):
             self.assertEqual(partial, path.read_text())
             self.assertIn(partial, output.getvalue())
             self.assertNotIn('actual tests passed', output.getvalue())
+
+    def test_setup_failure_never_runs_the_suite(self):
+        with patch('scripts.native_device_tests.subprocess.run', side_effect=subprocess.CalledProcessError(1, 'adb')):
+            with patch('scripts.native_device_tests.run_instrumentation') as suite:
+                with self.assertRaises(subprocess.CalledProcessError):
+                    main()
+                suite.assert_not_called()
+
+    def test_compile_failure_is_not_reported_as_a_test_pass(self):
+        def fail_compile(command, **kwargs):
+            if 'compile' in command:
+                raise subprocess.CalledProcessError(1, command)
+            return subprocess.CompletedProcess(command, 0)
+        with patch('scripts.native_device_tests.subprocess.run', side_effect=fail_compile):
+            with patch('scripts.native_device_tests.run_instrumentation') as suite:
+                with self.assertRaises(subprocess.CalledProcessError):
+                    main()
+                suite.assert_not_called()
 
     def test_full_suite_with_conditional_skips(self):
         self.assertEqual(18, verify(report()))

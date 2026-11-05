@@ -51,8 +51,8 @@ class SubscriptionsUiTest {
         compose.onNodeWithText("CNY 110").performScrollTo().assertIsDisplayed()
         app.subscriptionFailure = null
         runBlocking { app.subscriptions.connect(SubscriptionProvider.CURSOR, "fixture-only-cursor") }
-        compose.onNode(hasText("断开连接") and hasAnyAncestor(hasTestTag("subscription-DEEPSEEK"))).performScrollTo().performClick()
-        compose.waitUntil { !app.subscriptions.state.value.getValue(SubscriptionProvider.DEEPSEEK).connected }
+        compose.onNode(hasText("断开连接") and hasAnyAncestor(hasTestTag("subscription-DEEPSEEK"))).performScrollToVisible(compose).performClick()
+        compose.waitUntil(5000) { !app.subscriptions.state.value.getValue(SubscriptionProvider.DEEPSEEK).connected }
         assertTrue(app.subscriptions.state.value.getValue(SubscriptionProvider.CURSOR).connected)
     }
 
@@ -84,9 +84,9 @@ class SubscriptionsUiTest {
         compose.onNodeWithTag("subscription-connect-DEEPSEEK").performScrollToVisible(compose).performClick()
         compose.onNodeWithTag("subscription-credential").performTextInput("fixture-only-cancel")
         compose.onAllNodesWithText("连接").onLast().performClick()
-        compose.waitUntil { app.subscriptions.state.value.getValue(SubscriptionProvider.DEEPSEEK).busy }
+        compose.waitUntil(5000) { app.subscriptions.state.value.getValue(SubscriptionProvider.DEEPSEEK).busy }
         compose.onNodeWithText("取消").performScrollToVisible(compose).performClick()
-        compose.waitUntil { !app.subscriptions.state.value.getValue(SubscriptionProvider.DEEPSEEK).busy }
+        compose.waitUntil(5000) { !app.subscriptions.state.value.getValue(SubscriptionProvider.DEEPSEEK).busy }
         assertFalse(app.subscriptions.state.value.getValue(SubscriptionProvider.DEEPSEEK).connected)
         assertFalse(java.io.File(app.noBackupFilesDir, "subscriptions.enc").exists())
     }

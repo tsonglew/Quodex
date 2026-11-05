@@ -77,7 +77,7 @@ fun TokenUsageCard(
     }
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
 
-    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
+    GlassPanel(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().padding(20.dp).testTag("token-usage-card"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             PanelHeading(texts(R.string.token_usage_trend), Icons.Outlined.BarChart)
             Text(if (demo) texts(R.string.sample_data_preview_only) else texts(R.string.account_wide_token_totals_service_dates), fontSize = 12.sp, color = secondary)
@@ -130,7 +130,7 @@ fun TokenUsageCard(
                 displayed?.peakDailyTokens?.let { TokenMetric(texts(R.string.all_time_daily_peak), it, compact) }
             }
             if (displayed?.partial == true) {
-                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.tertiaryContainer,
+                GlassPanel(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
                     Text(texts(R.string.service_data_may_be_incomplete_only_available), fontSize = 12.sp, lineHeight = 20.sp,
                         modifier = Modifier.fillMaxWidth().padding(12.dp))

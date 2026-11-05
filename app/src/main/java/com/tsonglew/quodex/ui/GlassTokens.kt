@@ -77,13 +77,15 @@ internal fun resolveGlassTokens(
     forceSolid: Boolean = false,
     restorePreviousInk: Boolean = false,
     protectUnsampledDetail: Boolean = false,
+    containerColor: Color? = null,
+    contentColor: Color? = null,
 ): GlassTokens {
     val lightInk = if (stats == null && restorePreviousInk) dark || previousLightInk
         else glassLightInk(dark, stats?.luminance, previousLightInk)
     val solid = forceSolid || preferences.reduceTransparency
     val amount = preferences.tint(dark)
-    val base = when { dark -> Color(0xFF141418); lightInk -> Color(0xFF101216); else -> Color.White }
-    val primary = if (lightInk) Color.White.copy(alpha = 0.94f) else Color.Black.copy(alpha = 0.86f)
+    val base = containerColor?.copy(alpha = 1f) ?: when { dark -> Color(0xFF141418); lightInk -> Color(0xFF101216); else -> Color.White }
+    val primary = contentColor ?: if (lightInk) Color.White.copy(alpha = 0.94f) else Color.Black.copy(alpha = 0.86f)
     val secondary = if (lightInk) Color(0xFFEBEBF5).copy(alpha = 0.64f) else Color(0xFF3C3C43).copy(alpha = 0.7f)
     val density = stats?.let {
         (0.55f * (1f - abs(it.luminance - if (lightInk) 1f else 0f)) +
@@ -92,13 +94,18 @@ internal fun resolveGlassTokens(
     val thin = when { dark -> 0.16f; lightInk -> 0.10f; else -> 0.06f }
     val dense = when { dark -> 0.38f; lightInk -> 0.30f; else -> 0.22f }
     val edgeAlpha = if (solid) 1f else ((thin + (dense - thin) * density) * amount).coerceIn(0f, 1f)
-    var alpha = edgeAlpha
+    // Semantic cues must remain recognizable even at the lowest transparency setting.
+    var alpha = if (containerColor != null && !solid) max(edgeAlpha, 0.55f) else edgeAlpha
     val brightness = 1f + ((when { dark -> 0.8f; lightInk -> 0.85f; else -> 1.06f }) - 1f) * min(amount, 1f)
     val saturation = (when { dark -> 1.6f; lightInk -> 1.7f; else -> 1.8f }) *
         max(0.45f, 1f - 0.75f * (stats?.chroma ?: 0f))
     val scheme = quodexColorScheme(lightInk)
-    val highlight = if (solid) 0f else if (lightInk) 0.10f else 0.30f
-    val foregrounds = listOf(primary, secondary, scheme.primary, scheme.error)
+    var highlight = if (solid) 0f else if (lightInk) 0.10f else 0.30f
+    val foregrounds = if (containerColor != null) listOf(primary) else listOf(primary, secondary, scheme.primary, scheme.error)
+    // The original on-container ink can require a weaker sheen on a colored surface.
+    while (highlight > 0f && foregrounds.any {
+        glassContrast(it, Color.White.copy(alpha = highlight).compositeOver(base)) < 4.5f
+    }) highlight = max(0f, highlight - 0.01f)
     // Unknown wallpaper is checked against both black and white, including at tint = 0.
     val backgrounds = stats?.samples?.map { processedGlassColor(it, saturation, brightness) }
         ?.let { if (protectUnsampledDetail) it + listOf(Color.Black, Color.White) else it }

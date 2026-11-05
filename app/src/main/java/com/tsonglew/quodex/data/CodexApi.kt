@@ -6,6 +6,7 @@ import com.tsonglew.quodex.diagnostics.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.*
 import okhttp3.*
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
@@ -31,6 +32,7 @@ class CodexApi(
     private val tokenUsageUrl: String = "https://chatgpt.com/backend-api/wham/profiles/me",
     private val requestRetry: RequestRetry = RequestRetry(now = now),
     private val resetCreditsUrl: String = "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits",
+    private val apiCreditsBaseUrl: String = "https://chatgpt.com/backend-api/product-account-links/accounts",
 ) {
     companion object {
         // Public client identifier from openai/codex; not a client secret.
@@ -41,13 +43,15 @@ class CodexApi(
     private data class Reply(val status: Int, val body: String, val retryAfter: String?)
     private val usageCooldown = AtomicReference<Pair<String, ApiFailure>?>(null)
     private val tokenCooldown = AtomicReference<Pair<String, ApiFailure>?>(null)
+    private val apiCreditsCooldown = AtomicReference<Pair<String, ApiFailure>?>(null)
     private val resetCreditsCooldown = AtomicReference<Pair<String, ApiFailure>?>(null)
     private suspend fun send(request: Request): Reply = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         suspendCancellableCoroutine { cont ->
-            val operation = when (request.url.toString()) {
-                usageUrl -> 0L
-                tokenUsageUrl -> 2L
-                resetCreditsUrl -> 3L
+            val operation = when {
+                request.url.toString() == usageUrl -> 0L
+                request.url.toString() == tokenUsageUrl -> 2L
+                request.url.toString() == resetCreditsUrl -> 3L
+                request.url.encodedPath.endsWith("/benefits/chatgpt_api_credits_promo") -> 4L
                 else -> 1L
             }
             val started = System.nanoTime()
@@ -184,6 +188,17 @@ class CodexApi(
             val reply = send(Request.Builder().url(resetCreditsUrl).header("Authorization", "Bearer ${session.accessToken}")
                 .header("ChatGPT-Account-Id", session.accountId).get().build())
             ResetCreditsParser.parse(check(reply), session.accountId, now())
+        }
+
+    /** Experimental read-only Billing adapter. A browser-only challenge is reported as unavailable. */
+    suspend fun apiCredits(session: Session, retryNetwork: Boolean = true): ApiCreditsSnapshot =
+        retryRead(session, retryNetwork, apiCreditsCooldown) {
+            val url = apiCreditsBaseUrl.toHttpUrl().newBuilder().addPathSegment(session.accountId)
+                .addPathSegment("benefits").addPathSegment("chatgpt_api_credits_promo")
+                .addQueryParameter("destination_type", "api_org").build()
+            val reply = send(Request.Builder().url(url).header("Authorization", "Bearer ${session.accessToken}")
+                .header("ChatGPT-Account-Id", session.accountId).get().build())
+            ApiCreditsParser.parse(check(reply), now())
         }
 
     private fun jwtClaims(token: String): JsonObject = try {

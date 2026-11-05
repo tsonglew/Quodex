@@ -51,7 +51,7 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
     }
     if (demo) Text(texts(R.string.subscription_sample_notice), color = MaterialTheme.colorScheme.primary)
     if (!demo && storageUnavailable) {
-        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.errorContainer) {
+        GlassPanel(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.errorContainer) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(texts(R.string.subscription_storage_unreadable))
                 OutlinedButton(onClick = model::loadSubscriptions, modifier = Modifier.fillMaxWidth()) {
@@ -88,7 +88,7 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
     listOfNotNull(selectedProvider).forEach { provider ->
         val state = if (demo) SubscriptionState(snapshot = sampleSubscription(provider, now)) else saved.getValue(provider)
         Spacer(Modifier.height(16.dp))
-        Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface,
+        GlassPanel(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth().testTag("subscription-${provider.name}")) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(provider.displayName, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)

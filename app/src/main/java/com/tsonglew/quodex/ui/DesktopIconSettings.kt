@@ -37,7 +37,7 @@ internal fun DesktopIconSettings(state: AppState, prefs: PreferencesState, model
     val content = desktopIconContent(state, prefs, texts, now)
     val bitmap = remember(context, content) { QuotaIconRenderer.render(context, content, 216).asImageBitmap() }
     val requestPin = rememberHomePinRequest { model.addDesktopIcon() }
-    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface,
+    GlassPanel(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.testTag("desktop-icon-settings")) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(texts(R.string.home_screen_quota_icon), fontSize = 14.sp, fontWeight = FontWeight.SemiBold,

@@ -42,7 +42,7 @@ internal fun ServicesOverview(state: AppState, prefs: PreferencesState, model: M
             Text(texts(R.string.subscription_storage_unreadable), color = MaterialTheme.colorScheme.error)
         }
         if (!hasCodex && providers.isEmpty() && (initialized || storageUnavailable)) {
-            Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
+            GlassPanel(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (!storageUnavailable) Text(texts(R.string.overview_empty), style = MaterialTheme.typography.bodyLarge)
                     Button(onClick = onAccounts, modifier = Modifier.fillMaxWidth().testTag("connect-service")) {
@@ -113,7 +113,7 @@ internal fun ServicesOverview(state: AppState, prefs: PreferencesState, model: M
 @Composable
 private fun ServiceSummary(name: String, plan: String, tag: String, onOpen: () -> Unit,
     content: @Composable ColumnScope.() -> Unit) {
-    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.testTag(tag)) {
+    GlassPanel(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.testTag(tag)) {
         Column {
             NavigationRow(name, plan, onOpen, Modifier.testTag("$tag-open"))
             Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),

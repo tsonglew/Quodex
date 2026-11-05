@@ -140,14 +140,14 @@ private fun requestWidgetPin(context: Context, receiver: Class<*>): Boolean = tr
 private fun WidgetLayoutPanel(title: String, description: String, addLabel: String, addTag: String,
     onAdd: () -> Unit, preview: @Composable () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    Surface(shape = RoundedCornerShape(24.dp), color = colors.surface) {
+    GlassPanel(shape = RoundedCornerShape(24.dp), color = colors.surface) {
         Column(Modifier.fillMaxWidth().padding(20.dp)) {
             Text(title, fontSize = 17.sp, lineHeight = 24.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.semantics { heading() })
             Spacer(Modifier.height(5.dp))
             Text(description, fontSize = 12.sp, lineHeight = 19.sp, color = colors.onSurfaceVariant)
             Spacer(Modifier.height(16.dp))
-            Surface(shape = RoundedCornerShape(20.dp), color = colors.background) {
+            GlassPanel(shape = RoundedCornerShape(20.dp), color = colors.background) {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) { preview() }
             }
             Spacer(Modifier.height(14.dp))

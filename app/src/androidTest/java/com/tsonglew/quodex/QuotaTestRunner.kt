@@ -81,6 +81,12 @@ class TestQuotaApplication : QuodexApplication() {
                     .code(tokenUsageStatusCode).message("Test token response")
                     .body(tokenUsageBody.toResponseBody("application/json".toMediaType())).build()
             }
+            if (chain.request().url.encodedPath.endsWith("/benefits/chatgpt_api_credits_promo")) {
+                return@addInterceptor Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                    .code(200).message("Synthetic API credit preview")
+                    .body("""{"eligible":false,"ineligibility_reason":"not_qualified","offer":null}"""
+                        .toResponseBody("application/json".toMediaType())).build()
+            }
             if (chain.request().url.encodedPath != "/backend-api/wham/usage") {
                 throw java.io.IOException("No external network in device tests")
             }

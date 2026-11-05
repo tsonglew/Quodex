@@ -208,7 +208,7 @@ internal fun CodexAccountSettings(state: AppState, model: MainViewModel) {
 
 @Composable
 internal fun SettingsGroup(content: @Composable ColumnScope.() -> Unit) {
-    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
+    GlassPanel(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth(), content = content)
     }
 }
@@ -220,7 +220,7 @@ private fun SettingsDivider() {
 
 @Composable
 private fun SettingsPanel(content: @Composable ColumnScope.() -> Unit) {
-    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
+    GlassPanel(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().padding(16.dp), content = content)
     }
 }
