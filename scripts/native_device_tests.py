@@ -20,11 +20,11 @@ def run_instrumentation(path: Path) -> None:
     path.parent.mkdir(exist_ok=True)
     try:
         with path.open('w') as output:
-            # The full 85-test Android 17 suite can reach its last test at 600s.
-            # Keep a bounded runtime within the 30-minute job, without rerunning failures.
+            # The expanded glass/UI suite is still progressing at 900s on Android 17.
+            # Keep the full suite bounded within the 50-minute job; never retry failures.
             result = subprocess.run(['adb', '-e', 'shell', 'am', 'instrument', '-r', '-w',
                                      'com.tsonglew.quodex.test/com.tsonglew.quodex.QuotaTestRunner'],
-                                    stdout=output, stderr=subprocess.STDOUT, timeout=900)
+                                    stdout=output, stderr=subprocess.STDOUT, timeout=1800)
     finally:
         # Preserve partial runner statuses in the job log even if adb times out.
         print(path.read_text())
@@ -36,6 +36,11 @@ def run_instrumentation(path: Path) -> None:
 def main() -> None:
     for apk in ('debug/app-debug.apk', 'androidTest/debug/app-debug-androidTest.apk'):
         subprocess.run(['adb', '-e', 'install', '-r', f'app/build/outputs/apk/{apk}'], check=True, timeout=120)
+    # These are freshly installed APKs on an owned, disposable CI emulator.
+    # Compile both before timing UI assertions so cold ART work does not dominate the suite.
+    for package in ('com.tsonglew.quodex', 'com.tsonglew.quodex.test'):
+        subprocess.run(['adb', '-e', 'shell', 'cmd', 'package', 'compile', '-m', 'speed', '-f', package],
+                       check=True, timeout=120)
     run_instrumentation(Path('screenshots/native-instrumentation.txt'))
 
 

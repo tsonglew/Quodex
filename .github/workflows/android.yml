@@ -134,7 +134,7 @@ jobs:
             target: google_apis_ps16k
             ram-size: 4096M
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v7
         with:
