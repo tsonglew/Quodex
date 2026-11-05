@@ -30,6 +30,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun connectSubscription(provider: SubscriptionProvider, credential: String) {
         app.subscriptionActions.connect(provider, credential, viewModelScope)
     }
+    fun importGrokSubscription(raw: String) {
+        app.subscriptionActions.importGrok(raw, viewModelScope)
+    }
     fun refreshSubscription(provider: SubscriptionProvider) {
         app.subscriptionActions.refresh(provider, viewModelScope, true)
     }

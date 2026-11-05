@@ -56,7 +56,8 @@ class SubscriptionRepositoryTest {
     @Test fun restartRestoresEachProviderWithoutExposingCredentialsInUi() = runBlocking {
         val store = MemoryStore()
         val repo = SubscriptionRepository({ p, _ -> snapshot(p) }, store)
-        SubscriptionProvider.entries.forEach { repo.connect(it, "secret-${it.name}") }
+        SubscriptionProvider.entries.forEach { repo.connect(it, if (it == SubscriptionProvider.WORKBUDDY)
+            WorkBuddySession("secret-session", "secret-chunk", "Synthetic Browser/1.0").encode() else "secret-${it.name}") }
         val restored = SubscriptionRepository({ _, _ -> error("must use cache") }, store)
         restored.initialize()
         assertTrue(restored.state.value.values.all { it.connected && it.snapshot != null })

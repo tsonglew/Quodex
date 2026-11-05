@@ -1,6 +1,6 @@
 # 隐私说明与数据流核对
 
-更新：2026-11-03。完整政策采用随 App 打包的隐私说明：[简体中文](../app/src/main/res/raw-zh/privacy_notice.txt)、[English](../app/src/main/res/raw/privacy_notice.txt)、[日本語](../app/src/main/res/raw-ja/privacy_notice.txt)，设置和连接对话框读取同一份文件，离线可查看。此页为实现核对，不是另一份政策。
+更新：2026-11-06。完整政策采用随 App 打包的隐私说明：[简体中文](../app/src/main/res/raw-zh/privacy_notice.txt)、[English](../app/src/main/res/raw/privacy_notice.txt)、[日本語](../app/src/main/res/raw-ja/privacy_notice.txt)，设置和连接对话框读取同一份文件，离线可查看。此页为实现核对，不是另一份政策。
 
 | 数据／行为 | 实现证据 |
 | --- | --- |
@@ -18,9 +18,9 @@
 
 账号连接的实际权限、续期、服务方适用范围仍由 M0 真机接入验证完成，本政策不替代其验收。当前使用 GitHub Releases 发布实验性 APK；不将隐私说明或构建预发布等同于已通过商店审核或稳定版验收。
 
-## alpha32 源码中的订阅连接
+## alpha37 源码中的订阅连接
 
-`SubscriptionApi` 仅向所选服务的固定 HTTPS 域名发 GET 请求，禁止重定向；Cursor 使用单一会话 Cookie，其余使用 Bearer API key。完整地址、权限与来源见 [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md)。凭据及对应快照作为一笔 AES-GCM 加密事务保存在 `noBackupFilesDir/subscriptions.enc`，不写入诊断或保存界面状态。每个服务独立断开，账号 → Codex 中的退出仅影响 Codex。导航开发版在进入应用或账号页面时前台刷新这些服务（五分钟缓存），也可手动刷新，不加入后台任务或桌面小组件；示例数据不联网。
+`SubscriptionApi` 仅向所选服务的固定 HTTPS 域名发送只读 GET 或 POST 查询，禁止重定向；Bearer、会话 Cookie 与团队 Basic key 按服务隔离。WorkBuddy 另保存原浏览器 User-Agent 与两段会话，仅用于国际站查询。Grok 手动导入只保存解析后的额度／费用快照，标注导入来源和时间，不保存 JSON 原文，也不自动刷新。Cursor 团队分页只累计费用，不保存姓名、邮箱或成员 ID。完整地址、权限与来源见 [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md)。凭据及对应快照作为一笔 AES-GCM 加密事务保存在 `noBackupFilesDir/subscriptions.enc`，不写入诊断或保存界面状态。每个服务独立断开，账号 → Codex 中的退出仅影响 Codex。新服务在进入应用或账号页时前台刷新（五分钟缓存），不加入后台任务或桌面小组件；示例数据不联网。
 
 ## 重置卡明细（2026-11-04，alpha34 源码）
 

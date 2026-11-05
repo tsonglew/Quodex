@@ -14,6 +14,9 @@ class SubscriptionActions(
     fun connect(provider: SubscriptionProvider, credential: String, scope: CoroutineScope) =
         query(provider, scope, replace = true) { repository.connect(provider, credential) }
 
+    fun importGrok(raw: String, scope: CoroutineScope) =
+        query(SubscriptionProvider.GROK, scope, replace = true) { repository.importGrok(raw) }
+
     fun refresh(provider: SubscriptionProvider, scope: CoroutineScope, force: Boolean = false) =
         query(provider, scope, replace = false) { repository.refresh(provider, force) }
 

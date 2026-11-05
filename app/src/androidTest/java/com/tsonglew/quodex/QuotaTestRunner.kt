@@ -30,6 +30,14 @@ class TestQuotaApplication : QuodexApplication() {
             com.tsonglew.quodex.subscriptions.SubscriptionProvider.OPENCODE_GO -> """{"usage":{"rolling":{"status":"ok","percent":24,"resetsAt":"2027-01-01T02:00:00Z"},"weekly":{"status":"ok","percent":38,"resetsAt":"2027-01-04T00:00:00Z"},"monthly":{"status":"ok","percent":46,"resetsAt":"2027-02-01T00:00:00Z"}}}"""
             com.tsonglew.quodex.subscriptions.SubscriptionProvider.OPENCODE_ZEN -> """{"billingMode":"prepaid","balanceMicroCents":"1850000000","availableMicroCents":"1850000000"}"""
             com.tsonglew.quodex.subscriptions.SubscriptionProvider.CURSOR -> """{"membershipType":"pro","billingCycleEnd":"2027-01-01T00:00:00Z","individualUsage":{"plan":{"autoPercentUsed":35,"apiPercentUsed":18,"totalPercentUsed":27}}}"""
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.KIMI -> """{"subscriptionBalance":{"unit":"UNIT_CREDIT","amountUsedRatio":0.28,"expireTime":"2027-01-01T00:00:00Z"},"boosterWallets":[{"status":"STATUS_ACTIVE","moneyLeft":{"currency":"CNY","priceInCents":"1850"}}]}"""
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.GROK -> """{"availability":"available","weeklyIncludedUsage":{"usedCents":37,"budgetCents":100,"resetsAt":"2027-01-01T00:00:00Z"},"accountBalance":{"usdRemainingCents":"1200"}}"""
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.WORKBUDDY -> """{"code":0,"data":{"Response":{"Data":{"TotalCount":1,"Accounts":[{"CapacityUnit":"credits","CycleCapacityRemainPrecise":"60","CycleCapacitySizePrecise":"100","PackageName":"Free Plan"}]}}}}"""
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.KIMI_CODE -> """{"usage":{"limit":"100","used":"28","resetTime":"2027-01-01T00:00:00Z"},"limits":[{"window":{"duration":300,"timeUnit":"TIME_UNIT_MINUTE"},"detail":{"limit":"100","used":"42","resetTime":"2027-01-01T00:00:00Z"}}]}"""
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.KIMI_API,
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.KIMI_API_GLOBAL -> """{"code":0,"status":true,"data":{"available_balance":49.58894,"voucher_balance":46.58893,"cash_balance":3.00001}}"""
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.GROK_API -> """{"total":{"val":"-2500"}}"""
+            com.tsonglew.quodex.subscriptions.SubscriptionProvider.CURSOR_BILLING -> """{"teamMemberSpend":[{"spendCents":1234,"overallSpendCents":8456}]}"""
         }
         com.tsonglew.quodex.subscriptions.SubscriptionParser.parse(provider, raw, java.time.Instant.now().epochSecond)
     }

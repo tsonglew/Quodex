@@ -88,9 +88,10 @@ internal fun ServicesOverview(state: AppState, prefs: PreferencesState, model: M
                 // Currency pools stay separate. Do not add balances across services or currencies.
                 val metrics = snapshot?.overviewMetrics().orEmpty()
                 metrics.forEach { metric ->
-                    SummaryMetric(texts(metric.kind.labelResource()), metric.formattedValue(texts),
+                    SummaryMetric(listOfNotNull(metric.label, metric.displayLabel(texts)).joinToString(" · "), metric.formattedValue(texts),
                         metric.resetsAt?.let { if (it <= now) texts(R.string.reset_unconfirmed_refresh_to_check)
-                            else texts(R.string.resets_value, absoluteTime(it, true)) })
+                            else texts(R.string.resets_value, absoluteTime(it, true)) }
+                            ?: metric.serverPeriodEnd?.let { texts(R.string.subscription_server_period_end, it) })
                 }
                 if (metrics.isEmpty()) Text(texts(R.string.overview_no_data))
                 if (snapshot?.available == false) Text(texts(R.string.subscription_api_unavailable), color = MaterialTheme.colorScheme.error)
@@ -98,7 +99,8 @@ internal fun ServicesOverview(state: AppState, prefs: PreferencesState, model: M
                     Text(if (it == FailureKind.LIMITED) texts(R.string.subscription_error_limited, absoluteTime(account.retryAt, true))
                         else texts(it.subscriptionErrorResource()), color = MaterialTheme.colorScheme.error)
                 }
-                snapshot?.let { Text(texts(R.string.subscription_updated, absoluteTime(it.fetchedAt, true)),
+                if (account.imported) Text(texts(R.string.subscription_import_notice), style = MaterialTheme.typography.bodySmall)
+                snapshot?.let { Text(texts(if (account.imported) R.string.subscription_imported_at else R.string.subscription_updated, absoluteTime(it.fetchedAt, true)),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 if (account.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             }
@@ -151,11 +153,30 @@ internal fun SubscriptionSnapshot.overviewMetrics(): List<SubscriptionMetric> = 
         ?: metrics.firstOrNull { it.kind == SubscriptionMetricKind.BALANCE })
     SubscriptionProvider.OPENCODE_GO -> metrics.filter { it.kind in setOf(SubscriptionMetricKind.ROLLING, SubscriptionMetricKind.WEEKLY) }
     SubscriptionProvider.CURSOR -> metrics.filter { it.kind in setOf(SubscriptionMetricKind.CURSOR_MODELS, SubscriptionMetricKind.OTHER_MODELS) }
+    SubscriptionProvider.KIMI, SubscriptionProvider.KIMI_CODE, SubscriptionProvider.WORKBUDDY -> metrics.take(2)
+    SubscriptionProvider.GROK -> metrics.filter { it.kind in setOf(SubscriptionMetricKind.WEEKLY, SubscriptionMetricKind.EXTRA_BALANCE) }
+    SubscriptionProvider.KIMI_API, SubscriptionProvider.KIMI_API_GLOBAL -> metrics.filter { it.kind == SubscriptionMetricKind.AVAILABLE }
+    SubscriptionProvider.GROK_API -> metrics.filter { it.kind == SubscriptionMetricKind.BALANCE }
+    SubscriptionProvider.CURSOR_BILLING -> metrics.filter { it.kind == SubscriptionMetricKind.API_SPEND }
 }
 
 internal fun SubscriptionMetric.formattedValue(texts: TextResources): String = when {
     value == null -> texts(R.string.subscription_unknown)
     currency != null -> "$currency $value"
+    unit == SubscriptionMetricUnit.CREDITS -> if (limit != null) texts(R.string.subscription_credits_of, value, limit)
+        else texts(R.string.subscription_credits, value)
     else -> texts(R.string.subscription_used, java.math.BigDecimal(value)
         .setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString())
+}
+
+internal fun SubscriptionMetric.displayLabel(texts: TextResources): String {
+    val seconds = windowSeconds
+    if (kind != SubscriptionMetricKind.QUOTA_WINDOW || seconds == null) return texts(kind.labelResource())
+    val (label, divisor) = when {
+        seconds % 86400L == 0L -> R.string.subscription_window_days to 86400L
+        seconds % 3600L == 0L -> R.string.subscription_window_hours to 3600L
+        seconds % 60L == 0L -> R.string.subscription_window_minutes to 60L
+        else -> R.string.subscription_window_seconds to 1L
+    }
+    return texts(label, (seconds / divisor).toString())
 }
