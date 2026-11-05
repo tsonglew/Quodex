@@ -14,7 +14,8 @@ import kotlinx.serialization.json.*
 import java.io.IOException
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.ConcurrentHashMap
+import okio.ByteString.Companion.encodeUtf8
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -46,7 +47,7 @@ class SubscriptionApi(
         .retryOnConnectionFailure(false).cookieJar(CookieJar.NO_COOKIES)
         .callTimeout(30, TimeUnit.SECONDS).connectTimeout(15, TimeUnit.SECONDS).build()
 
-    private val grokWalletRetryAt = AtomicLong()
+    private val grokWalletRetryAt = ConcurrentHashMap<String, Long>()
 
     override suspend fun fetch(provider: SubscriptionProvider, credential: String): SubscriptionSnapshot {
         require(validCredential(provider, credential))
@@ -119,7 +120,11 @@ class SubscriptionApi(
         val quotaOnly = usage.toString()
         // Validate the primary response before attempting a supplementary wallet read.
         SubscriptionParser.parse(provider, quotaOnly, now())
-        if (now() < grokWalletRetryAt.get()) return quotaOnly
+        // Keep retry deadlines separate without retaining raw session tokens in this cache.
+        val walletSession = credential.encodeUtf8().sha256().hex()
+        val currentTime = now()
+        grokWalletRetryAt.entries.removeIf { it.value <= currentTime }
+        if ((grokWalletRetryAt[walletSession] ?: 0L) > currentTime) return quotaOnly
         return try {
             val balanceUrl = base.newBuilder().addPathSegment("get-complat-credit-balance").build()
             val balance = objectFrom(read(request(provider, credential).url(balanceUrl)
@@ -130,7 +135,7 @@ class SubscriptionApi(
             combined
         } catch (cancel: CancellationException) { throw cancel }
         catch (failure: ApiFailure) {
-            failure.retryAt?.let { deadline -> grokWalletRetryAt.updateAndGet { maxOf(it, deadline) } }
+            failure.retryAt?.let { deadline -> grokWalletRetryAt.merge(walletSession, deadline, ::maxOf) }
             quotaOnly
         }
     }

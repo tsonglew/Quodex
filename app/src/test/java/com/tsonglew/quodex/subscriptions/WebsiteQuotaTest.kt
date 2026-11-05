@@ -115,7 +115,7 @@ class WebsiteQuotaTest {
         }
     }
 
-    @Test fun optionalWalletCooldownDoesNotThrottleThePrimaryQuota() = runBlocking {
+    @Test fun optionalWalletCooldownIsSessionScopedAndDoesNotThrottlePrimaryQuota() = runBlocking {
         MockWebServer().use { server ->
             var clock = 1000L
             val source = SubscriptionApi(endpoints = mapOf(SubscriptionProvider.GROK to server.url("/").toString()),
@@ -126,11 +126,18 @@ class WebsiteQuotaTest {
             server.enqueue(MockResponse().setBody(grok))
             assertEquals("37", source.fetch(SubscriptionProvider.GROK, "private-session").metrics.first().value)
             assertEquals(3, server.requestCount) // Quota updates; the wallet deadline is respected.
+            server.enqueue(MockResponse().setBody(grok))
+            server.enqueue(MockResponse().setBody("""{"usdRemainingCents":"700"}"""))
+            assertEquals("7.00", source.fetch(SubscriptionProvider.GROK, "different-session").metrics.last().value)
+            assertEquals(5, server.requestCount) // Another account has its own wallet deadline.
+            server.enqueue(MockResponse().setBody(grok))
+            assertNull(source.fetch(SubscriptionProvider.GROK, "private-session").metrics.last().value)
+            assertEquals(6, server.requestCount) // Switching back keeps the original cooldown.
             clock = 1600L
             server.enqueue(MockResponse().setBody(grok))
             server.enqueue(MockResponse().setBody("""{"usdRemainingCents":"1250"}"""))
             assertEquals("12.50", source.fetch(SubscriptionProvider.GROK, "private-session").metrics.last().value)
-            assertEquals(5, server.requestCount)
+            assertEquals(8, server.requestCount)
         }
     }
 
