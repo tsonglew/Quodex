@@ -2,7 +2,9 @@ package com.tsonglew.quodex.subscriptions
 
 import com.tsonglew.quodex.data.*
 import com.tsonglew.quodex.subscriptions.browser.BrowserProvider
+import com.tsonglew.quodex.subscriptions.browser.awaitBrowserCleanup
 import kotlinx.coroutines.*
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -16,6 +18,52 @@ class BrowserSubscriptionTest {
         override fun write(accounts: Map<SubscriptionProvider, SubscriptionAccount>) {
             check(!fail); data = accounts
         }
+    }
+
+    @Test fun cleanupDeadlineReportsStorageFailure() = runTest {
+        try {
+            awaitBrowserCleanup { awaitCancellation() }
+            fail("cleanup must time out")
+        } catch (error: ApiFailure) { assertEquals(FailureKind.STORAGE, error.kind) }
+    }
+
+    @Test fun callerCancellationIsNotConvertedToStorageFailure() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val request = launch {
+            awaitBrowserCleanup { entered.complete(Unit); awaitCancellation() }
+        }
+        entered.await()
+        request.cancelAndJoin()
+        assertTrue(request.isCancelled)
+    }
+
+    @Test fun disconnectWaitsForValidatedCommitBeforeClaimingItsGenerationAndClearingProfile() = runBlocking {
+        val store = Store()
+        val writing = CompletableDeferred<Unit>()
+        val finishWrite = java.util.concurrent.CountDownLatch(1)
+        val clearing = CompletableDeferred<Unit>()
+        val blockedStore = object : SubscriptionStore by store {
+            override fun write(accounts: Map<SubscriptionProvider, SubscriptionAccount>) {
+                if (accounts.isNotEmpty()) {
+                    writing.complete(Unit)
+                    check(finishWrite.await(5, java.util.concurrent.TimeUnit.SECONDS))
+                }
+                store.write(accounts)
+            }
+        }
+        val repo = SubscriptionRepository({ _, _ -> error("no native HTTP") }, blockedStore,
+            clearBrowserProfile = { clearing.complete(Unit) })
+        val writer = launch { repo.acceptBrowser(provider, raw) }
+        writing.await()
+        val removal = launch { repo.disconnect(provider) }
+        try {
+            writer.cancel() // Cancellation cannot interrupt the synchronous, already validated disk commit.
+            assertNull(withTimeoutOrNull(150) { clearing.await() })
+        } finally { finishWrite.countDown() }
+        writer.join(); removal.join()
+        assertTrue(clearing.isCompleted)
+        assertTrue(store.data.isEmpty())
+        assertFalse(repo.state.value.getValue(provider).connected)
     }
 
     @Test fun originsCannotBeSelectedByUntrustedNavigation() {

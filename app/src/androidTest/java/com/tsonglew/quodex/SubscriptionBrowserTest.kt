@@ -147,6 +147,8 @@ class SubscriptionBrowserTest {
             val name = "${context.packageName}:${profile.profile}"
             assertEquals(1, activities.count { it.processName == name && !it.exported })
             assertEquals(1, services.count { it.processName == name && !it.exported })
+            val rotation = android.content.pm.ActivityInfo.CONFIG_ORIENTATION or android.content.pm.ActivityInfo.CONFIG_SCREEN_SIZE
+            assertEquals(rotation, activities.single { it.processName == name }.configChanges and rotation)
         }
     }
 }

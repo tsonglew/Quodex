@@ -99,7 +99,7 @@ internal object BrowserSession {
         val profile = BrowserProvider.forProvider(provider) ?: return
         if (!withContext(Dispatchers.IO) { marker(context, profile).exists() }) return
         withContext(Dispatchers.Main.immediate) {
-            withTimeout(20_000) {
+            awaitBrowserCleanup {
                 var bound = false
                 lateinit var connection: ServiceConnection
                 try {

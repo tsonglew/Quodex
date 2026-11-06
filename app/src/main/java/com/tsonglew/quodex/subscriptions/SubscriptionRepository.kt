@@ -76,7 +76,10 @@ class SubscriptionRepository(
             update(provider) { it.copy(failure = FailureKind.PROTOCOL) }
             return
         }
-        val ticket = generations.getValue(provider).incrementAndGet()
+        val ticket = storageLock.withLock {
+            currentCoroutineContext().ensureActive()
+            generations.getValue(provider).incrementAndGet()
+        }
         update(provider) { it.copy(busy = false) }
         query(provider, ticket, credential, true)
     }
@@ -93,9 +96,9 @@ class SubscriptionRepository(
         }
         initialize()
         if (storageFailed) return@withContext
-        val ticket = generations.getValue(provider).incrementAndGet()
         storageLock.withLock {
-            if (ticket != generations.getValue(provider).get()) return@withLock
+            currentCoroutineContext().ensureActive()
+            generations.getValue(provider).incrementAndGet()
             try {
                 val next = accounts + (provider to SubscriptionAccount("", snapshot, imported = true))
                 store.write(next)
@@ -112,10 +115,11 @@ class SubscriptionRepository(
         val snapshot = SubscriptionParser.parse(provider, raw, now())
         initialize()
         if (storageFailed) return@withContext
-        val ticket = generations.getValue(provider).incrementAndGet()
         storageLock.withLock {
             currentCoroutineContext().ensureActive()
-            if (ticket != generations.getValue(provider).get()) return@withLock
+            // Generation changes share the commit lock with disconnect. A cancelled writer
+            // cannot invalidate a removal after it has already claimed its generation.
+            generations.getValue(provider).incrementAndGet()
             try {
                 val next = accounts + (provider to SubscriptionAccount("", snapshot, browser = true))
                 store.write(next)
@@ -177,7 +181,10 @@ class SubscriptionRepository(
     suspend fun disconnect(provider: SubscriptionProvider) = withContext(Dispatchers.IO) {
         initialize()
         if (storageFailed) return@withContext
-        val ticket = generations.getValue(provider).incrementAndGet()
+        val ticket = storageLock.withLock {
+            currentCoroutineContext().ensureActive()
+            generations.getValue(provider).incrementAndGet()
+        }
         try {
             if (provider in browserProviders) clearBrowserProfile(provider)
         } catch (cancel: CancellationException) { throw cancel }
