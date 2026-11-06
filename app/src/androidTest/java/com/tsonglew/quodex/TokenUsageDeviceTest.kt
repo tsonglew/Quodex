@@ -2,7 +2,6 @@ package com.tsonglew.quodex
 
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.tsonglew.quodex.data.FailureKind
 import com.tsonglew.quodex.data.Session
@@ -18,7 +17,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class TokenUsageDeviceTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule val compose = createQuodexAndroidComposeRule<MainActivity>()
     private val app get() = compose.activity.quotaApp as TestQuotaApplication
     private var previousStyle: TokenChartStyle? = null
 

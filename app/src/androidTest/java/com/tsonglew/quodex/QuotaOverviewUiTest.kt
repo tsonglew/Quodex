@@ -18,7 +18,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -42,7 +41,7 @@ import java.util.concurrent.TimeUnit
 
 /** Exercise the same quota region as Dashboard, including optional account data. */
 class QuotaOverviewUiTest {
-    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val compose = createQuodexEmptyComposeRule()
     private val state = mutableStateOf(AppState())
     private val preferences = mutableStateOf(PreferencesState())
     private var host: MainActivity? = null

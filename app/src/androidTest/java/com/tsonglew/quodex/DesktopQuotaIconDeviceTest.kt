@@ -7,7 +7,6 @@ import android.graphics.Color
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.WorkManager
 import androidx.work.testing.TestListenableWorkerBuilder
@@ -30,7 +29,7 @@ import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
 
 class DesktopQuotaIconDeviceTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule val compose = createQuodexAndroidComposeRule<MainActivity>()
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     // Opening a real launcher shortcut may replace the original ActivityScenario instance.
     private val app get() = instrumentation.targetContext.applicationContext as TestQuotaApplication
@@ -174,26 +173,45 @@ class DesktopQuotaIconDeviceTest {
     }
 
     private fun clickPinnedIcon(description: String) {
-        Thread.sleep(500)
-        repeat(5) {
-            val root = instrumentation.uiAutomation.rootInActiveWindow
-            val screen = android.graphics.Rect().also { root?.getBoundsInScreen(it) }
-            val icon = root?.let(::descendants)?.firstOrNull { node ->
-                val bounds = android.graphics.Rect().also { node.getBoundsInScreen(it) }
-                node.isVisibleToUser && screen.contains(bounds.centerX(), bounds.centerY()) &&
-                    node.contentDescription?.toString() == description
+        val deadline = android.os.SystemClock.elapsedRealtime() + 15_000
+        var page = 0
+        var visibleDescriptions = emptyList<String>()
+        while (android.os.SystemClock.elapsedRealtime() < deadline) {
+            if (!resumedLauncher && dismissLauncherAnrOnEmulator(instrumentation, LauncherAnrResponse.WAIT)) {
+                resumedLauncher = true
             }
+            // ShortcutManager updates precede the launcher's asynchronous label/icon update.
+            // Wait for accessibility events to settle, then obtain a fresh tree for this page.
+            try {
+                instrumentation.uiAutomation.waitForIdle(100, 1_000)
+            } catch (_: java.util.concurrent.TimeoutException) {
+                // A busy launcher may still expose the target; the overall deadline remains.
+            }
+            val root = instrumentation.uiAutomation.rootInActiveWindow
+            if (root?.packageName?.toString()?.contains("launcher") != true) continue
+            val screen = android.graphics.Rect().also(root::getBoundsInScreen)
+            val visible = descendants(root).filter { node ->
+                val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+                node.isVisibleToUser && screen.contains(bounds.centerX(), bounds.centerY())
+            }
+            visibleDescriptions = visible.mapNotNull { it.contentDescription?.toString() }
+            val icon = visible.firstOrNull { it.contentDescription?.toString() == description }
             if (icon != null) {
                 instrumentation.uiAutomation.takeScreenshot()?.let { saveDeviceScreenshot(app, "desktop-icon-launcher", it) }
                 val target = generateSequence(icon) { it.parent }.first { it.isClickable }
-                val bounds = android.graphics.Rect().also { target.getBoundsInScreen(it) }
+                val bounds = android.graphics.Rect().also(target::getBoundsInScreen)
                 shell("input tap ${bounds.centerX()} ${bounds.centerY()}")
                 return
             }
-            shell("input swipe ${screen.width() * 4 / 5} ${screen.height() / 2} ${screen.width() / 5} ${screen.height() / 2} 250")
-            Thread.sleep(500)
+            // Home can restore the last launcher page. Search to its left first, then
+            // across the workspace to the right; one-way swipes miss earlier pages.
+            val towardEarlierPage = page++ % 15 < 5
+            val start = screen.width() * (if (towardEarlierPage) 1 else 4) / 5
+            val end = screen.width() * (if (towardEarlierPage) 4 else 1) / 5
+            shell("input swipe $start ${screen.height() / 2} $end ${screen.height() / 2} 250")
         }
-        fail("The updated pinned quota icon was not visible on the launcher")
+        instrumentation.uiAutomation.takeScreenshot()?.let { saveDeviceScreenshot(app, "desktop-icon-failure", it) }
+        fail("The updated pinned quota icon was not visible on the launcher; expected=$description; visible=$visibleDescriptions")
     }
 
     private fun descendants(node: AccessibilityNodeInfo): List<AccessibilityNodeInfo> = listOf(node) +

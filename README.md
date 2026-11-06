@@ -126,6 +126,8 @@ CI 保留 Android 29、31、35、36、37.0 与 37.2 的设备检查。Android 17
 
 PR 与 master 都检查经过 R8 压缩的 release APK，包括六版本上的页面切换、语言、设置和退出示例模式。冒烟测试仅使用临时测试签名；读取界面失败时有限重试，每次清除旧 UI 层级，失败后独立保存截图与 Activity 状态。正式签名和发布仍须等待 master 的全部检查通过。
 
+Compose 设备测试统一使用排队的测试调度器，由主测试时钟在 UI 线程推进任务；同步排队的滚动操作，专门验证异步 IO 返回后的线程归属，防止测试中的重组与布局并发执行。每轮开发以 PR 检查和合并后的发布链路验证作为完整交付依据。
+
 ## 一起完善 Quodex
 
 欢迎提交可复现的问题、使用体验、翻译改进和代码贡献。先查看已有 [Issues](https://github.com/tsonglew/Quodex/issues)，再使用[问题表单](https://github.com/tsonglew/Quodex/issues/new/choose)或提出聚焦的 PR。

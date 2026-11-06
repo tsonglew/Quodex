@@ -5,7 +5,6 @@ import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import com.tsonglew.quodex.ui.InAppUpdateDialog
 import com.tsonglew.quodex.ui.QuotaTheme
@@ -24,7 +23,7 @@ import java.io.IOException
 import java.security.MessageDigest
 
 class InAppUpdateDeviceTest {
-    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val compose = createQuodexEmptyComposeRule()
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
 

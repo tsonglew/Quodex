@@ -2,7 +2,6 @@ package com.tsonglew.quodex
 
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.tsonglew.quodex.data.demoSnapshot
@@ -14,7 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class LocalizationDeviceTest {
-    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val compose = createQuodexEmptyComposeRule()
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val app get() = instrumentation.targetContext.applicationContext as TestQuotaApplication
 

@@ -3,7 +3,6 @@ package com.tsonglew.quodex
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.tsonglew.quodex.data.FailureKind
 import com.tsonglew.quodex.subscriptions.*
@@ -15,7 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class SubscriptionsUiTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule val compose = createQuodexAndroidComposeRule<MainActivity>()
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     // Cleanup must not resolve an Activity while a locale change is recreating it.
     private val app get() = instrumentation.targetContext.applicationContext as TestQuotaApplication

@@ -10,6 +10,10 @@ PR 也构建并测试 minified release，避免发布包问题直到合并后才
 
 Android 10 的小组件偏好测试会跳过任务列表中已经被系统移除的任务，再寻找原来的宿主任务；仍要求三种真实小组件获得前台焦点、显示新的额度偏好且不触发额外额度请求。
 
+Compose 1.8 的测试环境默认使用 `UnconfinedTestDispatcher`，从真实 IO 返回的协程可能立即在工作线程恢复，造成测试中的重组／测量与 Android UI 线程并发。设备测试统一通过 `ComposeTestRules.kt` 创建规则，使用独立的 `StandardTestDispatcher`，由 Compose 主测试时钟在 UI 线程推进任务。额外的 idle resource 在内置检查之前执行 `scheduler.runCurrent()`，补齐旧版 Compose 对排队滚动／effect 的同步，不推进虚拟时间，也不替换原有空闲检查。`ComposeSchedulingTest` 验证 IO 返回后的 UI 线程归属和空闲界面的排队滚动；原有导航、截图、滚动和额度断言继续执行。新增 Compose 测试也应复用这些规则工厂。
+
+桌面快捷方式设备测试等待 Launcher 的异步更新，并从当前桌面向两侧查找完整的预期额度描述；超时保留截图和可见描述。额度数值、缓存状态、快捷方式 ID、启动 App 和退出登录后的清理断言不变。
+
 | 入口 | 检查／产物 | 部署 |
 | --- | --- | --- |
 | PR、master push | 交付脚本测试、JVM 单元测试、debug 与 release lint／APK；API 29／31／35／36／37.0／37.2 完整设备矩阵及 minified release 页面检查 | 全部通过后登记预览 deployment；仅 master 可正式签名和发布 |
