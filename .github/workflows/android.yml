@@ -27,7 +27,7 @@ on:
 permissions:
   contents: read
 env:
-  BUILD_RELEASE: ${{ inputs.build-release || inputs.check-signing || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
+  BUILD_RELEASE: ${{ inputs.build-release || inputs.check-signing || github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}

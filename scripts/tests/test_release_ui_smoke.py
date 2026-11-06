@@ -1,5 +1,7 @@
 import importlib.util
 from pathlib import Path
+import subprocess
+import tempfile
 import unittest
 from unittest.mock import patch, call
 import xml.etree.ElementTree as ET
@@ -23,6 +25,53 @@ def screen(target='[300,1010][700,1060]', labels=('Overview', 'Accounts', 'Setti
 
 
 class ReleaseUiSmokeTests(unittest.TestCase):
+    def test_null_root_never_reuses_old_coordinates(self):
+        stored = '<hierarchy><node text="Old screen" /></hierarchy>'
+        dumps = 0
+
+        def shell(*args):
+            nonlocal stored, dumps
+            if args[0] == 'rm':
+                stored = None
+            elif args[0] == 'uiautomator':
+                dumps += 1
+                if dumps == 2:
+                    stored = '<hierarchy><node text="Current screen" /></hierarchy>'
+                # A null root may be printed to stderr with exit status zero.
+                return ''
+            elif args[0] == 'cat':
+                if stored is None:
+                    raise subprocess.CalledProcessError(1, args)
+                return stored
+            return ''
+
+        with patch.object(ui, 'shell', side_effect=shell), patch.object(ui.time, 'sleep'):
+            tree = ui.nodes()
+        self.assertIsNone(ui.find('Old screen', tree))
+        self.assertIsNotNone(ui.find('Current screen', tree))
+        self.assertEqual(2, dumps)
+
+    def test_failed_or_empty_dumps_have_bounded_retries(self):
+        for result in ['ERROR: null root node returned by UiTestAutomationBridge.',
+                       '<hierarchy />', '<hierarchy><node']:
+            with self.subTest(result=result), patch.object(ui, 'shell', return_value=result) as shell, \
+                    patch.object(ui.time, 'sleep'):
+                with self.assertRaisesRegex(AssertionError, 'fresh release UI hierarchy'):
+                    ui.nodes()
+                self.assertEqual(6, sum(c.args[0] == 'uiautomator' for c in shell.call_args_list))
+                self.assertEqual(6, sum(c.args[0] == 'rm' for c in shell.call_args_list))
+
+    def test_inaccessible_hierarchy_still_preserves_screenshot_and_activity_state(self):
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(ui, 'nodes', side_effect=AssertionError('null root')), \
+                patch.object(ui.subprocess, 'check_output', return_value=b'PNG'), \
+                patch.object(ui, 'shell', return_value='resumed activity'):
+            output = Path(directory)
+            ui.capture_failure(output)
+            self.assertEqual(b'PNG', (output / 'release-ui-failure.png').read_bytes())
+            self.assertEqual('resumed activity', (output / 'release-ui-activities.txt').read_text())
+            self.assertFalse((output / 'release-ui-failure.xml').exists())
+
     def test_button_beneath_transparent_navigation_requires_scrolling(self):
         tree = screen()
         self.assertTrue(ui.covered_by_navigation(ui.find('Privacy and data', tree), tree))

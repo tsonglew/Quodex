@@ -1,11 +1,13 @@
 """Exercise the actual minified APK through platform UI, without app/test class coupling."""
 import re
+from pathlib import Path
 import subprocess
 import sys
 import time
 import xml.etree.ElementTree as ET
 
 adb = None
+WINDOW_XML = '/sdcard/quodex-release-window.xml'
 
 
 def shell(*args):
@@ -13,8 +15,41 @@ def shell(*args):
 
 
 def nodes():
-    shell('uiautomator', 'dump', '/sdcard/quodex-release-window.xml')
-    return ET.fromstring(shell('cat', '/sdcard/quodex-release-window.xml'))
+    # UIAutomator can exit successfully with a null root during window transitions.
+    # Never let that turn an old dump into coordinates for a different screen.
+    last_error = None
+    for attempt in range(6):
+        try:
+            shell('rm', '-f', WINDOW_XML)
+            result = shell('uiautomator', 'dump', WINDOW_XML)
+            if 'ERROR:' in result:
+                raise ValueError(result.strip())
+            tree = ET.fromstring(shell('cat', WINDOW_XML))
+            if tree.tag != 'hierarchy' or next(tree.iter('node'), None) is None:
+                raise ValueError('UIAutomator returned an empty hierarchy')
+            return tree
+        except (subprocess.SubprocessError, ET.ParseError, ValueError) as error:
+            last_error = error
+            print(f'RELEASE_UI_DUMP_RETRY {attempt + 1}/6: {error}', flush=True)
+            if attempt < 5:
+                time.sleep(.5)
+    raise AssertionError('Cannot obtain a fresh release UI hierarchy after 6 attempts') from last_error
+
+
+def capture_failure(output=Path('screenshots')):
+    output.mkdir(exist_ok=True)
+    # Capture independently: a broken accessibility bridge must not hide the screen.
+    captures = {
+        'release-ui-failure.png': lambda: subprocess.check_output(
+            [adb, '-e', 'exec-out', 'screencap', '-p'], timeout=20),
+        'release-ui-failure.xml': lambda: ET.tostring(nodes()),
+        'release-ui-activities.txt': lambda: shell('dumpsys', 'activity', 'activities').encode(),
+    }
+    for name, capture in captures.items():
+        try:
+            (output / name).write_bytes(capture())
+        except Exception as error:
+            print(f'Cannot capture {name}: {error}', file=sys.stderr)
 
 
 def find(text, tree=None):
@@ -89,6 +124,7 @@ def wait(text, scroll=False, for_tap=False):
 def click(text, scroll=False):
     node = wait(text, scroll, for_tap=True)
     x1, y1, x2, y2 = bounds(node)
+    print(f'RELEASE_UI_CLICK: {text}', flush=True)
     shell('input', 'tap', str((x1 + x2) // 2), str((y1 + y2) // 2))
 
 
@@ -99,6 +135,7 @@ def click_tab(text):
     if item is None:
         raise AssertionError(f'Release navigation missing: {text}')
     x1, y1, x2, y2 = bounds(item)
+    print(f'RELEASE_UI_TAB: {text}', flush=True)
     shell('input', 'tap', str((x1 + x2) // 2), str((y1 + y2) // 2))
 
 
@@ -149,15 +186,5 @@ if __name__ == '__main__':
     try:
         run()
     except Exception:
-        # Preserve the actual foreground UI when a release-only click fails.
-        from pathlib import Path
-        try:
-            output = Path('screenshots')
-            output.mkdir(exist_ok=True)
-            tree = nodes()
-            (output / 'release-ui-failure.xml').write_bytes(ET.tostring(tree))
-            (output / 'release-ui-failure.png').write_bytes(subprocess.check_output(
-                [adb, '-e', 'exec-out', 'screencap', '-p'], timeout=20))
-        except Exception as diagnostic_error:
-            print(f'Cannot capture release failure UI: {diagnostic_error}', file=sys.stderr)
+        capture_failure()
         raise

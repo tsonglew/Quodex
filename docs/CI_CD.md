@@ -6,9 +6,14 @@
 
 ## 流程
 
+PR 也构建并测试 minified release，避免发布包问题直到合并后才暴露。设备冒烟使用一次性测试签名，不读取发布密钥。UIAutomator 在页面切换期间可能返回空根节点且退出码为零；脚本每次删除旧 dump，仅对新生成且有效的层级执行操作，最多重试六次。持续失败仍使 job 失败，截图和 Activity 栈独立采集，便于区分页面回归与系统窗口问题。
+
+Android 10 的小组件偏好测试会跳过任务列表中已经被系统移除的任务，再寻找原来的宿主任务；仍要求三种真实小组件获得前台焦点、显示新的额度偏好且不触发额外额度请求。
+
 | 入口 | 检查／产物 | 部署 |
 | --- | --- | --- |
-| PR、master push、手动 CI | 交付脚本测试、JVM 单元测试、lint、debug APK；API 29／31／35／36／37.0／37.2 设备矩阵 | PR 或 master 全部通过后登记预览 deployment |
+| PR、master push | 交付脚本测试、JVM 单元测试、debug 与 release lint／APK；API 29／31／35／36／37.0／37.2 完整设备矩阵及 minified release 页面检查 | 全部通过后登记预览 deployment；仅 master 可正式签名和发布 |
+| 手动 CI | 默认 debug 检查；`build-release` 增加 release lint／R8 与六版本发布包页面检查 | 不自动公开 Release |
 | `v<versionName>` tag，或在该 tag 上手动运行 Release | 验证 tag 格式、版本及主分支祖先关系；复用完整 CI；额外构建和 lint minified release，并在六组模拟器检查真实 release 页面 | 固定密钥签名、校验证书、发布 GitHub Release；记录 `android-release` 环境 |
 
 合并到 master 自动执行完整 CI、release lint／R8 和六组 minified 页面检查；全部通过后使用 android-release 固定密钥签名，上传 `android-signed-apk`（保留 14 天）。运行摘要提供下载链接、版本、源提交和 APK 哈希；产物包含 APK、SHA256SUMS、provenance.json。构建或设备测试失败时不会签名。PR 不接触发布 secrets，master push 随后自动创建独立 `build-<runId>-<attempt>` 预发布并上传相同 APK／校验和／来源信息，历史包不覆盖；同版本 master 产物可用于测试，正式覆盖升级仍需递增 versionCode。
