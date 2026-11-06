@@ -127,7 +127,21 @@ class WidgetRenderTest {
                     var actual = ""
                     scenario.onActivity { actual = text(it.widgetView) }
                     val options = android.appwidget.AppWidgetManager.getInstance(context).getAppWidgetOptions(removedId)
-                    assertTrue("Resized RemoteViews expected $expected, second=$secondVisible; actual=$actual; options=$options", matched)
+                    if (!matched) {
+                        val saved = runBlocking { app.settings.widgetSettings(removedId) }
+                        var cached = ""
+                        scenario.onActivity { activity ->
+                            val manager = android.appwidget.AppWidgetManager.getInstance(context)
+                            val fresh = android.appwidget.AppWidgetHost(activity, 9000).createView(
+                                activity, removedId, manager.getAppWidgetInfo(removedId))
+                            cached = text(fresh)
+                            instrumentation.uiAutomation.takeScreenshot()?.let {
+                                saveDeviceScreenshot(context, "widget-resize-settings-timeout", it)
+                            }
+                        }
+                        fail("Resized RemoteViews expected $expected, second=$secondVisible; actual=$actual; " +
+                            "cached=$cached; saved=$saved; options=$options; diagnostics=${app.diagnostics.report()}")
+                    }
                 }
                 awaitQuota("38%", true)
                 fun resize(width: Int, height: Int) {

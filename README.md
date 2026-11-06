@@ -128,6 +128,8 @@ PR 与 master 都检查经过 R8 压缩的 release APK，包括六版本上的�
 
 Compose 设备测试统一使用排队的测试调度器，由主测试时钟在 UI 线程推进任务；同步排队的滚动操作，专门验证异步 IO 返回后的线程归属，防止测试中的重组与布局并发执行。每轮开发以 PR 检查和合并后的发布链路验证作为完整交付依据。
 
+DataStore 使用包含并发订阅／写入修复的 1.3.0 稳定版，避免新添加的小组件在保存显示偏好时漏掉更新。JVM 回归测试直接控制写入与订阅的交错顺序，设备测试继续核对实际小组件内容、缩放和删除后的设置清理。
+
 ## 一起完善 Quodex
 
 欢迎提交可复现的问题、使用体验、翻译改进和代码贡献。先查看已有 [Issues](https://github.com/tsonglew/Quodex/issues)，再使用[问题表单](https://github.com/tsonglew/Quodex/issues/new/choose)或提出聚焦的 PR。
