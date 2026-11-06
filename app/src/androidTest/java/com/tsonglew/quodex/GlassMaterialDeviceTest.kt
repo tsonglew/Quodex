@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
@@ -29,7 +28,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class GlassMaterialDeviceTest {
-    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val compose = createQuodexEmptyComposeRule()
     private val app get() = InstrumentationRegistry.getInstrumentation().targetContext.quotaApp as TestQuotaApplication
 
     @Test fun glassPagesRemainReachableInBothThemes() {

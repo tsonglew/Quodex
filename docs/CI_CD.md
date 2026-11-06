@@ -10,6 +10,12 @@ PR 也构建并测试 minified release，避免发布包问题直到合并后才
 
 Android 10 的小组件偏好测试会跳过任务列表中已经被系统移除的任务，再寻找原来的宿主任务；仍要求三种真实小组件获得前台焦点、显示新的额度偏好且不触发额外额度请求。
 
+DataStore 1.1.7 在新订阅与写入重叠时可能漏掉已保存的新值，导致小组件停留在旧的显示偏好。运行时升级到包含[官方并发读写修复](https://android.googlesource.com/platform/frameworks/support/+/1ef22b89a34bd4027d7c50684101a62daf27b07b)的 1.3.0 稳定版。`DataStoreObservationTest` 在磁盘替换前暂停写入，再开始订阅并完成保存；旧版本漏掉第二个值，新版本必须收到它。这个回归测试不依赖真实延时或反复重跑；小组件设备断言仍检查实际 RemoteViews，失败时同时记录存储值、系统缓存和截图。
+
+Compose 1.8 的测试环境默认使用 `UnconfinedTestDispatcher`，从真实 IO 返回的协程可能立即在工作线程恢复，造成测试中的重组／测量与 Android UI 线程并发。设备测试统一通过 `ComposeTestRules.kt` 创建规则，使用独立的 `StandardTestDispatcher`，由 Compose 主测试时钟在 UI 线程推进任务。额外的 idle resource 在内置检查之前执行 `scheduler.runCurrent()`，补齐旧版 Compose 对排队滚动／effect 的同步，不推进虚拟时间，也不替换原有空闲检查。`ComposeSchedulingTest` 验证 IO 返回后的 UI 线程归属和空闲界面的排队滚动；原有导航、截图、滚动和额度断言继续执行。新增 Compose 测试也应复用这些规则工厂。
+
+桌面快捷方式设备测试先确认初始图标已在 Launcher 中完成添加，再触发额度更新；等待分页动画后的点击位置稳定，并从当前桌面向两侧查找完整的预期额度描述；先向普通桌面分页查找，反向查找若进入 Pixel Launcher 的 Google Discover，则返回 Home 后继续；超时保留截图和可见描述。额度数值、缓存状态、快捷方式 ID、启动 App 和退出登录后的清理断言不变。更新安装测试分块读取／校验完整 APK，避免低内存模拟器一次性分配超过堆上限的 debug 安装包。
+
 | 入口 | 检查／产物 | 部署 |
 | --- | --- | --- |
 | PR、master push | 交付脚本测试、JVM 单元测试、debug 与 release lint／APK；API 29／31／35／36／37.0／37.2 完整设备矩阵及 minified release 页面检查 | 全部通过后登记预览 deployment；仅 master 可正式签名和发布 |
@@ -22,7 +28,7 @@ Android 10 的小组件偏好测试会跳过任务列表中已经被系统移除
 
 ## 编译平台与断网探针
 
-CI 的构建及设备任务显式安装 SDK Platform 37.0，与 App 的 compileSdk 37 和 README 一致；安装验证使用的最小测试 APK 也链接同一平台。minSdk 29、targetSdk 36、Build Tools 35.0.0 和现有运行时依赖保持主分支配置。
+CI 的构建及设备任务显式安装 SDK Platform 37.0，与 App 的 compileSdk 37 和 README 一致；安装验证使用的最小测试 APK 也链接同一平台。minSdk 29、targetSdk 36 和 Build Tools 35.0.0 保持不变。
 
 真实断网探针同时等待系统无活动网络与 WorkManager 收到离线回调后再提交刷新，避免 Android 29 回调延迟导致任务读到旧的联网状态。它仍检查离线零请求、任务等待、恢复网络后仅刷新一次，不注入约束状态或跳过断言。
 

@@ -7,7 +7,6 @@ import android.graphics.Color
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.WorkManager
 import androidx.work.testing.TestListenableWorkerBuilder
@@ -30,7 +29,7 @@ import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
 
 class DesktopQuotaIconDeviceTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule val compose = createQuodexAndroidComposeRule<MainActivity>()
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     // Opening a real launcher shortcut may replace the original ActivityScenario instance.
     private val app get() = instrumentation.targetContext.applicationContext as TestQuotaApplication
@@ -93,6 +92,15 @@ class DesktopQuotaIconDeviceTest {
         assertEquals(MainActivity::class.java.name, pinned().intent?.component?.className)
         val work = WorkManager.getInstance(app).getWorkInfosForUniqueWork("codex-periodic-sync").get(10, TimeUnit.SECONDS)
         assertEquals("A pinned quota icon must keep background polling active", 1, work.count { !it.state.isFinished })
+
+        // The system's pinned list is updated before Launcher finishes adding the
+        // workspace item. Establish the initial visible icon before updating it;
+        // otherwise Launcher's queued install can bind the original 62% snapshot
+        // after it has already received the worker's 29% update.
+        shell("input keyevent 3")
+        waitFor { instrumentation.uiAutomation.rootInActiveWindow?.packageName?.toString()?.contains("launcher") == true }
+        clickPinnedIcon(pinned().longLabel.toString())
+        waitFor { instrumentation.uiAutomation.rootInActiveWindow?.packageName == app.packageName }
 
         app.usedPercent = 71
         app.settings.syncResult(null, lastAttemptAt = 0)
@@ -174,26 +182,72 @@ class DesktopQuotaIconDeviceTest {
     }
 
     private fun clickPinnedIcon(description: String) {
-        Thread.sleep(500)
-        repeat(5) {
-            val root = instrumentation.uiAutomation.rootInActiveWindow
-            val screen = android.graphics.Rect().also { root?.getBoundsInScreen(it) }
-            val icon = root?.let(::descendants)?.firstOrNull { node ->
-                val bounds = android.graphics.Rect().also { node.getBoundsInScreen(it) }
-                node.isVisibleToUser && screen.contains(bounds.centerX(), bounds.centerY()) &&
-                    node.contentDescription?.toString() == description
+        val deadline = android.os.SystemClock.elapsedRealtime() + 15_000
+        var page = 0
+        var lastSwipeTowardEarlierPage = false
+        var visibleDescriptions = emptyList<String>()
+        var previousBounds: android.graphics.Rect? = null
+        var stableSince = 0L
+        while (android.os.SystemClock.elapsedRealtime() < deadline) {
+            if (!resumedLauncher && dismissLauncherAnrOnEmulator(instrumentation, LauncherAnrResponse.WAIT)) {
+                resumedLauncher = true
             }
+            // ShortcutManager updates precede the launcher's asynchronous label/icon update.
+            // Wait for accessibility events to settle, then obtain a fresh tree for this page.
+            try {
+                instrumentation.uiAutomation.waitForIdle(100, 1_000)
+            } catch (_: java.util.concurrent.TimeoutException) {
+                // A busy launcher may still expose the target; the overall deadline remains.
+            }
+            val root = instrumentation.uiAutomation.rootInActiveWindow
+            val packageName = root?.packageName?.toString()
+            if (lastSwipeTowardEarlierPage && packageName == "com.google.android.googlequicksearchbox") {
+                // Pixel Launcher opens Discover as a separate activity when a
+                // backward swipe crosses the first page. Return Home and resume
+                // the workspace search instead of waiting in the Google app.
+                shell("input keyevent 3")
+                page = 0
+                lastSwipeTowardEarlierPage = false
+                previousBounds = null
+                continue
+            }
+            if (packageName?.contains("launcher") != true || root == null) continue
+            val screen = android.graphics.Rect().also(root::getBoundsInScreen)
+            val visible = descendants(root).filter { node ->
+                val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
+                node.isVisibleToUser && screen.contains(bounds.centerX(), bounds.centerY())
+            }
+            visibleDescriptions = visible.mapNotNull { it.contentDescription?.toString() }
+            val icon = visible.firstOrNull { it.contentDescription?.toString() == description }
             if (icon != null) {
-                instrumentation.uiAutomation.takeScreenshot()?.let { saveDeviceScreenshot(app, "desktop-icon-launcher", it) }
                 val target = generateSequence(icon) { it.parent }.first { it.isClickable }
-                val bounds = android.graphics.Rect().also { target.getBoundsInScreen(it) }
+                val bounds = android.graphics.Rect().also(target::getBoundsInScreen)
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (bounds != previousBounds) {
+                    previousBounds = bounds
+                    stableSince = now
+                }
+                // Accessibility can report an icon halfway through a page snap.
+                // Only tap coordinates that remain stationary after the animation.
+                if (now - stableSince < 300) {
+                    Thread.sleep(50)
+                    continue
+                }
+                instrumentation.uiAutomation.takeScreenshot()?.let { saveDeviceScreenshot(app, "desktop-icon-launcher", it) }
                 shell("input tap ${bounds.centerX()} ${bounds.centerY()}")
                 return
             }
-            shell("input swipe ${screen.width() * 4 / 5} ${screen.height() / 2} ${screen.width() / 5} ${screen.height() / 2} 250")
-            Thread.sleep(500)
+            previousBounds = null
+            // Start toward ordinary workspace pages, away from Discover. Home can
+            // restore any page, so also search backward after reaching the far end.
+            val towardEarlierPage = page++ % 10 >= 5
+            lastSwipeTowardEarlierPage = towardEarlierPage
+            val start = screen.width() * (if (towardEarlierPage) 1 else 4) / 5
+            val end = screen.width() * (if (towardEarlierPage) 4 else 1) / 5
+            shell("input swipe $start ${screen.height() / 2} $end ${screen.height() / 2} 250")
         }
-        fail("The updated pinned quota icon was not visible on the launcher")
+        instrumentation.uiAutomation.takeScreenshot()?.let { saveDeviceScreenshot(app, "desktop-icon-failure", it) }
+        fail("The updated pinned quota icon was not visible on the launcher; expected=$description; focused=${instrumentation.uiAutomation.rootInActiveWindow?.packageName}; visible=$visibleDescriptions")
     }
 
     private fun descendants(node: AccessibilityNodeInfo): List<AccessibilityNodeInfo> = listOf(node) +

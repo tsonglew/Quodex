@@ -11,7 +11,6 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
@@ -29,7 +28,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class ResetCreditsUiTest {
-    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val compose = createQuodexEmptyComposeRule()
     private val state = mutableStateOf(AppState())
     private val loads = mutableListOf<Boolean>()
     private var host: MainActivity? = null

@@ -1,7 +1,6 @@
 package com.tsonglew.quodex
 
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.tsonglew.quodex.data.*
@@ -10,7 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class ApiCreditsUiTest {
-    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val compose = createQuodexEmptyComposeRule()
     private val app get() = InstrumentationRegistry.getInstrumentation().targetContext.quotaApp as TestQuotaApplication
 
     @Test fun benefitAndUnavailableBalanceRemainDistinctInBothThemes() {

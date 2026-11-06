@@ -11,7 +11,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
@@ -37,7 +36,7 @@ import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class UiExperienceTest {
-    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val compose = createQuodexEmptyComposeRule()
     private val app get() = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as TestQuotaApplication
     private lateinit var previousPreferences: PreferencesState
 

@@ -14,7 +14,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.ListenableWorker.Result
@@ -31,7 +30,7 @@ import org.junit.Test
 
 /** Real launcher RemoteViews and PendingIntents; HTTP is served by the synthetic test application. */
 class TokenHeatmapWidgetDeviceTest {
-    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val compose = createQuodexEmptyComposeRule()
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
     private val app get() = context.quotaApp as TestQuotaApplication

@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
@@ -15,7 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class WidgetDisplayPreferenceTest {
-    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val compose = createQuodexEmptyComposeRule()
 
     @Test fun appSwitchUpdatesExistingStandardAndSlimWidgetsWithoutFetchingUsage() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()

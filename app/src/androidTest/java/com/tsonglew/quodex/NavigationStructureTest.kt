@@ -2,7 +2,6 @@ package com.tsonglew.quodex
 
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.tsonglew.quodex.subscriptions.SubscriptionProvider
 import kotlinx.coroutines.runBlocking
@@ -12,7 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class NavigationStructureTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule val compose = createQuodexAndroidComposeRule<MainActivity>()
     private val app get() = InstrumentationRegistry.getInstrumentation().targetContext.quotaApp as TestQuotaApplication
     private lateinit var previousTheme: String
 

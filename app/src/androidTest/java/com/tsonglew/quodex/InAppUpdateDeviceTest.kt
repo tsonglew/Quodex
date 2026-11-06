@@ -5,7 +5,6 @@ import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import com.tsonglew.quodex.ui.InAppUpdateDialog
 import com.tsonglew.quodex.ui.QuotaTheme
@@ -15,6 +14,9 @@ import kotlinx.coroutines.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okhttp3.ResponseBody.Companion.asResponseBody
+import okio.buffer
+import okio.source
 import org.junit.Assert.*
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -24,7 +26,7 @@ import java.io.IOException
 import java.security.MessageDigest
 
 class InAppUpdateDeviceTest {
-    @get:Rule val compose = createEmptyComposeRule()
+    @get:Rule val compose = createQuodexEmptyComposeRule()
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
 
@@ -68,7 +70,16 @@ class InAppUpdateDeviceTest {
             assertEquals("${context.packageName}.updates", intent.data!!.authority)
             assertEquals("application/vnd.android.package-archive", intent.type)
             assertTrue(intent.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0)
-            context.contentResolver.openInputStream(intent.data!!)!!.use { assertEquals(copy.length(), it.readBytes().size.toLong()) }
+            context.contentResolver.openInputStream(intent.data!!)!!.use { input ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                var bytes = 0L
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count == -1) break
+                    bytes += count
+                }
+                assertEquals(copy.length(), bytes)
+            }
             try { apkInstallIntent(context, File(context.cacheDir, "unrelated.txt")); fail("Must not share unrelated cache files") }
             catch (_: IllegalArgumentException) { }
             try { validateDownloadedApk(context, copy, metadata(copy, BuildConfig.VERSION_CODE.toLong())); fail("Must reject same version") }
@@ -90,7 +101,7 @@ class InAppUpdateDeviceTest {
             if (requests.incrementAndGet() == 1) return@addInterceptor Response.Builder().request(chain.request())
                 .protocol(Protocol.HTTP_1_1).code(503).message("Transient fixture").body("".toResponseBody()).build()
             Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("Fixture")
-                .body(fixture.readBytes().toResponseBody("application/vnd.android.package-archive".toMediaType())).build()
+                .body(fixture.source().buffer().asResponseBody("application/vnd.android.package-archive".toMediaType(), fixture.length())).build()
         }.build()
         val updater = InAppUpdate(context, scope, UpdateSource { candidate }, ApkDownloader(client))
         try {
@@ -150,5 +161,20 @@ class InAppUpdateDeviceTest {
     private fun metadata(file: File, code: Long) = AppUpdate(code, "0.1.0-alpha$code",
         "https://github.com/tsonglew/Quodex/releases/tag/test-update", "a".repeat(40),
         "https://github.com/tsonglew/Quodex/releases/download/test-update/Quodex-0.1.0-alpha$code.apk",
-        file.length(), MessageDigest.getInstance("SHA-256").digest(file.readBytes()).hex())
+        file.length(), sha256(file))
+
+    // Debug APKs can exceed the entire heap on API 29. Verify the same complete
+    // payload with bounded memory, as the production download verifier does.
+    private fun sha256(file: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val count = input.read(buffer)
+                if (count == -1) break
+                digest.update(buffer, 0, count)
+            }
+        }
+        return digest.digest().hex()
+    }
 }
