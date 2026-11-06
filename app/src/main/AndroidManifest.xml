@@ -24,6 +24,12 @@
             android:authorities="${applicationId}.updates" android:exported="false" android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/update_file_paths" />
         </provider>
+        <activity android:name=".subscriptions.browser.KimiLoginActivity" android:exported="false" android:process=":subscription_kimi" />
+        <service android:name=".subscriptions.browser.KimiBrowserCleanupService" android:exported="false" android:process=":subscription_kimi" />
+        <activity android:name=".subscriptions.browser.WorkBuddyLoginActivity" android:exported="false" android:process=":subscription_workbuddy" />
+        <service android:name=".subscriptions.browser.WorkBuddyBrowserCleanupService" android:exported="false" android:process=":subscription_workbuddy" />
+        <activity android:name=".subscriptions.browser.GrokLoginActivity" android:exported="false" android:process=":subscription_grok" />
+        <service android:name=".subscriptions.browser.GrokBrowserCleanupService" android:exported="false" android:process=":subscription_grok" />
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

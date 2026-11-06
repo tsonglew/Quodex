@@ -18,9 +18,9 @@
 
 账号连接的实际权限、续期、服务方适用范围仍由 M0 真机接入验证完成，本政策不替代其验收。当前使用 GitHub Releases 发布实验性 APK；不将隐私说明或构建预发布等同于已通过商店审核或稳定版验收。
 
-## alpha37 源码中的订阅连接
+## alpha38 订阅网页登录
 
-`SubscriptionApi` 仅向所选服务的固定 HTTPS 域名发送只读 GET 或 POST 查询，禁止重定向；Bearer、会话 Cookie 与团队 Basic key 按服务隔离。WorkBuddy 另保存原浏览器 User-Agent 与两段会话，仅用于国际站查询。Grok 手动导入只保存解析后的额度／费用快照，标注导入来源和时间，不保存 JSON 原文，也不自动刷新。Cursor 团队分页只累计费用，不保存姓名、邮箱或成员 ID。完整地址、权限与来源见 [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md)。凭据及对应快照作为一笔 AES-GCM 加密事务保存在 `noBackupFilesDir/subscriptions.enc`，不写入诊断或保存界面状态。每个服务独立断开，账号 → Codex 中的退出仅影响 Codex。新服务在进入应用或账号页时前台刷新（五分钟缓存），不加入后台任务或桌面小组件；示例数据不联网。
+Kimi、WorkBuddy、Grok／Cursor 使用独立进程与 WebView 数据目录，在官方页面登录并读取额度；密码和会话不返回主进程。网页登录资料由 WebView 在应用私有目录管理，不属于 API key 的 AES-GCM 加密文件；禁用备份。额度脚本限制在固定 HTTPS 域名，不暴露 JavaScript 原生接口；断开只清理对应浏览器状态与快照。窗口关闭保留登录，未完成登录可显式清除。仅用户打开“官网登录／官网刷新”时读取，启动先显示缓存。API 与旧版会话仍使用独立加密存储及原有前台查询。详细目的地、限制和迁移行为见 [SUBSCRIPTIONS.md](SUBSCRIPTIONS.md)，三语言完整政策已同步。
 
 ## 重置卡明细（2026-11-04，alpha34 源码）
 

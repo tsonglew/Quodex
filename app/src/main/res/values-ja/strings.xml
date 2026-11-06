@@ -355,7 +355,7 @@
     <string name="token_heatmap_status_unavailable">"データなし"</string>
     <string name="subscriptions">"プラン"</string>
     <string name="subscriptions_intro">"各サービスの残高とプラン使用量を確認できます。接続は端末内で個別に保存されます。"</string>
-    <string name="subscriptions_scope">"このページを開いたとき、または更新ボタンで取得します。ホーム画面ウィジェットは現在 Codex のみ対応しています。"</string>
+    <string name="subscriptions_scope">"API 接続はページを開くと更新します。Web ログインは前回のデータを表示し、「公式サイトで更新」で再取得します。ウィジェットは現在 Codex のみです。"</string>
     <string name="subscription_connect">"接続"</string>
     <string name="subscription_refresh">"更新"</string>
     <string name="subscription_disconnect">"接続を解除"</string>
@@ -365,8 +365,8 @@
     <string name="subscription_deepseek_help">"DeepSeek プラットフォームで API キーを作成してください。チャットアプリとは別の API 残高、付与残高、チャージ残高を表示します。"</string>
     <string name="subscription_go_help">"Go ワークスペースの API キーを使用します。OpenCode が返すローリング、週間、月間の使用量を表示します。"</string>
     <string name="subscription_zen_help">"OpenCode Console（旧 Zen）：請求情報の読み取り権限を持つ個人 API キーで、ワークスペースの残高と利用可能額を取得します。実験的な互換接続です。"</string>
-    <string name="subscription_cursor_help">"個人ダッシュボードへの実験的な互換接続です。PC のブラウザで cursor.com/dashboard にログインし、開発者ツール → Application → Cookies から WorkosCursorSessionToken の値だけをコピーしてここに貼り付けます。チャットには送らないでください。画面の変更や期限切れ時は再接続が必要です。"</string>
-    <string name="subscription_secret_notice">"認証情報は端末内で暗号化し、選択したサービスにのみ送信します。接続解除時に認証情報とキャッシュを削除します。"</string>
+    <string name="subscription_cursor_help">"新しいログインは統合された Grok / Cursor ダッシュボードを開きます。既存の旧接続は切り替えや切断まで保持します。"</string>
+    <string name="subscription_secret_notice">"認証情報は端末内で暗号化し、選択したサービスにのみ送信します。接続解除時に認証情報、ウェブログイン状態とキャッシュを削除します。"</string>
     <string name="subscription_dashboard">"公式ダッシュボード"</string>
     <string name="subscription_updated">"更新日時 %1$s"</string>
     <string name="subscription_used">"%1$s%% 使用済み"</string>
@@ -395,7 +395,7 @@
     <string name="subscription_deepseek_description">"API 残高 · 付与とチャージの内訳"</string>
     <string name="subscription_go_description">"ローリング・週間・月間使用量"</string>
     <string name="subscription_zen_description">"Console 残高と利用可能額 · 実験的接続"</string>
-    <string name="subscription_cursor_description">"旧個人ダッシュボード · 移行済みは Grok / Cursor"</string>
+    <string name="subscription_cursor_description">"既存の Cursor 旧接続です。新しいログインには統合 Grok / Cursor カードを使用します。"</string>
     <string name="subscription_prepaid">"前払い"</string>
     <string name="subscription_credit">"クレジット請求"</string>
     <string name="subscription_seat">"シート課金"</string>
@@ -404,7 +404,7 @@
     <string name="subscription_retry_storage">"データの読み込みを再試行"</string>
     <string name="subscription_reset_storage">"プランデータをリセット"</string>
     <string name="subscription_reset_title">"読み込めないプランデータをリセットしますか？"</string>
-    <string name="subscription_reset_detail">"最初に読み込みを再試行します。引き続き失敗する場合、すべての購読サービスの端末内の認証情報とキャッシュを削除し、再接続が必要になります。読み込める接続は保持されます。Codex の接続と他の設定には影響しません。"</string>
+    <string name="subscription_reset_detail">"最初に読み込みを再試行します。引き続き失敗する場合、すべての購読サービスの端末内の認証情報、ウェブログイン状態とキャッシュを削除し、再接続が必要になります。読み込める接続は保持されます。Codex の接続と他の設定には影響しません。"</string>
     <string name="update_retry_at">"更新サービスから待機が求められています。%1$s 以降に再試行してください。"</string>
     <string name="update_retry_ready">"待機時間が終了しました。更新を再確認できます。"</string>
     <string name="update_fallback_wait">メインの更新元に接続できません。予備の更新元は %1$s まで待機します。メインは再試行できますが、予備の待機は継続します。</string>
@@ -472,12 +472,12 @@
     <string name="subscription_quota_window">"利用枠の期間"</string>
     <string name="subscription_window_seconds">"%1$s 秒の利用枠"</string>
     <string name="subscription_api_spend">"合計費用（プラン内使用量を含む）"</string>
-    <string name="subscription_kimi_description">"会員使用量と追加利用残高 · 実験的な Web セッション"</string>
-    <string name="subscription_kimi_help">"デスクトップブラウザーで kimi.com にログインします。開発者ツール → Application → Local Storage の access_token の値だけをコピーします。会員枠と追加利用残高を取得します。Open Platform API 残高は別カードで接続し、期限切れ時は再接続してください。"</string>
-    <string name="subscription_workbuddy_description">"WorkBuddy / CodeBuddy のパッケージ別クレジット · 国際版"</string>
-    <string name="subscription_workbuddy_help">"workbuddy.ai にログインし、開発者ツール → Application → Cookies の session と session_2 の値を各欄に入力します。Network のリクエストヘッダーから同じブラウザーの User-Agent もコピーします。セッションはこの値に紐づきます。有効なパッケージを取得します。発行される API キーは CodeBuddy CLI 用です。カスタムモデルの API 残高はモデル提供元に属します。"</string>
-    <string name="subscription_grok_description">"Grok / Cursor 共通の会員枠 · 重複計上なし · 実験的"</string>
-    <string name="subscription_grok_help">"grok.com/dashboard/usage を開き、開発者ツール → Application → Cookies の WorkosCursorSessionToken の値をコピーします。共通の週次枠、追加利用費用、アカウント残高を取得します。xAI 開発者 API 残高とは別です。旧 Cursor アカウントは Cursor カードを利用できます。ブラウザー認証やセッション変更で接続できない場合は、カードから公式データを取り込んでください。"</string>
+    <string name="subscription_kimi_description">"公式サイトへのログイン後に Kimi 会員使用量と追加残高を取得します。Open Platform API 残高は別の接続です。"</string>
+    <string name="subscription_kimi_help">"Kimi の公式ページにログインすると、会員使用量と追加残高を自動取得します。トークンのコピーは不要です。"</string>
+    <string name="subscription_workbuddy_description">"WorkBuddy 国際版の有効なクレジットパックです。ログインは専用のブラウザープロファイルに保持します。中国版は未対応です。"</string>
+    <string name="subscription_workbuddy_help">"WorkBuddy 国際版の公式ページにログインして、有効なクレジットパックを取得します。セッションやブラウザー情報のコピーは不要です。独自モデルの API 残高は各モデル提供者に属します。"</string>
+    <string name="subscription_grok_description">"Grok / Cursor の共有サブスクリプション枠と料金です。公式サイトでログインや更新ができ、Cookie や JSON のコピーは不要です。"</string>
+    <string name="subscription_grok_help">"Grok / Cursor の公式ダッシュボードにログインし、共有の週間枠、追加使用料金、取得可能な残高を確認します。xAI 開発者 API の残高は別の接続です。"</string>
     <string name="subscription_extra_balance">"追加利用残高"</string>
     <string name="subscription_credits_remaining">"残りクレジット"</string>
     <string name="subscription_credits_of">"%1$s / %2$s クレジット"</string>
@@ -492,7 +492,18 @@
     <string name="subscription_filter_api">"API 請求"</string>
     <string name="subscription_external_api_note">"WorkBuddy でカスタムモデル API を利用する場合は「API 請求」でモデル提供元に接続してください。WorkBuddy のクレジットとは別の残高です。"</string>
     <string name="subscription_import">"公式サイトのデータを取り込む"</string>
-    <string name="subscription_import_notice">"公式サイトから手動で取り込んだデータです。取得時刻は取り込み時刻より前の場合があり、自動更新されません。ダッシュボードで確認して再度取り込んでください。"</string>
+    <string name="subscription_import_notice">"旧バージョンで手動取り込みしたデータです。取り込み時刻より古い場合があります。「公式サイトでログイン」で接続して更新してください。"</string>
     <string name="subscription_imported_at">"取り込み日時 %1$s"</string>
     <string name="subscription_import_help">"grok.com/dashboard/usage の開発者ツール → Network で usage-status?scope=user の JSON レスポンスをコピーして貼り付けます。保存するのは利用枠と費用のみです。リクエストヘッダーや Cookie は貼り付けないでください。残高がない場合は不明のままです。自動更新されない手動のスナップショットです。"</string>
+    <string name="subscription_browser_title">"%1$s にログイン"</string>
+    <string name="subscription_browser_connect">"公式サイトでログイン"</string>
+    <string name="subscription_browser_refresh">"公式サイトで更新"</string>
+    <string name="subscription_browser_cached">"ログイン済みの公式ページから取得した前回のデータです。「公式サイトで更新」で再取得できます。"</string>
+    <string name="subscription_browser_reading">"使用量を取得中です。完了すると Quodex に自動で戻ります。"</string>
+    <string name="subscription_browser_retry">"使用量を取得できませんでした。ページでログインや認証を完了してから再試行してください。"</string>
+    <string name="subscription_browser_limited">"サービスから待機が要求されました。待機時間が過ぎてから再取得できます。"</string>
+    <string name="subscription_browser_blocked">"このページや操作を安全に開けませんでした。公式の使用量ページに戻って再試行してください。"</string>
+    <string name="subscription_browser_sign_in">"公式ページでログインと必要な認証を行ってください。使用量を取得すると自動で戻ります。"</string>
+    <string name="subscription_browser_read">"使用量を取得"</string>
+    <string name="subscription_browser_clear">"ログイン状態を削除"</string>
 </resources>

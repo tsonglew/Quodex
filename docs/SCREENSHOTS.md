@@ -1,5 +1,9 @@
 # Android 原生截图与动效录屏
 
+## alpha38 官方登录（2026-11-06）
+
+[原生登录入口、合成数据和验收范围](screenshots/browser-login-alpha38/README.md)。API 36 原生截图；alpha37 的手动会话／导入界面为历史记录。
+
 ## alpha37 Kimi、WorkBuddy、Cursor 与 Grok（2026-11-06）
 
 [来源、浅深色、API 账单、手动导入和大字体界面](screenshots/providers-alpha37/README.md)。来自 alpha37 debug / API 37 模拟器，全部为合成数据，未裁切或重绘；手动导入图使用测试 JSON，不是实际账号。

@@ -52,7 +52,7 @@ data class SubscriptionSnapshot(
 
 /** Credentials never enter UI state, diagnostics, snapshots or toString output. */
 @Serializable
-data class SubscriptionAccount(val credential: String, val snapshot: SubscriptionSnapshot, val imported: Boolean = false) {
+data class SubscriptionAccount(val credential: String, val snapshot: SubscriptionSnapshot, val imported: Boolean = false, val browser: Boolean = false) {
     override fun toString() = "SubscriptionAccount(credentials=redacted)"
 }
 
@@ -63,6 +63,7 @@ data class SubscriptionState(
     val failure: FailureKind? = null,
     val retryAt: Long = 0,
     val imported: Boolean = false,
+    val browser: Boolean = false,
 )
 
 object SubscriptionParser {

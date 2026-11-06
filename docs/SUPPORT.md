@@ -1,10 +1,10 @@
 # 支持范围与已知限制
 
-更新：2026-11-06，当前源码版本 0.1.0-alpha37。本文描述已经取得的证据和未完成的验收，实际可安装版本以 GitHub Releases 附件为准，不表示已发布稳定版本。
+更新：2026-11-06，当前源码版本 0.1.0-alpha38。本文描述已经取得的证据和未完成的验收，实际可安装版本以 GitHub Releases 附件为准，不表示已发布稳定版本。
 
 ## 订阅额度与 API 账单
 
-alpha37 增加 Kimi 会员／Code／国内和国际 API 余额、WorkBuddy 国际站积分、Grok／Cursor 共享订阅池、xAI API 预付余额与 Cursor 团队费用。原有 DeepSeek、OpenCode 和旧 Cursor 连接保留。仅前台查询，五分钟缓存；Grok 手动导入不会自动刷新，原生请求可能被网页验证阻止。WorkBuddy 自带模型 key 的账单归相应模型服务商，不虚构独立钱包。Cursor Admin 显示费用而非剩余额度。各项不进入 Codex 小组件、Token 图表或后台同步。
+alpha37 增加 Kimi 会员／Code／国内和国际 API 余额、WorkBuddy 国际站积分、Grok／Cursor 共享订阅池、xAI API 预付余额与 Cursor 团队费用。原有 DeepSeek、OpenCode 和旧 Cursor 连接保留。alpha38 将 Kimi、WorkBuddy、Grok／Cursor 改为 App 内官网登录，无需粘贴会话或 JSON；点击官网刷新复用登录，平时显示缓存。API 与旧连接保持五分钟前台缓存。部分 SSO 可能不支持 WebView，真实 Android 账号完整登录仍需验收。WorkBuddy 自带模型 key 的账单归相应模型服务商，不虚构独立钱包。Cursor Admin 显示费用而非剩余额度。各项不进入 Codex 小组件、Token 图表或后台同步。
 
 Kimi、WorkBuddy 已核对登录网页及浏览器外只读 HTTP；开发者 API 尚未用真实 key 验收。私有接口、套餐与地区覆盖可能变化。具体输入、数据单位与证据见[订阅与 API 账单说明](SUBSCRIPTIONS.md)。
 

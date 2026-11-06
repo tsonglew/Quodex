@@ -26,6 +26,7 @@ import com.tsonglew.quodex.R
 import com.tsonglew.quodex.data.*
 import com.tsonglew.quodex.i18n.*
 import com.tsonglew.quodex.subscriptions.*
+import com.tsonglew.quodex.subscriptions.browser.BrowserProvider
 
 @Composable
 fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
@@ -41,7 +42,6 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
     val context = LocalContext.current
     var connecting by remember { mutableStateOf<SubscriptionProvider?>(null) }
     var confirmReset by remember { mutableStateOf(false) }
-    var importingGrok by remember { mutableStateOf(false) }
     if (selectedProvider == null) {
         Text(texts(R.string.nav_accounts), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(8.dp))
@@ -141,20 +141,32 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
                         else texts(failure.subscriptionErrorResource()), color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.testTag("subscription-error-${provider.name}"))
                 }
+                if (state.browser) Text(texts(R.string.subscription_browser_cached), style = MaterialTheme.typography.bodySmall)
                 if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 if (!demo) {
                     if (state.busy) TextButton(onClick = { model.cancelSubscription(provider) }) {
                         Text(texts(R.string.subscription_cancel))
                     }
-                    if (provider == SubscriptionProvider.GROK) OutlinedButton(onClick = { importingGrok = true },
-                        enabled = !state.busy && !storageUnavailable, modifier = Modifier.fillMaxWidth().testTag("subscription-import-GROK")) {
-                        Text(texts(R.string.subscription_import))
+                    val browser = BrowserProvider.forProvider(provider)
+                    fun openLogin() {
+                        if (browser != null) {
+                            if (provider != browser.provider) onOpen("provider:${browser.provider.name}")
+                            model.connectSubscriptionBrowser(provider, context)
+                        } else connecting = provider
                     }
-                    Button(onClick = { connecting = provider }, enabled = !state.busy && !storageUnavailable,
-                        modifier = Modifier.fillMaxWidth().testTag("subscription-connect-${provider.name}")) { Text(texts(if (state.connected) R.string.reconnect else R.string.subscription_connect)) }
+                    Button(onClick = ::openLogin, enabled = !state.busy && !storageUnavailable,
+                        modifier = Modifier.fillMaxWidth().testTag("subscription-connect-${provider.name}")) {
+                        Text(texts(if (browser != null) R.string.subscription_browser_connect
+                            else if (state.connected) R.string.reconnect else R.string.subscription_connect))
+                    }
+                    if (!state.connected && browser?.provider == provider) TextButton(onClick = { model.disconnectSubscription(provider) },
+                        enabled = !state.busy && !storageUnavailable) { Text(texts(R.string.subscription_browser_clear)) }
                     if (state.connected) {
-                        if (!state.imported) OutlinedButton(onClick = { model.refreshSubscription(provider) },
-                            enabled = !state.busy && now >= state.retryAt, modifier = Modifier.fillMaxWidth()) { Text(texts(R.string.subscription_refresh)) }
+                        OutlinedButton(onClick = {
+                            if (browser != null) openLogin() else model.refreshSubscription(provider)
+                        }, enabled = !state.busy && now >= state.retryAt, modifier = Modifier.fillMaxWidth()) {
+                            Text(texts(if (browser != null) R.string.subscription_browser_refresh else R.string.subscription_refresh))
+                        }
                         TextButton(onClick = { model.disconnectSubscription(provider) }) { Text(texts(R.string.subscription_disconnect)) }
                     }
                 }
@@ -167,21 +179,6 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
     Spacer(Modifier.height(16.dp))
     if (demo || selectedProvider == null || !saved.getValue(selectedProvider).imported)
         Text(texts(R.string.subscriptions_scope), style = MaterialTheme.typography.bodySmall)
-    if (importingGrok) {
-        var raw by remember { mutableStateOf("") }
-        GlassAlertDialog(surfaceId = "grok-import", onDismissRequest = { raw = ""; importingGrok = false },
-            title = { Text(texts(R.string.subscription_import)) },
-            text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(texts(R.string.subscription_import_help))
-                OutlinedTextField(value = raw, onValueChange = { raw = it.take(65536) }, minLines = 4, maxLines = 10,
-                    label = { Text("JSON") }, keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
-                    modifier = Modifier.fillMaxWidth().testTag("subscription-import-json"))
-            } },
-            confirmButton = { TextButton(enabled = raw.isNotBlank(), onClick = {
-                model.importGrokSubscription(raw); raw = ""; importingGrok = false
-            }) { Text(texts(R.string.subscription_import)) } },
-            dismissButton = { TextButton(onClick = { raw = ""; importingGrok = false }) { Text(texts(R.string.subscription_cancel)) } })
-    }
     if (confirmReset) GlassAlertDialog(surfaceId = "subscriptions-reset", onDismissRequest = { confirmReset = false },
         title = { Text(texts(R.string.subscription_reset_title)) },
         text = { Text(texts(R.string.subscription_reset_detail), modifier = Modifier.verticalScroll(rememberScrollState())) },
@@ -191,35 +188,20 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
     connecting?.let { provider ->
         // Never save credentials to saved-instance-state or a persistent text field.
         var input by remember(provider) { mutableStateOf("") }
-        var chunk by remember(provider) { mutableStateOf("") }
-        var browserAgent by remember(provider) { mutableStateOf("") }
-        val credential = if (provider == SubscriptionProvider.WORKBUDDY)
-            WorkBuddySession(input.trim(), chunk.trim(), browserAgent.trim()).encode() else input.trim()
+        val credential = input.trim()
         GlassAlertDialog(surfaceId = "subscription-connect", onDismissRequest = { input = ""; connecting = null },
             title = { Text(provider.displayName) },
             text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(texts(provider.helpResource()))
                 OutlinedTextField(value = input, onValueChange = { input = it.take(8192) }, singleLine = true,
-                    label = { Text(if (provider == SubscriptionProvider.WORKBUDDY) "session" else texts(if (provider in
-                        setOf(SubscriptionProvider.CURSOR, SubscriptionProvider.GROK, SubscriptionProvider.KIMI))
-                        R.string.subscription_session else R.string.subscription_credential)) },
+                    label = { Text(texts(R.string.subscription_credential)) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
                     modifier = Modifier.fillMaxWidth().testTag("subscription-credential"))
-                if (provider == SubscriptionProvider.WORKBUDDY) {
-                    OutlinedTextField(value = chunk, onValueChange = { chunk = it.take(8192) }, singleLine = true,
-                        label = { Text("session_2") }, visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
-                        modifier = Modifier.fillMaxWidth().testTag("subscription-cookie-chunk"))
-                    OutlinedTextField(value = browserAgent, onValueChange = { browserAgent = it.take(512) },
-                        label = { Text(texts(R.string.subscription_browser_agent)) },
-                        keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
-                        modifier = Modifier.fillMaxWidth().testTag("subscription-browser-agent"))
-                }
                 Text(texts(R.string.subscription_secret_notice), style = MaterialTheme.typography.bodySmall)
             } },
             confirmButton = { TextButton(enabled = SubscriptionApi.validCredential(provider, credential), onClick = {
-                model.connectSubscription(provider, credential); input = ""; chunk = ""; browserAgent = ""; connecting = null
+                model.connectSubscription(provider, credential); input = ""; connecting = null
             }) { Text(texts(R.string.subscription_connect)) } },
             dismissButton = { TextButton(onClick = { input = ""; connecting = null }) { Text(texts(R.string.subscription_cancel)) } })
     }
