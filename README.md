@@ -37,7 +37,7 @@
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/all-glass-alpha36/all-glass-quota-light.png" width="230" alt="alpha36 debug：多服务总览，API 37 模拟器，示例数据" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-subscriptions-light.png" width="230" alt="alpha36 debug：统一账号入口，API 37 模拟器，示例模式" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-settings-light.png" width="230" alt="alpha36 debug：紧凑设置列表，API 37 模拟器" /> |
 
-上方为融合导航改版的 alpha36 历史截图；alpha37 新服务见下方原生截图，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。当前已发布包仍为 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1)，保留四页导航。
+上方为融合导航改版的 alpha36 历史截图；alpha37 新服务见下方原生截图，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。历史发布 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1) 保留四页导航；当前可安装版本请查看 [Releases 的实际产物](https://github.com/tsonglew/Quodex/releases)。
 
 ## 界面一览
 
@@ -123,6 +123,8 @@ Debug APK 输出到 `app/build/outputs/apk/debug/app-debug.apk`。技术栈为 K
 连接测试模拟器后可运行 `./gradlew connectedDebugAndroidTest`。测试会改变示例模式、账号和显示偏好，请使用专用测试环境。[贡献指南](CONTRIBUTING.md) · [测试说明](docs/TESTING.md) · [CI 与签名发布](docs/CI_CD.md)
 
 CI 保留 Android 29、31、35、36、37.0 与 37.2 的设备检查。Android 17 的完整测试套件在预编译 APK 后执行，上限为 1800 秒（设备 job 上限 50 分钟），超时保留部分报告并判定失败。真实断网探针等待系统与 WorkManager 都确认离线，再验证任务等待及联网后只刷新一次。
+
+PR 与 master 都检查经过 R8 压缩的 release APK，包括六版本上的页面切换、语言、设置和退出示例模式。冒烟测试仅使用临时测试签名；读取界面失败时有限重试，每次清除旧 UI 层级，失败后独立保存截图与 Activity 状态。正式签名和发布仍须等待 master 的全部检查通过。
 
 ## 一起完善 Quodex
 

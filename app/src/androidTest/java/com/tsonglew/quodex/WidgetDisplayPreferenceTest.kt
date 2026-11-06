@@ -95,11 +95,22 @@ class WidgetDisplayPreferenceTest {
             host.onActivity { activity ->
                 expectedTask = activity.taskId
                 val tasks = activity.getSystemService(android.app.ActivityManager::class.java).appTasks
-                actualTasks = tasks.mapNotNull { it.taskInfo?.taskId }
-                tasks.firstOrNull { it.taskInfo?.taskId == expectedTask }?.let {
-                    it.moveToFront()
-                    found = true
+                val liveTasks = mutableListOf<Int>()
+                for (task in tasks) {
+                    try {
+                        // Android 10 can return the just-closed settings task in appTasks,
+                        // then throw from getTaskInfo once the system has removed it.
+                        val id = task.taskInfo?.taskId ?: continue
+                        liveTasks += id
+                        if (id == expectedTask) {
+                            task.moveToFront()
+                            found = true
+                        }
+                    } catch (error: IllegalArgumentException) {
+                        if (error.message?.startsWith("Unable to find task ID ") != true) throw error
+                    }
                 }
+                actualTasks = liveTasks
             }
             if (found) return
             // Closing the settings task and publishing the remaining task list are asynchronous.
