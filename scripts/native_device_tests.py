@@ -20,11 +20,11 @@ def run_instrumentation(path: Path) -> None:
     path.parent.mkdir(exist_ok=True)
     try:
         with path.open('w') as output:
-            # The expanded glass/UI suite is still progressing at 900s on Android 17.
+            # The full UI suite plus cold WebView readers needs headroom on Android 17.
             # Keep the full suite bounded within the 50-minute job; never retry failures.
             result = subprocess.run(['adb', '-e', 'shell', 'am', 'instrument', '-r', '-w',
                                      'com.tsonglew.quodex.test/com.tsonglew.quodex.QuotaTestRunner'],
-                                    stdout=output, stderr=subprocess.STDOUT, timeout=1800)
+                                    stdout=output, stderr=subprocess.STDOUT, timeout=2100)
     finally:
         # Preserve partial runner statuses in the job log even if adb times out.
         print(path.read_text())

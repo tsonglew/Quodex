@@ -108,44 +108,59 @@ class SubscriptionsUiTest {
         } finally { runBlocking { app.settings.theme(previous.theme) } }
     }
 
-    @Test fun workbuddySessionFormAndGrokImportAreSeparateFromApiKeys() {
-        compose.onNodeWithTag("tab-subscriptions").performClick()
-        compose.openProvider("WORKBUDDY")
-        compose.onNodeWithTag("subscription-connect-WORKBUDDY").performScrollToVisible(compose).performClick()
-        compose.onNodeWithTag("subscription-credential").performTextInput("fixture-session")
-        compose.onNodeWithTag("subscription-cookie-chunk").performScrollToVisible(compose).performTextInput("fixture-chunk")
-        compose.onNodeWithTag("subscription-browser-agent").performScrollToVisible(compose).performTextInput("Synthetic Browser/1.0")
-        compose.onAllNodesWithText("连接").onLast().performClick()
-        compose.waitUntil(5000) { app.subscriptions.state.value.getValue(SubscriptionProvider.WORKBUDDY).connected }
-        val account = EncryptedSubscriptionStore(app).read().getValue(SubscriptionProvider.WORKBUDDY)
-        assertEquals("Synthetic Browser/1.0", WorkBuddySession.parse(account.credential)?.userAgent)
-        runBlocking { app.subscriptions.connect(SubscriptionProvider.KIMI_API, "fixture-kimi-api") }
-        val requests = app.subscriptionRequests.get()
-        compose.onNodeWithTag("navigate-back").performClick()
-        compose.openProvider("GROK")
-        compose.onNodeWithTag("subscription-import-GROK").performScrollToVisible(compose).performClick()
-        compose.onNodeWithTag("subscription-import-json").performScrollToVisible(compose).performTextInput(
-            """{"availability":"available","weeklyIncludedUsage":{"usedCents":37,"budgetCents":100}}""")
-        compose.onAllNodesWithText("导入官网数据").onLast().performClick()
-        compose.waitUntil(5000) { app.subscriptions.state.value.getValue(SubscriptionProvider.GROK).imported }
-        assertEquals(requests, app.subscriptionRequests.get())
-        compose.onNode(hasText("刷新") and hasAnyAncestor(hasTestTag("subscription-GROK"))).assertDoesNotExist()
-        compose.onNodeWithText("从官网手动导入，数据可能早于导入时间，不会自动刷新。请核对控制台后重新导入。")
-            .performScrollToVisible(compose).assertIsDisplayed()
-        compose.onNodeWithText("打开此页时检查更新，也可手动刷新。桌面小组件目前仅显示 Codex。").assertDoesNotExist()
-        alignCardForScreenshot(SubscriptionProvider.GROK)
-        saveDeviceScreenshot(app, "providers-grok-manual-import", requireNotNull(instrumentation.uiAutomation.takeScreenshot()))
-        val encoded = java.io.File(app.noBackupFilesDir, "subscriptions.enc").readBytes().toString(Charsets.ISO_8859_1)
-        assertFalse(encoded.contains("fixture-session"))
-        assertFalse(encoded.contains("fixture-chunk"))
-        compose.onNodeWithTag("tab-quota").performClick()
-        compose.onNodeWithTag("overview-WORKBUDDY").assertExists()
-        compose.onNodeWithText("60 / 100 积分").performScrollToVisible(compose).assertIsDisplayed()
-        compose.onNodeWithText("CNY 49.58894").performScrollToVisible(compose).assertIsDisplayed()
-        compose.onNodeWithTag("overview-GROK").assertExists()
-        compose.onNodeWithText("从官网手动导入，数据可能早于导入时间，不会自动刷新。请核对控制台后重新导入。")
-            .performScrollToVisible(compose).assertIsDisplayed()
-        assertEquals(requests, app.subscriptionRequests.get())
+    @Test fun officialLoginsReplaceSessionFormsAndKeepApiKeysSeparate() {
+        val fixtures = mapOf(
+            SubscriptionProvider.KIMI to """{"subscriptionBalance":{"unit":"UNIT_CREDIT","amountUsedRatio":0.28}}""",
+            SubscriptionProvider.WORKBUDDY to """{"code":0,"data":{"Response":{"Data":{"TotalCount":1,"Accounts":[{"CapacityUnit":"credits","CycleCapacityRemainPrecise":"60","CycleCapacitySizePrecise":"100","PackageName":"Free Plan"}]}}}}""",
+            SubscriptionProvider.GROK to """{"availability":"available","weeklyIncludedUsage":{"usedCents":37,"budgetCents":100}}""")
+        val destinations = mapOf(
+            "KIMI" to "KimiLoginActivity", "WORKBUDDY" to "WorkBuddyLoginActivity",
+            "GROK" to "GrokLoginActivity", "CURSOR" to "GrokLoginActivity")
+        val launches = java.util.concurrent.CopyOnWriteArrayList<String>()
+        val monitor = object : android.app.Instrumentation.ActivityMonitor() {
+            override fun onStartActivity(intent: android.content.Intent): android.app.Instrumentation.ActivityResult? {
+                val name = intent.component?.className ?: return null
+                if (!name.endsWith("LoginActivity") || !name.contains("subscriptions.browser")) return null
+                launches += name.substringAfterLast('.')
+                val provider = when { name.endsWith("KimiLoginActivity") -> SubscriptionProvider.KIMI
+                    name.endsWith("WorkBuddyLoginActivity") -> SubscriptionProvider.WORKBUDDY
+                    else -> SubscriptionProvider.GROK }
+                com.tsonglew.quodex.subscriptions.browser.BrowserSession.receiver(intent.extras,
+                    com.tsonglew.quodex.subscriptions.browser.BrowserSession.REPLY)!!.send(
+                    com.tsonglew.quodex.subscriptions.browser.BrowserSession.SUCCESS,
+                    android.os.Bundle().apply { putString(com.tsonglew.quodex.subscriptions.browser.BrowserSession.QUOTA, fixtures.getValue(provider)) })
+                return android.app.Instrumentation.ActivityResult(android.app.Activity.RESULT_CANCELED, null)
+            }
+        }
+        instrumentation.addMonitor(monitor)
+        try {
+            compose.onNodeWithTag("tab-subscriptions").performClick()
+            for ((name, destination) in destinations) {
+                compose.openProvider(name)
+                compose.onNodeWithTag("subscription-connect-$name").performScrollToVisible(compose).performClick()
+                compose.waitUntil(10_000) { launches.lastOrNull() == destination &&
+                    app.subscriptions.state.value.getValue(if (name == "CURSOR") SubscriptionProvider.GROK else SubscriptionProvider.valueOf(name)).browser }
+                compose.onNodeWithTag("subscription-credential").assertDoesNotExist()
+                compose.onNodeWithTag("subscription-cookie-chunk").assertDoesNotExist()
+                if (name != "CURSOR") {
+                    alignCardForScreenshot(SubscriptionProvider.valueOf(name))
+                    saveDeviceScreenshot(app, "login-${name.lowercase()}-sample", requireNotNull(instrumentation.uiAutomation.takeScreenshot()))
+                }
+                compose.onNodeWithTag("navigate-back").performClick()
+            }
+            assertEquals(destinations.values.toList(), launches.toList())
+            runBlocking { app.subscriptions.connect(SubscriptionProvider.KIMI_API, "fixture-kimi-api") }
+            val requests = app.subscriptionRequests.get()
+            val saved = EncryptedSubscriptionStore(app).read()
+            fixtures.keys.forEach { assertTrue(saved.getValue(it).browser); assertEquals("", saved.getValue(it).credential) }
+            runBlocking { fixtures.keys.forEach { app.subscriptions.refresh(it, true) } }
+            assertEquals(requests, app.subscriptionRequests.get())
+            compose.onNodeWithTag("tab-quota").performClick()
+            compose.onNodeWithTag("overview-WORKBUDDY").assertExists()
+            compose.onNodeWithText("60 / 100 积分").performScrollToVisible(compose).assertIsDisplayed()
+            compose.onNodeWithText("CNY 49.58894").performScrollToVisible(compose).assertIsDisplayed()
+            compose.onNodeWithTag("overview-GROK").assertExists()
+        } finally { instrumentation.removeMonitor(monitor) }
     }
 
     private fun alignCardForScreenshot(provider: SubscriptionProvider) {

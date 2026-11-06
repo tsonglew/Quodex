@@ -355,7 +355,7 @@
     <string name="token_heatmap_status_unavailable">"无数据"</string>
     <string name="subscriptions">"订阅"</string>
     <string name="subscriptions_intro">"集中查看服务余额与订阅用量，每个服务在本机独立保存。"</string>
-    <string name="subscriptions_scope">"打开此页时检查更新，也可手动刷新。桌面小组件目前仅显示 Codex。"</string>
+    <string name="subscriptions_scope">"API 连接在打开此页时检查更新；网页登录连接保留上次额度，点“官网刷新”更新。桌面组件目前仅显示 Codex。"</string>
     <string name="subscription_connect">"连接"</string>
     <string name="subscription_refresh">"刷新"</string>
     <string name="subscription_disconnect">"断开连接"</string>
@@ -365,7 +365,7 @@
     <string name="subscription_deepseek_help">"在 DeepSeek 开放平台创建 API 密钥。查询 API 总余额、赠送余额和充值余额，与聊天应用独立。"</string>
     <string name="subscription_go_help">"使用所属 Go 工作区的 API 密钥，读取 OpenCode 返回的滚动、周和月度用量。"</string>
     <string name="subscription_zen_help">"OpenCode Console（原 Zen）：使用具有账单读取权限的个人 API 密钥，查询工作区余额与可用额度。控制台兼容接入为实验功能。"</string>
-    <string name="subscription_cursor_help">"实验性个人控制台接入。在电脑浏览器登录 cursor.com/dashboard，通过开发者工具 → Application → Cookies 复制 WorkosCursorSessionToken 的值，仅粘贴到此处，不要发到聊天中。页面变更或会话过期可能需要重新连接。"</string>
+    <string name="subscription_cursor_help">"新登录统一打开 Grok / Cursor 控制台；已有旧接口连接可继续使用，直到切换或断开。"</string>
     <string name="subscription_secret_notice">"凭据在本机加密保存，仅发送至所选服务；断开连接会删除其凭据和缓存。"</string>
     <string name="subscription_dashboard">"官方控制台"</string>
     <string name="subscription_updated">"更新于 %1$s"</string>
@@ -395,7 +395,7 @@
     <string name="subscription_deepseek_description">"API 余额 · 赠送与充值明细"</string>
     <string name="subscription_go_description">"滚动、周与月度用量"</string>
     <string name="subscription_zen_description">"控制台余额与可用额度 · 实验接入"</string>
-    <string name="subscription_cursor_description">"旧版个人控制台 · 已迁移账号请用 Grok / Cursor"</string>
+    <string name="subscription_cursor_description">"已有 Cursor 旧接口连接。新登录使用统一的 Grok / Cursor 额度卡片。"</string>
     <string name="subscription_prepaid">"预付费"</string>
     <string name="subscription_credit">"信用额度计费"</string>
     <string name="subscription_seat">"席位计费"</string>
@@ -404,7 +404,7 @@
     <string name="subscription_retry_storage">"重试读取数据"</string>
     <string name="subscription_reset_storage">"重置订阅数据"</string>
     <string name="subscription_reset_title">"重置无法读取的订阅数据？"</string>
-    <string name="subscription_reset_detail">"将先重试读取；若仍失败，会清除全部订阅服务的本机凭据及缓存，需要重新连接。若已恢复可读，则保留原连接。不会清除 Codex 连接或其他设置。"</string>
+    <string name="subscription_reset_detail">"将先重试读取；若仍失败，会清除全部订阅服务的本机凭据、网页登录状态及缓存，需要重新连接。若已恢复可读，则保留原连接。不会清除 Codex 连接或其他设置。"</string>
     <string name="update_retry_at">"更新服务要求等待，请在 %1$s 后重试。"</string>
     <string name="update_retry_ready">"等待时间已结束，可以重新检查更新。"</string>
     <string name="update_fallback_wait">主更新来源暂不可用，备用来源需等到 %1$s。可重试主来源；备用来源会继续等待。</string>
@@ -472,12 +472,12 @@
     <string name="subscription_quota_window">"额度窗口"</string>
     <string name="subscription_window_seconds">"%1$s 秒额度窗口"</string>
     <string name="subscription_api_spend">"总费用（含套餐内用量）"</string>
-    <string name="subscription_kimi_description">"会员用量与加量包余额 · 实验性网页会话"</string>
-    <string name="subscription_kimi_help">"在电脑浏览器登录 kimi.com。开发者工具 → Application → Local Storage，复制 access_token 的值。查询会员用量与加量包余额；开放平台 API 余额请使用单独的卡片。令牌过期后需重新连接。"</string>
-    <string name="subscription_workbuddy_description">"WorkBuddy／CodeBuddy 按资源包显示积分 · 国际站账户"</string>
-    <string name="subscription_workbuddy_help">"登录 workbuddy.ai，在浏览器开发者工具 → Application → Cookies 中，分别复制 session 和 session_2 的值；再从 Network 请求头复制该浏览器的 User-Agent。WorkBuddy 将会话绑定到此值。查询有效积分包；此处签发的 API Key 用于 CodeBuddy CLI。自定义模型的 API 余额归模型服务商所有。"</string>
-    <string name="subscription_grok_description">"Grok／Cursor 统一订阅额度池 · 仅计一次 · 实验性接入"</string>
-    <string name="subscription_grok_help">"打开 grok.com/dashboard/usage，在开发者工具 → Application → Cookies 中复制 WorkosCursorSessionToken 的值。查询共享周额度、额外用量费用与账户余额，与 xAI 开发者 API 余额独立。旧版 Cursor 账号可使用 Cursor 卡片。浏览器验证或会话变化可能导致无法连接，此时请使用卡片的“导入官网数据”。"</string>
+    <string name="subscription_kimi_description">"官网登录后读取 Kimi 会员用量和加量包余额；开放平台 API 余额使用独立连接。"</string>
+    <string name="subscription_kimi_help">"在 Kimi 官方页面登录后，自动读取会员用量和加量包余额，无需复制令牌。"</string>
+    <string name="subscription_workbuddy_description">"查询 WorkBuddy 国际站的有效积分包，登录状态保留在该服务独立的浏览器中。国内站暂不支持。"</string>
+    <string name="subscription_workbuddy_help">"在 WorkBuddy 国际站官网登录，自动读取有效积分包，无需复制会话或浏览器信息。自定义模型的 API 余额归模型服务商所有。"</string>
+    <string name="subscription_grok_description">"Grok / Cursor 的共享订阅额度与费用。通过官网登录连接和刷新，无需复制 Cookie 或 JSON。"</string>
+    <string name="subscription_grok_help">"在 Grok / Cursor 官方控制台登录，自动读取共享周额度、额外用量费用和可用账户余额。xAI 开发者 API 钱包使用独立连接。"</string>
     <string name="subscription_extra_balance">"订阅加量余额"</string>
     <string name="subscription_credits_remaining">"剩余积分"</string>
     <string name="subscription_credits_of">"%1$s / %2$s 积分"</string>
@@ -492,7 +492,18 @@
     <string name="subscription_filter_api">"API 账单"</string>
     <string name="subscription_external_api_note">"在 WorkBuddy 中使用自定义模型 API？请在「API 账单」连接对应服务商，其余额与 WorkBuddy 积分独立。"</string>
     <string name="subscription_import">"导入官网数据"</string>
-    <string name="subscription_import_notice">"从官网手动导入，数据可能早于导入时间，不会自动刷新。请核对控制台后重新导入。"</string>
+    <string name="subscription_import_notice">"旧版手动导入的数据，可能早于导入时间。请点“官网登录”连接并更新。"</string>
     <string name="subscription_imported_at">"导入于 %1$s"</string>
     <string name="subscription_import_help">"在 grok.com/dashboard/usage 打开浏览器开发者工具 → Network，复制 usage-status?scope=user 请求的 JSON 响应并粘贴。仅保存额度与费用字段，请勿粘贴请求头或 Cookie。未包含的账户余额保持未知。这是手动快照，不会自动更新。"</string>
+    <string name="subscription_browser_title">"登录 %1$s"</string>
+    <string name="subscription_browser_connect">"官网登录"</string>
+    <string name="subscription_browser_refresh">"官网刷新"</string>
+    <string name="subscription_browser_cached">"来自已登录的官方页面。当前显示上次读取的额度，点“官网刷新”更新。"</string>
+    <string name="subscription_browser_reading">"正在读取额度，完成后自动返回 Quodex。"</string>
+    <string name="subscription_browser_retry">"暂时无法读取额度。请在页面中完成登录或验证，再重试。"</string>
+    <string name="subscription_browser_limited">"服务要求稍后再试，等待时间结束后可重新读取。"</string>
+    <string name="subscription_browser_blocked">"无法安全打开该页面或操作，请返回官方额度页后重试。"</string>
+    <string name="subscription_browser_sign_in">"请在官方页面登录并完成所需验证，Quodex 会读取额度并自动返回。"</string>
+    <string name="subscription_browser_read">"读取额度"</string>
+    <string name="subscription_browser_clear">"清除登录状态"</string>
 </resources>

@@ -14,6 +14,19 @@ class SubscriptionActions(
     fun connect(provider: SubscriptionProvider, credential: String, scope: CoroutineScope) =
         query(provider, scope, replace = true) { repository.connect(provider, credential) }
 
+    fun connectBrowser(provider: SubscriptionProvider, scope: CoroutineScope, read: suspend () -> String) =
+        query(provider, scope, replace = true) {
+            try {
+                val raw = read()
+                currentCoroutineContext().ensureActive()
+                repository.acceptBrowser(provider, raw)
+            } catch (cancel: CancellationException) { throw cancel }
+            catch (error: Exception) {
+                currentCoroutineContext().ensureActive()
+                repository.browserFailure(provider, error)
+            }
+        }
+
     fun importGrok(raw: String, scope: CoroutineScope) =
         query(SubscriptionProvider.GROK, scope, replace = true) { repository.importGrok(raw) }
 

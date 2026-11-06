@@ -99,6 +99,7 @@ internal fun ServicesOverview(state: AppState, prefs: PreferencesState, model: M
                     Text(if (it == FailureKind.LIMITED) texts(R.string.subscription_error_limited, absoluteTime(account.retryAt, true))
                         else texts(it.subscriptionErrorResource()), color = MaterialTheme.colorScheme.error)
                 }
+                if (account.browser) Text(texts(R.string.subscription_browser_cached), style = MaterialTheme.typography.bodySmall)
                 if (account.imported) Text(texts(R.string.subscription_import_notice), style = MaterialTheme.typography.bodySmall)
                 snapshot?.let { Text(texts(if (account.imported) R.string.subscription_imported_at else R.string.subscription_updated, absoluteTime(it.fetchedAt, true)),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }

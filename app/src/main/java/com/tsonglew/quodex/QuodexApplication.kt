@@ -47,7 +47,7 @@ open class QuodexApplication : Application() {
     }
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        languageChanged()
+        if (!com.tsonglew.quodex.subscriptions.browser.BrowserSession.inBrowserProcess(this)) languageChanged()
     }
     private val mutableWallClockRevision = MutableStateFlow(0L)
     val wallClockRevision = mutableWallClockRevision.asStateFlow()
@@ -60,7 +60,8 @@ open class QuodexApplication : Application() {
     val subscriptions by lazy {
         com.tsonglew.quodex.subscriptions.SubscriptionRepository(
             subscriptionSource,
-            com.tsonglew.quodex.subscriptions.EncryptedSubscriptionStore(this))
+            com.tsonglew.quodex.subscriptions.EncryptedSubscriptionStore(this),
+            clearBrowserProfile = { com.tsonglew.quodex.subscriptions.browser.BrowserSession.clear(this, it) })
     }
     val subscriptionActions by lazy {
         com.tsonglew.quodex.subscriptions.SubscriptionActions(subscriptions, scope)
@@ -76,6 +77,7 @@ open class QuodexApplication : Application() {
     }
     override fun onCreate() {
         super.onCreate()
+        if (com.tsonglew.quodex.subscriptions.browser.BrowserSession.configureProcess(this)) return
         Thread.getDefaultUncaughtExceptionHandler()?.let { previous ->
             Thread.setDefaultUncaughtExceptionHandler(CrashRecorder(previous, diagnostics, android.os.Looper.getMainLooper().thread))
         }

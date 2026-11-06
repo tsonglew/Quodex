@@ -1,0 +1,13 @@
+# alpha38 官方登录入口
+
+2026-11-06，0.1.0-alpha38 debug / Android API 36 arm64 模拟器，1080×2400。
+
+`SubscriptionsUiTest.officialLoginsReplaceSessionFormsAndKeepApiKeysSeparate` 通过 Android UiAutomation 保存完整原生屏幕，未裁切、拼接或重绘。三张 `login-*-sample.png` 为**合成测试额度**：测试拦截登录 Activity 启动并返回固定数据，不代表真实账号的 Android 登录验收。图片展示官网登录、官网刷新、缓存说明和独立断开；网页登录页本身启用防截屏。
+
+使用 App 同一份 JS 读取脚本，在用户已经登录的桌面 Kimi、WorkBuddy、Grok 官网取得有效额度响应；不保存真实 Cookie 或 token。Android WebView 使用全网络拦截的合成页面验证三种脚本、WorkBuddy 数字 ID 分页、Grok 可选钱包失败、陌生来源隔离和销毁停止轮询。界面测试覆盖四个登录入口、API key 独立连接、旧数据保持与多语言。
+
+本地 debug/release 构建、lint、300 项 JVM 测试和 84 项交付脚本测试通过；API 36 首轮 9 项设备用例通过。API 36 另通过 5 项定向复测，评审修正后的最终代码在 API 31 也通过同样 5 项测试，含三个真实独立进程的 Cookie 持久化与定向清除；最终 PR 和 master 的六设备矩阵、签名与发布状态以 Actions 为准。真实 Android 账号完整登录与所有第三方 SSO 尚未全量验收；不会绕过服务方验证。
+
+合并前评审补充：横竖屏与窗口尺寸变化保留当前 WebView 和弹窗；清除超时显示存储错误并保留可重试状态，用户取消仍正常传播；连接结果、导入和断开的世代号变更与提交共享同一把锁，避免被取消的写入使断开失效。新增超时、取消与提交／清除并发回归。
+
+API 31 实际官方页面检查：Kimi 未登录页面正常显示；横竖屏切换后浏览器内临时测试标记与 document 的 timeOrigin 不变，视口尺寸同步变化。关闭登录返回原未连接卡片，清除登录状态后对应浏览器标记被删除。未输入手机号、密码或验证码，不视为真实账号登录验收。

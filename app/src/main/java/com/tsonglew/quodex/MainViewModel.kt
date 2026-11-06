@@ -30,6 +30,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun connectSubscription(provider: SubscriptionProvider, credential: String) {
         app.subscriptionActions.connect(provider, credential, viewModelScope)
     }
+    fun connectSubscriptionBrowser(provider: SubscriptionProvider, context: android.content.Context) {
+        val profile = com.tsonglew.quodex.subscriptions.browser.BrowserProvider.forProvider(provider) ?: return
+        app.subscriptionActions.connectBrowser(profile.provider, viewModelScope) {
+            com.tsonglew.quodex.subscriptions.browser.BrowserSession.read(context, profile, preferences.value)
+        }
+    }
     fun importGrokSubscription(raw: String) {
         app.subscriptionActions.importGrok(raw, viewModelScope)
     }

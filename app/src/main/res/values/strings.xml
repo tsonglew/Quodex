@@ -358,7 +358,7 @@
     <string name="token_heatmap_status_unavailable">"No data"</string>
     <string name="subscriptions">"Plans"</string>
     <string name="subscriptions_intro">"Balances and subscription usage across your services. Each connection is stored separately on this device."</string>
-    <string name="subscriptions_scope">"Queries refresh when you open this page and when you tap Refresh. Home screen widgets currently show Codex only."</string>
+    <string name="subscriptions_scope">"API connections refresh when this page opens. Website connections keep the last quota snapshot; use Refresh on official site to update it. Widgets currently show Codex only."</string>
     <string name="subscription_connect">"Connect"</string>
     <string name="subscription_refresh">"Refresh"</string>
     <string name="subscription_disconnect">"Disconnect"</string>
@@ -368,7 +368,7 @@
     <string name="subscription_deepseek_help">"Create an API key in the DeepSeek platform. Shows API balance, including granted and topped-up funds; this is separate from the chat app."</string>
     <string name="subscription_go_help">"Use the API key for your Go workspace. Shows rolling, weekly and monthly usage returned by OpenCode."</string>
     <string name="subscription_zen_help">"OpenCode Console (formerly Zen): use a personal API key with billing read permission. Shows workspace balance and available credit. This Console adapter is experimental."</string>
-    <string name="subscription_cursor_help">"Experimental personal dashboard adapter. In a desktop browser, sign in to cursor.com/dashboard, then copy only the WorkosCursorSessionToken cookie value from Developer Tools → Application → Cookies. Paste it here, never in chat. Dashboard changes or session expiry may require reconnecting."</string>
+    <string name="subscription_cursor_help">"New sign-ins open the unified Grok / Cursor dashboard. Existing legacy connections remain available until you switch or disconnect."</string>
     <string name="subscription_secret_notice">"Encrypted on this device and sent only to the selected service. Disconnect removes its credential and cached data."</string>
     <string name="subscription_dashboard">"Official dashboard"</string>
     <string name="subscription_updated">"Updated %1$s"</string>
@@ -398,7 +398,7 @@
     <string name="subscription_deepseek_description">"API balance · grants and top-ups"</string>
     <string name="subscription_go_description">"Rolling, weekly and monthly usage"</string>
     <string name="subscription_zen_description">"Console balance and available credit · experimental"</string>
-    <string name="subscription_cursor_description">"Legacy personal dashboard · migrated accounts use Grok / Cursor"</string>
+    <string name="subscription_cursor_description">"Legacy Cursor connection. New sign-ins use the unified Grok / Cursor quota card."</string>
     <string name="subscription_prepaid">"Prepaid"</string>
     <string name="subscription_credit">"Credit billing"</string>
     <string name="subscription_seat">"Seat billing"</string>
@@ -407,7 +407,7 @@
     <string name="subscription_retry_storage">"Retry reading data"</string>
     <string name="subscription_reset_storage">"Reset subscription data"</string>
     <string name="subscription_reset_title">"Reset unreadable subscriptions?"</string>
-    <string name="subscription_reset_detail">"Reading will be retried first. If it still fails, this clears all saved subscription-service credentials and cached data. You will need to reconnect. Readable connections are preserved. Your Codex connection and other settings are unaffected."</string>
+    <string name="subscription_reset_detail">"Reading will be retried first. If it still fails, this clears all saved subscription-service credentials, website sign-in state and cached data. You will need to reconnect. Readable connections are preserved. Your Codex connection and other settings are unaffected."</string>
     <string name="update_retry_at">"The update service asks you to wait. Try again after %1$s."</string>
     <string name="update_retry_ready">"The waiting period has ended. You can check for updates now."</string>
     <string name="update_fallback_wait">The primary update source is unavailable. The fallback must wait until %1$s. You can retry the primary; the fallback will keep waiting.</string>
@@ -475,12 +475,12 @@
     <string name="subscription_quota_window">"Quota window"</string>
     <string name="subscription_window_seconds">"%1$s-second quota window"</string>
     <string name="subscription_api_spend">"Total cost including plan usage"</string>
-    <string name="subscription_kimi_description">"Membership usage and Extra Usage wallet · experimental web session"</string>
-    <string name="subscription_kimi_help">"Sign in at kimi.com in a desktop browser. In Developer Tools → Application → Local Storage, copy only the access_token value. This reads membership usage and the Extra Usage wallet. Open Platform API balances have their own cards. Reconnect when the token expires."</string>
-    <string name="subscription_workbuddy_description">"WorkBuddy / CodeBuddy credits by package · international account"</string>
-    <string name="subscription_workbuddy_help">"Sign in at workbuddy.ai. In browser Developer Tools → Application → Cookies, copy the values of session and session_2 into the matching fields. Copy that browser’s User-Agent from its Network request headers. WorkBuddy binds the session to this value. This reads active packages; API keys issued here are for CodeBuddy CLI. Custom model API balances belong to the model provider."</string>
-    <string name="subscription_grok_description">"Unified Grok / Cursor subscription pool · shown once · experimental"</string>
-    <string name="subscription_grok_help">"Open grok.com/dashboard/usage. In browser Developer Tools → Application → Cookies, copy the WorkosCursorSessionToken value. This reads the unified weekly pool, additional usage cost and account credit balance. It is separate from xAI developer API credit. Legacy Cursor accounts can use the Cursor card. Browser verification or session changes may prevent access. Use Import website data on the card in that case."</string>
+    <string name="subscription_kimi_description">"Kimi membership usage and Extra Usage balance, read after official website sign-in. Open Platform API balances have separate connections."</string>
+    <string name="subscription_kimi_help">"Sign in on the official Kimi page. Quodex reads membership usage and Extra Usage balance automatically, without copying tokens."</string>
+    <string name="subscription_workbuddy_description">"International WorkBuddy credit packages. Sign in on the official page; your login stays in its dedicated browser profile. The China site is not supported yet."</string>
+    <string name="subscription_workbuddy_help">"Sign in on the official international WorkBuddy page to read active credit packages. No session cookies or browser settings need to be copied. Custom model API balances belong to the model provider."</string>
+    <string name="subscription_grok_description">"Shared Grok / Cursor subscription pool and spending. Sign in on the official page to connect or refresh; no copied cookies or JSON are required."</string>
+    <string name="subscription_grok_help">"Sign in on the official Grok / Cursor dashboard. Quodex reads the shared weekly pool, additional usage cost and available account credit. The separate xAI developer API wallet uses its own connection."</string>
     <string name="subscription_extra_balance">"Extra Usage balance"</string>
     <string name="subscription_credits_remaining">"Credits remaining"</string>
     <string name="subscription_credits_of">"%1$s / %2$s credits"</string>
@@ -495,7 +495,18 @@
     <string name="subscription_filter_api">"API billing"</string>
     <string name="subscription_external_api_note">"Using a custom model API in WorkBuddy? Connect its provider under API billing. Those balances are independent of WorkBuddy credits."</string>
     <string name="subscription_import">"Import website data"</string>
-    <string name="subscription_import_notice">"Manual website import. The data may predate this import and does not refresh automatically. Import again after checking the dashboard."</string>
+    <string name="subscription_import_notice">"Previously imported website data; it may be older than the import time. Use Website sign-in to connect and update."</string>
     <string name="subscription_imported_at">"Imported at %1$s"</string>
     <string name="subscription_import_help">"In grok.com/dashboard/usage, open browser Developer Tools → Network. Copy the JSON response from usage-status?scope=user and paste it here. Only quota and cost fields are saved. Do not paste request headers or cookies. If the account balance is absent, it stays unknown. This is a manual snapshot, not an automatic connection."</string>
+    <string name="subscription_browser_title">"Sign in to %1$s"</string>
+    <string name="subscription_browser_connect">"Sign in on official site"</string>
+    <string name="subscription_browser_refresh">"Refresh on official site"</string>
+    <string name="subscription_browser_cached">"Read from the signed-in official page. Tap Refresh on official site to update this cached snapshot."</string>
+    <string name="subscription_browser_reading">"Reading your quota. You will return to Quodex when it is ready."</string>
+    <string name="subscription_browser_retry">"Quota could not be read. Complete sign-in or verification on the page, then try again."</string>
+    <string name="subscription_browser_limited">"The service asked you to wait. Quota reading will be available after its cooldown."</string>
+    <string name="subscription_browser_blocked">"This page or action could not be opened securely. Return to the official quota page and try again."</string>
+    <string name="subscription_browser_sign_in">"Sign in on the official page and complete any verification. Quodex will read your quota and return automatically."</string>
+    <string name="subscription_browser_read">"Read quota"</string>
+    <string name="subscription_browser_clear">"Clear saved sign-in"</string>
 </resources>

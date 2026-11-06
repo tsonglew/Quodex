@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong
 class SubscriptionRepository(
     private val source: SubscriptionSource,
     private val store: SubscriptionStore,
+    private val clearBrowserProfile: suspend (SubscriptionProvider) -> Unit = {},
     private val now: () -> Long = { Instant.now().epochSecond },
 ) {
     private val storageLock = Mutex()
@@ -34,7 +35,7 @@ class SubscriptionRepository(
                 accounts = store.read()
                 require(accounts.all { (provider, account) -> account.snapshot.provider == provider })
                 mutable.value = SubscriptionProvider.entries.associateWith { provider ->
-                    SubscriptionState(accounts.containsKey(provider), accounts[provider]?.snapshot, imported = accounts[provider]?.imported == true)
+                    SubscriptionState(accounts.containsKey(provider), accounts[provider]?.snapshot, imported = accounts[provider]?.imported == true, browser = accounts[provider]?.browser == true)
                 }
                 storageFailed = false
                 mutableStorageUnavailable.value = false
@@ -54,6 +55,7 @@ class SubscriptionRepository(
         storageLock.withLock {
             if (initialized.value || !storageFailed) return@withLock
             try {
+                browserProviders.forEach { clearBrowserProfile(it) }
                 store.reset()
                 accounts = emptyMap()
                 generations.values.forEach { it.incrementAndGet() }
@@ -74,7 +76,10 @@ class SubscriptionRepository(
             update(provider) { it.copy(failure = FailureKind.PROTOCOL) }
             return
         }
-        val ticket = generations.getValue(provider).incrementAndGet()
+        val ticket = storageLock.withLock {
+            currentCoroutineContext().ensureActive()
+            generations.getValue(provider).incrementAndGet()
+        }
         update(provider) { it.copy(busy = false) }
         query(provider, ticket, credential, true)
     }
@@ -91,9 +96,9 @@ class SubscriptionRepository(
         }
         initialize()
         if (storageFailed) return@withContext
-        val ticket = generations.getValue(provider).incrementAndGet()
         storageLock.withLock {
-            if (ticket != generations.getValue(provider).get()) return@withLock
+            currentCoroutineContext().ensureActive()
+            generations.getValue(provider).incrementAndGet()
             try {
                 val next = accounts + (provider to SubscriptionAccount("", snapshot, imported = true))
                 store.write(next)
@@ -102,6 +107,32 @@ class SubscriptionRepository(
             } catch (cancel: CancellationException) { throw cancel }
             catch (_: Exception) { update(provider) { it.copy(busy = false, failure = FailureKind.STORAGE) } }
         }
+    }
+
+    /** The browser keeps its login; only parsed quota is persisted in the encrypted App store. */
+    suspend fun acceptBrowser(provider: SubscriptionProvider, raw: String) = withContext(Dispatchers.IO) {
+        require(provider in browserProviders && raw.length <= 131072)
+        val snapshot = SubscriptionParser.parse(provider, raw, now())
+        initialize()
+        if (storageFailed) return@withContext
+        storageLock.withLock {
+            currentCoroutineContext().ensureActive()
+            // Generation changes share the commit lock with disconnect. A cancelled writer
+            // cannot invalidate a removal after it has already claimed its generation.
+            generations.getValue(provider).incrementAndGet()
+            try {
+                val next = accounts + (provider to SubscriptionAccount("", snapshot, browser = true))
+                store.write(next)
+                accounts = next
+                update(provider) { SubscriptionState(true, snapshot, browser = true) }
+            } catch (cancel: CancellationException) { throw cancel }
+            catch (_: Exception) { update(provider) { it.copy(busy = false, failure = FailureKind.STORAGE) } }
+        }
+    }
+
+    fun browserFailure(provider: SubscriptionProvider, error: Exception) {
+        update(provider) { it.copy(busy = false, failure = (error as? ApiFailure)?.kind ?: FailureKind.PROTOCOL,
+            retryAt = (error as? ApiFailure)?.retryAt ?: 0) }
     }
 
     suspend fun refresh(provider: SubscriptionProvider, force: Boolean = false) {
@@ -120,7 +151,7 @@ class SubscriptionRepository(
             if (replacement == null && !force && previous.failure == null &&
                 previous.snapshot?.let { now() - it.fetchedAt in 0L until 300L } == true) return@withLock
             val account = storageLock.withLock { accounts[provider] }
-            if (replacement == null && account?.imported == true) return@withLock
+            if (replacement == null && (account?.imported == true || account?.browser == true)) return@withLock
             val credential = replacement ?: account?.credential ?: return@withLock
             update(provider) { it.copy(busy = true, failure = null) }
             try {
@@ -150,10 +181,21 @@ class SubscriptionRepository(
     suspend fun disconnect(provider: SubscriptionProvider) = withContext(Dispatchers.IO) {
         initialize()
         if (storageFailed) return@withContext
-        generations.getValue(provider).incrementAndGet()
+        val ticket = storageLock.withLock {
+            currentCoroutineContext().ensureActive()
+            generations.getValue(provider).incrementAndGet()
+        }
+        try {
+            if (provider in browserProviders) clearBrowserProfile(provider)
+        } catch (cancel: CancellationException) { throw cancel }
+        catch (_: Exception) {
+            update(provider) { it.copy(busy = false, failure = FailureKind.STORAGE) }
+            return@withContext
+        }
         // Do not wait for the HTTP request; invalidate it before removing credentials.
         storageLock.withLock {
             try {
+                if (ticket != generations.getValue(provider).get()) return@withLock
                 val next = accounts - provider
                 store.write(next)
                 accounts = next
@@ -161,6 +203,10 @@ class SubscriptionRepository(
             } catch (cancel: CancellationException) { throw cancel }
             catch (_: Exception) { update(provider) { it.copy(busy = false, failure = FailureKind.STORAGE) } }
         }
+    }
+
+    companion object {
+        val browserProviders = setOf(SubscriptionProvider.KIMI, SubscriptionProvider.WORKBUDDY, SubscriptionProvider.GROK)
     }
 
     private fun update(provider: SubscriptionProvider, block: (SubscriptionState) -> SubscriptionState) {
