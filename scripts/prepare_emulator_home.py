@@ -87,7 +87,15 @@ def prepare(timeout=120):
             print(f'BOOT_SYSTEM_RECOVERY {dialog}', flush=True)
             stable = 0
         else:
-            focused = ui.shell('dumpsys', 'window')
+            try:
+                focused = ui.shell('dumpsys', 'window')
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+                # An observation may briefly fail while a recovered home binds.
+                # Mutating recovery commands and isolation checks remain fail-fast.
+                print(f'BOOT_FOCUS_NOT_READY {type(error).__name__}', flush=True)
+                stable = 0
+                time.sleep(1)
+                continue
             home_visible = any(node.get('package') == launcher for node in tree.iter('node'))
             home_focused = re.search(r'mCurrentFocus=.*\b' + re.escape(launcher) + r'/', focused)
             stable = stable + 1 if home_visible and home_focused else 0

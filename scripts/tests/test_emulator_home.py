@@ -1,6 +1,7 @@
 import importlib.util
 from pathlib import Path
 import sys
+import subprocess
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
@@ -92,6 +93,29 @@ class EmulatorHomeTests(unittest.TestCase):
     def test_unstable_home_resets_consecutive_successes(self):
         self.run_home([screen(), screen(), screen('android'), screen(), screen(), screen()])
         self.assertEqual(6, self.commands.count(('dumpsys', 'window')))
+
+    def test_transient_focus_query_resets_successes_within_deadline(self):
+        queries = 0
+        def delayed(*args):
+            nonlocal queries
+            result = self.shell(*args)
+            if args == ('dumpsys', 'window'):
+                queries += 1
+                if queries == 2:
+                    raise subprocess.TimeoutExpired(args, 20)
+            return result
+        self.run_home([screen()] * 5, shell=delayed)
+        self.assertEqual(5, queries)
+
+    def test_persistent_focus_query_failure_still_fails_at_deadline(self):
+        def broken(*args):
+            result = self.shell(*args)
+            if args == ('dumpsys', 'window'):
+                raise subprocess.CalledProcessError(1, args)
+            return result
+        with self.assertRaisesRegex(AssertionError, 'before timeout'):
+            self.run_home([screen()] * 3, timeout=3, shell=broken)
+        self.assertEqual(3, self.commands.count(('dumpsys', 'window')))
 
     def test_physical_device_or_installed_app_rejected_before_input(self):
         for guard, output in [(('getprop', 'ro.kernel.qemu'), '0'),
