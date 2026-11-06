@@ -37,7 +37,7 @@
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/all-glass-alpha36/all-glass-quota-light.png" width="230" alt="alpha36 debug：多服务总览，API 37 模拟器，示例数据" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-subscriptions-light.png" width="230" alt="alpha36 debug：统一账号入口，API 37 模拟器，示例模式" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-settings-light.png" width="230" alt="alpha36 debug：紧凑设置列表，API 37 模拟器" /> |
 
-上方为融合导航改版的 alpha36 历史截图；alpha37 新服务见下方原生截图，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。当前已发布包仍为 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1)，保留四页导航。
+上方为融合导航改版的 alpha36 历史截图；alpha37 新服务见下方原生截图，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。历史发布 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1) 保留四页导航；当前可安装版本请查看 [Releases 的实际产物](https://github.com/tsonglew/Quodex/releases)。
 
 ## 界面一览
 
