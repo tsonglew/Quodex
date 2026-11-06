@@ -184,6 +184,7 @@ class DesktopQuotaIconDeviceTest {
     private fun clickPinnedIcon(description: String) {
         val deadline = android.os.SystemClock.elapsedRealtime() + 15_000
         var page = 0
+        var lastSwipeTowardEarlierPage = false
         var visibleDescriptions = emptyList<String>()
         var previousBounds: android.graphics.Rect? = null
         var stableSince = 0L
@@ -199,7 +200,18 @@ class DesktopQuotaIconDeviceTest {
                 // A busy launcher may still expose the target; the overall deadline remains.
             }
             val root = instrumentation.uiAutomation.rootInActiveWindow
-            if (root?.packageName?.toString()?.contains("launcher") != true) continue
+            val packageName = root?.packageName?.toString()
+            if (lastSwipeTowardEarlierPage && packageName == "com.google.android.googlequicksearchbox") {
+                // Pixel Launcher opens Discover as a separate activity when a
+                // backward swipe crosses the first page. Return Home and resume
+                // the workspace search instead of waiting in the Google app.
+                shell("input keyevent 3")
+                page = 0
+                lastSwipeTowardEarlierPage = false
+                previousBounds = null
+                continue
+            }
+            if (packageName?.contains("launcher") != true || root == null) continue
             val screen = android.graphics.Rect().also(root::getBoundsInScreen)
             val visible = descendants(root).filter { node ->
                 val bounds = android.graphics.Rect().also(node::getBoundsInScreen)
@@ -226,15 +238,16 @@ class DesktopQuotaIconDeviceTest {
                 return
             }
             previousBounds = null
-            // Home can restore the last launcher page. Search to its left first, then
-            // across the workspace to the right; one-way swipes miss earlier pages.
-            val towardEarlierPage = page++ % 15 < 5
+            // Start toward ordinary workspace pages, away from Discover. Home can
+            // restore any page, so also search backward after reaching the far end.
+            val towardEarlierPage = page++ % 10 >= 5
+            lastSwipeTowardEarlierPage = towardEarlierPage
             val start = screen.width() * (if (towardEarlierPage) 1 else 4) / 5
             val end = screen.width() * (if (towardEarlierPage) 4 else 1) / 5
             shell("input swipe $start ${screen.height() / 2} $end ${screen.height() / 2} 250")
         }
         instrumentation.uiAutomation.takeScreenshot()?.let { saveDeviceScreenshot(app, "desktop-icon-failure", it) }
-        fail("The updated pinned quota icon was not visible on the launcher; expected=$description; visible=$visibleDescriptions")
+        fail("The updated pinned quota icon was not visible on the launcher; expected=$description; focused=${instrumentation.uiAutomation.rootInActiveWindow?.packageName}; visible=$visibleDescriptions")
     }
 
     private fun descendants(node: AccessibilityNodeInfo): List<AccessibilityNodeInfo> = listOf(node) +
