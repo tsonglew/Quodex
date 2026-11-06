@@ -93,6 +93,15 @@ class DesktopQuotaIconDeviceTest {
         val work = WorkManager.getInstance(app).getWorkInfosForUniqueWork("codex-periodic-sync").get(10, TimeUnit.SECONDS)
         assertEquals("A pinned quota icon must keep background polling active", 1, work.count { !it.state.isFinished })
 
+        // The system's pinned list is updated before Launcher finishes adding the
+        // workspace item. Establish the initial visible icon before updating it;
+        // otherwise Launcher's queued install can bind the original 62% snapshot
+        // after it has already received the worker's 29% update.
+        shell("input keyevent 3")
+        waitFor { instrumentation.uiAutomation.rootInActiveWindow?.packageName?.toString()?.contains("launcher") == true }
+        clickPinnedIcon(pinned().longLabel.toString())
+        waitFor { instrumentation.uiAutomation.rootInActiveWindow?.packageName == app.packageName }
+
         app.usedPercent = 71
         app.settings.syncResult(null, lastAttemptAt = 0)
         val worker = TestListenableWorkerBuilder<UsageSyncWorker>(app).setInputData(workDataOf("force" to true)).build()
@@ -176,6 +185,8 @@ class DesktopQuotaIconDeviceTest {
         val deadline = android.os.SystemClock.elapsedRealtime() + 15_000
         var page = 0
         var visibleDescriptions = emptyList<String>()
+        var previousBounds: android.graphics.Rect? = null
+        var stableSince = 0L
         while (android.os.SystemClock.elapsedRealtime() < deadline) {
             if (!resumedLauncher && dismissLauncherAnrOnEmulator(instrumentation, LauncherAnrResponse.WAIT)) {
                 resumedLauncher = true
@@ -197,12 +208,24 @@ class DesktopQuotaIconDeviceTest {
             visibleDescriptions = visible.mapNotNull { it.contentDescription?.toString() }
             val icon = visible.firstOrNull { it.contentDescription?.toString() == description }
             if (icon != null) {
-                instrumentation.uiAutomation.takeScreenshot()?.let { saveDeviceScreenshot(app, "desktop-icon-launcher", it) }
                 val target = generateSequence(icon) { it.parent }.first { it.isClickable }
                 val bounds = android.graphics.Rect().also(target::getBoundsInScreen)
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (bounds != previousBounds) {
+                    previousBounds = bounds
+                    stableSince = now
+                }
+                // Accessibility can report an icon halfway through a page snap.
+                // Only tap coordinates that remain stationary after the animation.
+                if (now - stableSince < 300) {
+                    Thread.sleep(50)
+                    continue
+                }
+                instrumentation.uiAutomation.takeScreenshot()?.let { saveDeviceScreenshot(app, "desktop-icon-launcher", it) }
                 shell("input tap ${bounds.centerX()} ${bounds.centerY()}")
                 return
             }
+            previousBounds = null
             // Home can restore the last launcher page. Search to its left first, then
             // across the workspace to the right; one-way swipes miss earlier pages.
             val towardEarlierPage = page++ % 15 < 5
