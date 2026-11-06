@@ -122,7 +122,7 @@ Debug APK 输出到 `app/build/outputs/apk/debug/app-debug.apk`。技术栈为 K
 
 连接测试模拟器后可运行 `./gradlew connectedDebugAndroidTest`。测试会改变示例模式、账号和显示偏好，请使用专用测试环境。[贡献指南](CONTRIBUTING.md) · [测试说明](docs/TESTING.md) · [CI 与签名发布](docs/CI_CD.md)
 
-CI 保留 Android 29、31、35、36、37.0 与 37.2 的设备检查。Android 17 的完整测试套件在预编译 APK 后执行，上限为 1800 秒（设备 job 上限 50 分钟），超时保留部分报告并判定失败。真实断网探针等待系统与 WorkManager 都确认离线，再验证任务等待及联网后只刷新一次。
+CI 保留 Android 29、31、35、36、37.0 与 37.2 的设备检查。Android 16+ 在安装 App 前检查系统服务和桌面连续可见、可聚焦，保存启动故障证据；系统桌面未就绪时直接使设备检查失败。Android 17 的完整测试套件在预编译 APK 后执行，上限为 1800 秒（设备 job 上限 50 分钟），超时保留部分报告并判定失败。真实断网探针等待系统与 WorkManager 都确认离线，再验证任务等待及联网后只刷新一次。
 
 PR 与 master 都检查经过 R8 压缩的 release APK，包括六版本上的页面切换、语言、设置和退出示例模式。冒烟测试仅使用临时测试签名；读取界面失败时有限重试，每次清除旧 UI 层级，失败后独立保存截图与 Activity 状态。正式签名和发布仍须等待 master 的全部检查通过。
 

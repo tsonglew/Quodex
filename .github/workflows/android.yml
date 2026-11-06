@@ -49,7 +49,7 @@ jobs:
           go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           actionlint
           shellcheck scripts/*.sh
-          python3 -m py_compile scripts/release_ui_smoke.py scripts/wait_for_android.py
+          python3 -m py_compile scripts/release_ui_smoke.py scripts/wait_for_android.py scripts/prepare_emulator_home.py
           python3 -m unittest discover -s scripts/tests -v
   build:
     runs-on: ubuntu-latest
@@ -159,7 +159,7 @@ jobs:
           name: android-release-unsigned
           path: release-unsigned
       - name: Install emulator runtime dependency
-        if: ${{ startsWith(format('{0}', matrix.api-level), '37.') }}
+        if: ${{ matrix.api-level == 36 || startsWith(format('{0}', matrix.api-level), '37.') }}
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y libpulse0
@@ -169,7 +169,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - uses: reactivecircus/android-emulator-runner@v2
-        if: ${{ !startsWith(format('{0}', matrix.api-level), '37.') }}
+        if: ${{ matrix.api-level != 36 && !startsWith(format('{0}', matrix.api-level), '37.') }}
         env:
           RELEASE_APK: ${{ env.BUILD_RELEASE == 'true' && 'release-unsigned/app-release-unsigned.apk' || '' }}
         with:
@@ -180,13 +180,13 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: bash scripts/device_ci.sh
-      - name: Android 17 device tests with framework readiness checks
-        if: ${{ startsWith(format('{0}', matrix.api-level), '37.') }}
+      - name: Android 16+ device tests with framework and home readiness checks
+        if: ${{ matrix.api-level == 36 || startsWith(format('{0}', matrix.api-level), '37.') }}
         env:
           DEVICE_API: ${{ matrix.api-level }}
-          DEVICE_TARGET: ${{ matrix.target }}
+          DEVICE_TARGET: ${{ matrix.target || 'default' }}
           RELEASE_APK: ${{ env.BUILD_RELEASE == 'true' && 'release-unsigned/app-release-unsigned.apk' || '' }}
-        run: bash scripts/android17_device_ci.sh
+        run: bash scripts/modern_android_device_ci.sh
       - uses: actions/upload-artifact@v7
         if: always()
         with:
