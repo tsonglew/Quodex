@@ -95,11 +95,15 @@ GitHub 环境与部署行为参见 [官方环境说明](https://docs.github.com/
 
 Android 17 使用官方 SDK 的 `37.0/google_apis` 与 `37.2/google_apis_ps16k` 镜像及 4 GB RAM；后者覆盖 16 KB 页面配置。签名脚本显式使用 `zipalign -P 16` 并验证对齐。此处是配置说明，实际结果见对应运行记录。
 
-### Android 17 启动就绪
+### Android 16+ 启动就绪
 
 以下保留排查时序；AVD 元数据修复已在 38007906590 及后续六组 CI 中验证，文中的“待验证”描述对应当时状态。相关证据见上方“历史验证记录（2026-10）”，仅代表所列日期与提交；当前结果请查看[对应提交的 Android CI 运行](https://github.com/tsonglew/Quodex/actions/workflows/android.yml)。
 
-运行 37986219241 的 API 37.0／37.2 在应用测试开始前分别因 input 服务缺失／Broken pipe 失败；四个既有版本设备测试通过。Android 17 改由 `scripts/android17_device_ci.sh` 启动相同官方镜像，`wait_for_android.py` 要求启动标记、核心服务、包查询、settings 与无操作按键命令连续三轮成功，再运行原有完整测试及可选 minified release 检查。启动／logcat 日志随设备证据上传；失败继续使统一 gate 失败，不跳过检查。该启动流程已在运行 38007906590 的完整矩阵中通过，后续组件刷新失败仍需单独排查。
+运行 37986219241 的 API 37.0／37.2 在应用测试开始前分别因 input 服务缺失／Broken pipe 失败；四个既有版本设备测试通过。Android 17 改由 `scripts/modern_android_device_ci.sh` 启动相同官方镜像，`wait_for_android.py` 要求启动标记、核心服务、包查询、settings 与无操作按键命令连续三轮成功，再运行原有完整测试及可选 minified release 检查。启动／logcat 日志随设备证据上传；失败继续使统一 gate 失败，不跳过检查。该启动流程已在运行 38007906590 的完整矩阵中通过，后续组件刷新失败仍需单独排查。
+
+运行 [42172046685](https://github.com/tsonglew/Quodex/actions/runs/42172046685) 的 API 36 在安装 App 前已发生 System UI 启动 ANR；`boot_completed=1` 后立即发送的 MENU 键又触发 Quickstep 无焦点 ANR，残留弹窗遮住了之后的快捷方式和语言测试。因此 API 36 与 37.0／37.2 共用现代 Android 启动流程：先检查框架服务并唤醒屏幕，再由 `prepare_emulator_home.py` 确认系统桌面连续三次可见且持有焦点，然后才安装 App。API 36 仍使用原有 Gradle 设备测试，37 系列仍执行原生完整套件。
+
+启动准备仅允许在尚未安装 App 的隔离模拟器中执行，并验证桌面和 System UI 都属于系统包。已知启动 ANR 先保存截图、UI 层级和日志；每个系统组件最多恢复一次（重启已知桌面或点击 System UI 的 Wait）。重复故障、未知弹窗或无法取得稳定桌面都不能通过。App 安装后不运行此准备步骤，原有设备断言与运行时 ANR 处理保持不变；Python 回归覆盖叠加弹窗、重复故障、未知／App 弹窗、焦点和设备隔离限制。
 
 所有普通工作流 job 检出事件的不可变 `github.sha`，避免设备 job 启动较晚时读到分支新提交；可复用工作流仍支持显式 ref。
 
