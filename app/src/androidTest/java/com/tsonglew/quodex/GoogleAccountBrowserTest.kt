@@ -2,6 +2,7 @@ package com.tsonglew.quodex
 
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
+import androidx.activity.enableEdgeToEdge
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.tsonglew.quodex.subscriptions.browser.*
@@ -20,13 +21,14 @@ class GoogleAccountBrowserTest {
             lateinit var browser: QuotaBrowserView
             val loaded = LinkedBlockingQueue<Boolean>()
             scenario.onActivity { activity ->
+                    activity.enableEdgeToEdge()
                 browser = QuotaBrowserView(activity, BrowserProvider.GROK, {}, { _, state -> if (!state.loading) loaded.offer(true) }, { _, _ -> }, intercept = {
                     WebResourceResponse("text/html", "UTF-8", """<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font:18px sans-serif;padding:24px}input{display:block;margin:12px 0;padding:12px;width:85%}</style><h2>登录表单测试样例</h2><p>合成数据 · 不连接 Google</p><form onsubmit="window.submitted=true;return false"><label>邮箱<input id="identifierId" type="email" autocomplete="username"></label><label>密码<input id="password" type="password" value="untouched" autocomplete="current-password"></label></form><script>window.changes=0;window.submitted=false;identifierId.addEventListener('input',()=>window.changes++);identifierId.addEventListener('change',()=>window.changes++);</script>""".byteInputStream())
                 })
                 val layout = BrowserLoginLayout(activity)
                 val page = BrowserPageState(host = "accounts.google.com", loading = false)
-                layout.header.setContent { QuotaTheme("light") { BrowserLoginHeader(BrowserProvider.GROK, page, {}) } }
-                layout.footer.setContent { QuotaTheme("light") { BrowserLoginFooter(page, {}, {}) } }
+                layout.header.setContent { QuotaTheme("light") { BrowserLoginHeader(BrowserProvider.GROK, page, layout.compactChrome) {} } }
+                layout.footer.setContent { QuotaTheme("light") { BrowserLoginFooter(page, {}, layout.compactChrome) {} } }
                 layout.browserContainer.addView(browser)
                 activity.setContentView(layout)
             }

@@ -1,6 +1,7 @@
 package com.tsonglew.quodex
 
 import android.webkit.WebResourceResponse
+import androidx.activity.enableEdgeToEdge
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.tsonglew.quodex.subscriptions.browser.*
@@ -23,14 +24,17 @@ class BrowserAutofillTest {
                 lateinit var browser: QuotaBrowserView
                 val loaded = CountDownLatch(1)
                 scenario.onActivity { activity ->
+                    activity.enableEdgeToEdge()
+                    activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
                     browser = QuotaBrowserView(activity, BrowserProvider.GROK, {}, { _, state ->
                         if (!state.loading) loaded.countDown()
                     }, { _, _ -> }, intercept = {
                         WebResourceResponse("text/html", "UTF-8", """<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{padding:24px}input{display:block;padding:12px;margin:12px 0;width:80%}</style><form><label>Email<input id="email" type="email" autocomplete="username"></label><label>Password<input id="password" type="password" autocomplete="current-password"></label></form>""".byteInputStream())
                     })
                     val layout = BrowserLoginLayout(activity)
-                    layout.header.setContent { androidx.compose.material3.Text("Synthetic official login") }
-                    layout.footer.setContent { androidx.compose.material3.Text("Choose account") }
+                    val state = BrowserPageState(host = "accounts.google.com", loading = false)
+                    layout.header.setContent { com.tsonglew.quodex.ui.QuotaTheme("light") { BrowserLoginHeader(BrowserProvider.GROK, state, layout.compactChrome) {} } }
+                    layout.footer.setContent { com.tsonglew.quodex.ui.QuotaTheme("light") { BrowserLoginFooter(state, {}, layout.compactChrome) {} } }
                     layout.browserContainer.addView(browser)
                     activity.setContentView(layout)
                     browser.loadUrl("https://accounts.google.com/signin/identifier")

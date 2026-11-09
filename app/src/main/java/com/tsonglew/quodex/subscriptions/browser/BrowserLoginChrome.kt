@@ -10,14 +10,14 @@ import com.tsonglew.quodex.i18n.localTextResources
 import com.tsonglew.quodex.ui.*
 
 @Composable
-internal fun BrowserLoginHeader(profile: BrowserProvider, page: BrowserPageState, onClose: () -> Unit) {
+internal fun BrowserLoginHeader(profile: BrowserProvider, page: BrowserPageState, compact: Boolean = false, onClose: () -> Unit) {
     val texts = localTextResources()
     Column(Modifier.fillMaxWidth().glassSceneBackground()) {
         GlassPanel(modifier = Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
-                    Text(texts(R.string.subscription_browser_title, profile.provider.displayName), style = MaterialTheme.typography.titleMedium)
-                    Text(page.host.ifBlank { java.net.URI(profile.origin).host }, style = MaterialTheme.typography.labelSmall, maxLines = 2)
+                    if (!compact) Text(texts(R.string.subscription_browser_title, profile.provider.displayName), style = MaterialTheme.typography.titleMedium)
+                    Text(page.host.ifBlank { java.net.URI(profile.origin).host }, style = MaterialTheme.typography.labelSmall)
                 }
                 TextButton(onClick = { onClose() }) { Text(texts(R.string.close)) }
             }
@@ -27,13 +27,13 @@ internal fun BrowserLoginHeader(profile: BrowserProvider, page: BrowserPageState
 }
 
 @Composable
-internal fun BrowserLoginFooter(page: BrowserPageState, onChooseGoogle: () -> Unit, onRead: () -> Unit) {
+internal fun BrowserLoginFooter(page: BrowserPageState, onChooseGoogle: () -> Unit, compact: Boolean = false, onRead: () -> Unit) {
     val texts = localTextResources()
     val google = page.host == "accounts.google.com"
     Column(Modifier.fillMaxWidth().glassSceneBackground()) {
         GlassPanel(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(texts(if (google) R.string.subscription_browser_google_hint else when (page.status) {
+                if (!compact) Text(texts(if (google) R.string.subscription_browser_google_hint else when (page.status) {
                     BrowserReadStatus.READING -> R.string.subscription_browser_reading
                     BrowserReadStatus.RETRY -> R.string.subscription_browser_retry
                     BrowserReadStatus.LIMITED -> R.string.subscription_browser_limited

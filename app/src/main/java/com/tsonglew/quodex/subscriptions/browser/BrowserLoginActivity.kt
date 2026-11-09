@@ -99,12 +99,12 @@ abstract class BrowserLoginActivity : AppCompatActivity() {
             QuotaTheme(intent.getStringExtra("theme") ?: "system", glass) {
                 val background = MaterialTheme.colorScheme.background.toArgb()
                 SideEffect { layout.setBackgroundColor(background) }
-                BrowserLoginHeader(profile, page) { complete(BrowserSession.CANCELLED) }
+                BrowserLoginHeader(profile, page, layout.compactChrome) { complete(BrowserSession.CANCELLED) }
             }
         }
         layout.footer.setContent {
             QuotaTheme(intent.getStringExtra("theme") ?: "system", glass) {
-                BrowserLoginFooter(page, ::chooseGoogleAccount) { views.lastOrNull()?.readAgain() }
+                BrowserLoginFooter(page, ::chooseGoogleAccount, layout.compactChrome) { views.lastOrNull()?.readAgain() }
             }
         }
     }
