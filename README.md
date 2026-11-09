@@ -37,7 +37,7 @@
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/all-glass-alpha36/all-glass-quota-light.png" width="230" alt="alpha36 debug：多服务总览，API 37 模拟器，示例数据" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-subscriptions-light.png" width="230" alt="alpha36 debug：统一账号入口，API 37 模拟器，示例模式" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-settings-light.png" width="230" alt="alpha36 debug：紧凑设置列表，API 37 模拟器" /> |
 
-上方为融合导航改版的 alpha36 历史截图；alpha37 新服务见下方原生截图，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。历史发布 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1) 保留四页导航；当前可安装版本请查看 [Releases 的实际产物](https://github.com/tsonglew/Quodex/releases)。
+上方为融合导航改版的 alpha36 历史截图；alpha39 订阅自动更新见下方原生截图，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。历史发布 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1) 保留四页导航；当前可安装版本请查看 [Releases 的实际产物](https://github.com/tsonglew/Quodex/releases)。
 
 ## 界面一览
 
@@ -49,7 +49,7 @@
 
 <img src="docs/screenshots/reset-credits-alpha34/reset-details-zh-Hans-light.png" width="280" alt="alpha34 debug Codex 重置卡区域，展开卡片状态和到期时间，示例数据" />
 
-重置卡界面来自 alpha34 开发版的原生组件截图，使用合成示例数据，不代表真实账号权益。[截图来源与验收范围](docs/screenshots/reset-credits-alpha34/README.md)。功能是否已发布请以 Releases 中的实际 APK 为准。
+重置卡界面保留为 alpha34 开发版的历史原生组件截图，使用合成示例数据，不代表真实账号权益。[截图来源与验收范围](docs/screenshots/reset-credits-alpha34/README.md)。功能是否已发布请以 Releases 中的实际 APK 为准。
 
 | alpha35 玻璃材质 · 浅色 | alpha35 玻璃材质 · 深色 |
 | :---: | :---: |
