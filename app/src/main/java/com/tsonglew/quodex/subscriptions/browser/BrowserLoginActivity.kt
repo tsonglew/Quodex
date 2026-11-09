@@ -36,6 +36,7 @@ abstract class BrowserLoginActivity : AppCompatActivity() {
         if (BrowserProvider.forProcess(packageName, android.app.Application.getProcessName()) != profile) { finish(); return }
         reply = BrowserSession.receiver(intent.extras, BrowserSession.REPLY)
         if (reply == null) { finish(); return }
+        BrowserWindows.closeAll()
         BrowserWindows.close += closeForCleanup
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()

@@ -153,7 +153,18 @@ class SubscriptionsUiTest {
             val requests = app.subscriptionRequests.get()
             val saved = EncryptedSubscriptionStore(app).read()
             fixtures.keys.forEach { assertTrue(saved.getValue(it).browser); assertEquals("", saved.getValue(it).credential) }
+            val browserRequests = app.browserSubscriptionRequests.get()
             runBlocking { fixtures.keys.forEach { app.subscriptions.refresh(it, true) } }
+            assertEquals(browserRequests + fixtures.size, app.browserSubscriptionRequests.get())
+            assertEquals(destinations.values.toList(), launches.toList())
+            compose.openProvider("GROK")
+            compose.onNode(hasText("刷新") and hasAnyAncestor(hasTestTag("subscription-GROK")))
+                .performScrollToVisible(compose).performClick()
+            compose.waitUntil(5000) { app.browserSubscriptionRequests.get() == browserRequests + fixtures.size + 1 }
+            assertEquals(destinations.values.toList(), launches.toList())
+            alignCardForScreenshot(SubscriptionProvider.GROK)
+            saveDeviceScreenshot(app, "auto-refresh-grok-sample", requireNotNull(instrumentation.uiAutomation.takeScreenshot()))
+            compose.onNodeWithTag("navigate-back").performClick()
             assertEquals(requests, app.subscriptionRequests.get())
             compose.onNodeWithTag("tab-quota").performClick()
             compose.onNodeWithTag("overview-WORKBUDDY").assertExists()

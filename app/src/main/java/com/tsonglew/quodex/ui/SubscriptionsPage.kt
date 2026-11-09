@@ -37,7 +37,6 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
     val storageUnavailable by model.subscriptionStorageUnavailable.collectAsStateWithLifecycle()
     var filter by rememberSaveable { mutableStateOf(0) }
     val demo = appDemo || examples
-    LaunchedEffect(demo) { if (!demo) model.loadSubscriptions() }
     val texts = localTextResources()
     val context = LocalContext.current
     var connecting by remember { mutableStateOf<SubscriptionProvider?>(null) }
@@ -138,6 +137,7 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
                 }
                 state.failure?.takeUnless { storageUnavailable && !demo }?.let { failure ->
                     Text(if (failure == FailureKind.LIMITED) texts(R.string.subscription_error_limited, absoluteTime(state.retryAt, true))
+                        else if (state.browser && failure == FailureKind.AUTH) texts(R.string.subscription_browser_auth_required)
                         else texts(failure.subscriptionErrorResource()), color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.testTag("subscription-error-${provider.name}"))
                 }
@@ -163,9 +163,11 @@ fun SubscriptionsPage(model: MainViewModel, now: Long, appState: AppState,
                         enabled = !state.busy && !storageUnavailable) { Text(texts(R.string.subscription_browser_clear)) }
                     if (state.connected) {
                         OutlinedButton(onClick = {
-                            if (browser != null) openLogin() else model.refreshSubscription(provider)
+                            if (browser != null && (!state.browser || state.failure == FailureKind.AUTH)) openLogin()
+                            else model.refreshSubscription(provider)
                         }, enabled = !state.busy && now >= state.retryAt, modifier = Modifier.fillMaxWidth()) {
-                            Text(texts(if (browser != null) R.string.subscription_browser_refresh else R.string.subscription_refresh))
+                            Text(texts(if (browser != null && (!state.browser || state.failure == FailureKind.AUTH))
+                                R.string.subscription_browser_refresh else R.string.subscription_refresh))
                         }
                         TextButton(onClick = { model.disconnectSubscription(provider) }) { Text(texts(R.string.subscription_disconnect)) }
                     }

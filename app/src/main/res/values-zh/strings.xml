@@ -355,7 +355,7 @@
     <string name="token_heatmap_status_unavailable">"无数据"</string>
     <string name="subscriptions">"订阅"</string>
     <string name="subscriptions_intro">"集中查看服务余额与订阅用量，每个服务在本机独立保存。"</string>
-    <string name="subscriptions_scope">"API 连接在打开此页时检查更新；网页登录连接保留上次额度，点“官网刷新”更新。桌面组件目前仅显示 Codex。"</string>
+    <string name="subscriptions_scope">"已连接账号在 App 前台自动更新，使用五分钟缓存；网页验证可能需要重新登录。桌面组件目前仅显示 Codex。"</string>
     <string name="subscription_connect">"连接"</string>
     <string name="subscription_refresh">"刷新"</string>
     <string name="subscription_disconnect">"断开连接"</string>
@@ -476,7 +476,7 @@
     <string name="subscription_kimi_help">"在 Kimi 官方页面登录后，自动读取会员用量和加量包余额，无需复制令牌。"</string>
     <string name="subscription_workbuddy_description">"查询 WorkBuddy 国际站的有效积分包，登录状态保留在该服务独立的浏览器中。国内站暂不支持。"</string>
     <string name="subscription_workbuddy_help">"在 WorkBuddy 国际站官网登录，自动读取有效积分包，无需复制会话或浏览器信息。自定义模型的 API 余额归模型服务商所有。"</string>
-    <string name="subscription_grok_description">"Grok / Cursor 的共享订阅额度与费用。通过官网登录连接和刷新，无需复制 Cookie 或 JSON。"</string>
+    <string name="subscription_grok_description">"Grok / Cursor 的共享订阅额度与费用。官网登录后在 App 前台自动更新，无需复制 Cookie 或 JSON。"</string>
     <string name="subscription_grok_help">"在 Grok / Cursor 官方控制台登录，自动读取共享周额度、额外用量费用和可用账户余额。xAI 开发者 API 钱包使用独立连接。"</string>
     <string name="subscription_extra_balance">"订阅加量余额"</string>
     <string name="subscription_credits_remaining">"剩余积分"</string>
@@ -498,7 +498,8 @@
     <string name="subscription_browser_title">"登录 %1$s"</string>
     <string name="subscription_browser_connect">"官网登录"</string>
     <string name="subscription_browser_refresh">"官网刷新"</string>
-    <string name="subscription_browser_cached">"来自已登录的官方页面。当前显示上次读取的额度，点“官网刷新”更新。"</string>
+    <string name="subscription_browser_cached">"App 打开期间复用登录态自动更新，缓存五分钟；更新失败时保留上次成功数据。"</string>
+    <string name="subscription_browser_auth_required">"自动更新已暂停，请点“官网登录”重新登录或完成网页验证。"</string>
     <string name="subscription_browser_reading">"正在读取额度，完成后自动返回 Quodex。"</string>
     <string name="subscription_browser_retry">"暂时无法读取额度。请在页面中完成登录或验证，再重试。"</string>
     <string name="subscription_browser_limited">"服务要求稍后再试，等待时间结束后可重新读取。"</string>

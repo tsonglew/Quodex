@@ -358,7 +358,7 @@
     <string name="token_heatmap_status_unavailable">"No data"</string>
     <string name="subscriptions">"Plans"</string>
     <string name="subscriptions_intro">"Balances and subscription usage across your services. Each connection is stored separately on this device."</string>
-    <string name="subscriptions_scope">"API connections refresh when this page opens. Website connections keep the last quota snapshot; use Refresh on official site to update it. Widgets currently show Codex only."</string>
+    <string name="subscriptions_scope">"Connected accounts update automatically while the app is open, with a five-minute cache. Website verification may require signing in again. Widgets currently show Codex only."</string>
     <string name="subscription_connect">"Connect"</string>
     <string name="subscription_refresh">"Refresh"</string>
     <string name="subscription_disconnect">"Disconnect"</string>
@@ -479,7 +479,7 @@
     <string name="subscription_kimi_help">"Sign in on the official Kimi page. Quodex reads membership usage and Extra Usage balance automatically, without copying tokens."</string>
     <string name="subscription_workbuddy_description">"International WorkBuddy credit packages. Sign in on the official page; your login stays in its dedicated browser profile. The China site is not supported yet."</string>
     <string name="subscription_workbuddy_help">"Sign in on the official international WorkBuddy page to read active credit packages. No session cookies or browser settings need to be copied. Custom model API balances belong to the model provider."</string>
-    <string name="subscription_grok_description">"Shared Grok / Cursor subscription pool and spending. Sign in on the official page to connect or refresh; no copied cookies or JSON are required."</string>
+    <string name="subscription_grok_description">"Shared Grok / Cursor subscription pool and spending. Sign in once to update automatically while the app is open; no copied cookies or JSON are required."</string>
     <string name="subscription_grok_help">"Sign in on the official Grok / Cursor dashboard. Quodex reads the shared weekly pool, additional usage cost and available account credit. The separate xAI developer API wallet uses its own connection."</string>
     <string name="subscription_extra_balance">"Extra Usage balance"</string>
     <string name="subscription_credits_remaining">"Credits remaining"</string>
@@ -501,7 +501,8 @@
     <string name="subscription_browser_title">"Sign in to %1$s"</string>
     <string name="subscription_browser_connect">"Sign in on official site"</string>
     <string name="subscription_browser_refresh">"Refresh on official site"</string>
-    <string name="subscription_browser_cached">"Read from the signed-in official page. Tap Refresh on official site to update this cached snapshot."</string>
+    <string name="subscription_browser_cached">"Updates automatically while the app is open, using your saved sign-in and a five-minute cache. Last successful data stays visible if an update fails."</string>
+    <string name="subscription_browser_auth_required">"Automatic updates paused. Open official sign-in to sign in again or complete website verification."</string>
     <string name="subscription_browser_reading">"Reading your quota. You will return to Quodex when it is ready."</string>
     <string name="subscription_browser_retry">"Quota could not be read. Complete sign-in or verification on the page, then try again."</string>
     <string name="subscription_browser_limited">"The service asked you to wait. Quota reading will be available after its cooldown."</string>

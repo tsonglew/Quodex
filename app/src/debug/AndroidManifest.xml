@@ -9,6 +9,7 @@
         <activity android:name=".KimiProfileProbeActivity" android:exported="false" android:process=":subscription_kimi" />
         <activity android:name=".WorkBuddyProfileProbeActivity" android:exported="false" android:process=":subscription_workbuddy" />
         <activity android:name=".GrokProfileProbeActivity" android:exported="false" android:process=":subscription_grok" />
+        <service android:name=".GrokRefreshProbeService" android:exported="false" android:process=":subscription_grok" />
         <activity android:name=".WidgetTestHostActivity" android:exported="false" android:configChanges="locale|layoutDirection" />
     </application>
 </manifest>

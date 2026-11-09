@@ -27,12 +27,15 @@
         <activity android:name=".subscriptions.browser.KimiLoginActivity" android:exported="false" android:process=":subscription_kimi"
             android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|uiMode" />
         <service android:name=".subscriptions.browser.KimiBrowserCleanupService" android:exported="false" android:process=":subscription_kimi" />
+        <service android:name=".subscriptions.browser.KimiBrowserRefreshService" android:exported="false" android:process=":subscription_kimi" />
         <activity android:name=".subscriptions.browser.WorkBuddyLoginActivity" android:exported="false" android:process=":subscription_workbuddy"
             android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|uiMode" />
         <service android:name=".subscriptions.browser.WorkBuddyBrowserCleanupService" android:exported="false" android:process=":subscription_workbuddy" />
+        <service android:name=".subscriptions.browser.WorkBuddyBrowserRefreshService" android:exported="false" android:process=":subscription_workbuddy" />
         <activity android:name=".subscriptions.browser.GrokLoginActivity" android:exported="false" android:process=":subscription_grok"
             android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|uiMode" />
         <service android:name=".subscriptions.browser.GrokBrowserCleanupService" android:exported="false" android:process=":subscription_grok" />
+        <service android:name=".subscriptions.browser.GrokBrowserRefreshService" android:exported="false" android:process=":subscription_grok" />
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

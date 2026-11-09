@@ -18,6 +18,110 @@ class SubscriptionBrowserTest {
         if (html) "text/html" else "application/json", "UTF-8", status, if (status == 200) "OK" else "Unavailable",
         mapOf("Cache-Control" to "no-store"), body.byteInputStream())
 
+    @Test fun boundProfileServiceHandlesRepeatedRequestsAndIgnoresObsoleteCancellation() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val connected = CountDownLatch(1)
+        val endpoint = AtomicReference<android.os.Messenger>()
+        val connection = object : android.content.ServiceConnection {
+            override fun onServiceConnected(name: android.content.ComponentName, binder: android.os.IBinder) {
+                endpoint.set(android.os.Messenger(binder)); connected.countDown()
+            }
+            override fun onServiceDisconnected(name: android.content.ComponentName) = Unit
+        }
+        val marker = java.io.File(context.noBackupFilesDir, "browser-profiles/${BrowserProvider.GROK.profile}")
+        marker.parentFile!!.mkdirs(); marker.createNewFile()
+        assertTrue(context.bindService(android.content.Intent(context, GrokRefreshProbeService::class.java), connection,
+            android.content.Context.BIND_AUTO_CREATE))
+        try {
+            assertTrue(connected.await(20, TimeUnit.SECONDS))
+            for (index in 1..2) {
+                val done = CountDownLatch(1)
+                val quota = AtomicReference<String>()
+                val code = AtomicInteger()
+                val failure = AtomicReference<String>()
+                val reply = object : android.os.ResultReceiver(android.os.Handler(android.os.Looper.getMainLooper())) {
+                    override fun onReceiveResult(resultCode: Int, data: android.os.Bundle?) {
+                        code.set(resultCode); quota.set(data?.getString(BrowserSession.QUOTA)); failure.set(data?.getString("failure")); done.countDown()
+                    }
+                }
+                endpoint.get().send(android.os.Message.obtain().apply {
+                    what = BrowserRefreshService.READ
+                    data = android.os.Bundle().apply {
+                        putString(BrowserRefreshService.REQUEST_ID, "read-$index")
+                        putParcelable(BrowserSession.REPLY, BrowserSession.remote(reply))
+                    }
+                })
+                endpoint.get().send(android.os.Message.obtain().apply {
+                    what = BrowserRefreshService.CANCEL
+                    data = android.os.Bundle().apply { putString(BrowserRefreshService.REQUEST_ID, "obsolete") }
+                })
+                assertTrue(done.await(30, TimeUnit.SECONDS))
+                assertEquals("IPC read $index: ${failure.get()}", BrowserSession.SUCCESS, code.get())
+                assertTrue(requireNotNull(quota.get()).contains("\"usedCents\":$index"))
+                assertFalse(quota.get().contains("fixture-ipc"))
+            }
+        } finally {
+            context.unbindService(connection)
+            kotlinx.coroutines.runBlocking { BrowserSession.clear(context, BrowserProvider.GROK.provider) }
+        }
+    }
+
+    @Test fun invisibleRefreshReusesLoginForRepeatedReadsAndReportsVerificationAndRateLimit() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val profile = BrowserProvider.GROK
+        val calls = AtomicInteger()
+        var login = true
+        var status = 200
+        var used = 37
+        // No Activity or window is created by the reader; all traffic stays inside fixtures.
+        fun read(): Pair<String?, com.tsonglew.quodex.data.ApiFailure?> {
+            val done = CountDownLatch(1)
+            val quota = AtomicReference<String>()
+            val error = AtomicReference<com.tsonglew.quodex.data.ApiFailure>()
+            lateinit var request: BrowserRefreshRequest
+            instrumentation.runOnMainSync {
+                request = BrowserRefreshRequest(context, profile, { raw, failure ->
+                    quota.set(raw); error.set(failure); done.countDown()
+                }, intercept = { resource ->
+                    when {
+                        resource.url.path == "/dashboard/usage" -> response(
+                            if (login) "<script>document.cookie='sso=fixture-refresh; path=/; Secure'</script>" else "<p>Signed in</p>", html = true)
+                        resource.url.path.orEmpty().contains("usage-status") -> {
+                            calls.incrementAndGet()
+                            if (status == 429) WebResourceResponse("application/json", "UTF-8", 429, "Limited",
+                                mapOf("Retry-After" to "120"), "{}".byteInputStream())
+                            else response("""{"availability":"available","weeklyIncludedUsage":{"usedCents":$used,"budgetCents":100}}""", status = status)
+                        }
+                        else -> response("{}", status = 404)
+                    }
+                })
+                request.start()
+            }
+            try { assertTrue("Silent browser read did not finish", done.await(45, TimeUnit.SECONDS)) }
+            finally { instrumentation.runOnMainSync { request.close() } }
+            return quota.get() to error.get()
+        }
+        val first = read()
+        assertNull(first.second)
+        assertTrue(requireNotNull(first.first).contains("37"))
+        login = false // The second reader must use the first reader's persisted cookie.
+        used = 80
+        val next = read()
+        assertNull(next.second)
+        assertTrue(requireNotNull(next.first).contains("80"))
+        assertEquals(2, calls.get())
+        status = 401
+        val expired = read()
+        assertNull(expired.first)
+        assertEquals(com.tsonglew.quodex.data.FailureKind.AUTH, expired.second?.kind)
+        status = 429
+        val limited = read()
+        assertEquals(com.tsonglew.quodex.data.FailureKind.LIMITED, limited.second?.kind)
+        assertTrue(requireNotNull(limited.second?.retryAt) > java.time.Instant.now().epochSecond + 90)
+    }
+
     @Test fun officialPageReadersReturnOnlyUsableQuotaWithoutExportingLoginSecrets() {
         for (profile in BrowserProvider.entries) {
             val done = CountDownLatch(1)
@@ -142,11 +246,11 @@ class SubscriptionBrowserTest {
         val activities = info.activities.orEmpty().filter { it.name.contains("subscriptions.browser") }
         val services = info.services.orEmpty().filter { it.name.contains("subscriptions.browser") }
         assertEquals(3, activities.size)
-        assertEquals(3, services.size)
+        assertEquals(6, services.size)
         for (profile in BrowserProvider.entries) {
             val name = "${context.packageName}:${profile.profile}"
             assertEquals(1, activities.count { it.processName == name && !it.exported })
-            assertEquals(1, services.count { it.processName == name && !it.exported })
+            assertEquals(2, services.count { it.processName == name && !it.exported })
             val rotation = android.content.pm.ActivityInfo.CONFIG_ORIENTATION or android.content.pm.ActivityInfo.CONFIG_SCREEN_SIZE
             assertEquals(rotation, activities.single { it.processName == name }.configChanges and rotation)
         }

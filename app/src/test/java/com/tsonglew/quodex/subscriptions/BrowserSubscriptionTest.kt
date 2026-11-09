@@ -82,7 +82,7 @@ class BrowserSubscriptionTest {
         assertEquals(3, BrowserProvider.entries.map { it.profile }.toSet().size)
     }
 
-    @Test fun browserMigrationStoresQuotaOnlyAndRestartsWithoutNativeRequests() = runBlocking {
+    @Test fun browserMigrationStoresQuotaOnlyAndRestartsWithAutomaticBrowserRefresh() = runBlocking {
         val store = Store()
         val repo = SubscriptionRepository({ p, _ -> SubscriptionParser.parse(p, raw, 1) }, store)
         repo.connect(provider, "old-session")
@@ -90,11 +90,104 @@ class BrowserSubscriptionTest {
         assertEquals("", store.data.getValue(provider).credential)
         assertTrue(store.data.getValue(provider).browser)
         assertFalse(store.data.getValue(provider).imported)
-        val restored = SubscriptionRepository({ _, _ -> error("Browser sessions cannot use native HTTP") }, store)
+        var reads = 0
+        val restored = SubscriptionRepository({ _, _ -> error("Browser sessions cannot use native HTTP") }, store,
+            now = { 2000 }, readBrowser = { reads++; raw.replace("37", "80") })
         restored.initialize()
         restored.refresh(provider, true)
+        assertEquals(1, reads)
         assertTrue(restored.state.value.getValue(provider).browser)
-        assertEquals(repo.state.value[provider]?.snapshot, restored.state.value[provider]?.snapshot)
+        assertEquals(2000L, restored.state.value[provider]?.snapshot?.fetchedAt)
+        assertNotEquals(repo.state.value[provider]?.snapshot, restored.state.value[provider]?.snapshot)
+        assertEquals("", store.data.getValue(provider).credential)
+    }
+
+    @Test fun automaticBrowserRefreshUsesCacheAndRespectsRetryAfterEvenWhenForced() = runBlocking {
+        val store = Store()
+        var time = 1000L
+        var reads = 0
+        var limited = false
+        val repo = SubscriptionRepository({ _, _ -> error("no native HTTP") }, store, now = { time }, readBrowser = {
+            reads++
+            if (limited) throw ApiFailure(FailureKind.LIMITED, 3000)
+            raw.replace("37", "80")
+        })
+        repo.acceptBrowser(provider, raw)
+        time = 1299
+        repo.refresh(provider)
+        assertEquals(0, reads)
+        time = 1300
+        repo.refresh(provider)
+        assertEquals(1, reads)
+        assertEquals(1300L, repo.state.value[provider]?.snapshot?.fetchedAt)
+        limited = true
+        time = 1600
+        repo.refresh(provider)
+        val previous = repo.state.value.getValue(provider).snapshot
+        time = 2999
+        repo.refresh(provider, true)
+        assertEquals(2, reads)
+        assertEquals(previous, repo.state.value[provider]?.snapshot)
+        assertEquals(FailureKind.LIMITED, repo.state.value[provider]?.failure)
+        limited = false
+        time = 3000
+        repo.refresh(provider)
+        assertEquals(3, reads)
+        assertNull(repo.state.value[provider]?.failure)
+    }
+
+    @Test fun expiredLoginPausesAutomaticReadsUntilWebsiteLoginSucceeds() = runBlocking {
+        var time = 1000L
+        var reads = 0
+        val repo = SubscriptionRepository({ _, _ -> error("no native HTTP") }, Store(), now = { time }, readBrowser = {
+            reads++; throw ApiFailure(FailureKind.AUTH)
+        })
+        repo.acceptBrowser(provider, raw)
+        time = 1300
+        repo.refresh(provider)
+        time = 10000
+        repo.refresh(provider)
+        assertEquals(1, reads)
+        assertEquals(1000L, repo.state.value[provider]?.snapshot?.fetchedAt)
+        assertEquals(FailureKind.AUTH, repo.state.value[provider]?.failure)
+        repo.acceptBrowser(provider, raw)
+        assertNull(repo.state.value[provider]?.failure)
+        time += 300
+        repo.refresh(provider)
+        assertEquals(2, reads)
+    }
+
+    @Test fun disconnectedAccountCannotBeRestoredByLateAutomaticBrowserRead() = runBlocking {
+        val store = Store()
+        val started = CompletableDeferred<Unit>()
+        val finish = CompletableDeferred<Unit>()
+        val repo = SubscriptionRepository({ _, _ -> error("no native HTTP") }, store, readBrowser = {
+            started.complete(Unit); finish.await(); raw
+        })
+        repo.acceptBrowser(provider, raw)
+        val refresh = launch { repo.refresh(provider, true) }
+        started.await()
+        repo.disconnect(provider)
+        finish.complete(Unit)
+        refresh.join()
+        assertTrue(store.data.isEmpty())
+        assertFalse(repo.state.value.getValue(provider).connected)
+    }
+
+    @Test fun leavingForegroundCancelsReadAndPreservesLastSuccessfulSnapshot() = runBlocking {
+        val started = CompletableDeferred<Unit>()
+        var closed = false
+        val repo = SubscriptionRepository({ _, _ -> error("no native HTTP") }, Store(), readBrowser = {
+            try { started.complete(Unit); awaitCancellation() } finally { closed = true }
+        })
+        repo.acceptBrowser(provider, raw)
+        val previous = repo.state.value.getValue(provider)
+        val refresh = launch { repo.refresh(provider, true) }
+        started.await()
+        assertTrue(repo.state.value.getValue(provider).busy)
+        refresh.cancelAndJoin()
+        assertTrue(closed)
+        assertEquals(previous, repo.state.value.getValue(provider))
     }
 
     @Test fun failedBrowserCommitPreservesPreviousQuotaAndFailedClearPreservesConnection() = runBlocking {

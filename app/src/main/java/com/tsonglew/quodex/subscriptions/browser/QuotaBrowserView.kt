@@ -9,15 +9,17 @@ import android.os.Looper
 import android.os.Message
 import android.webkit.*
 import com.tsonglew.quodex.data.AppJson
+import com.tsonglew.quodex.data.FailureKind
 import com.tsonglew.quodex.subscriptions.SubscriptionParser
 import kotlinx.serialization.json.*
 import java.net.URI
 import java.time.Instant
 import java.util.UUID
 
-internal enum class BrowserReadStatus { LOGIN, READING, RETRY, LIMITED, BLOCKED }
+internal enum class BrowserReadStatus { LOGIN, READING, RETRY, LIMITED, BLOCKED, AUTH_REQUIRED }
 internal data class BrowserPageState(val host: String = "", val loading: Boolean = true,
-    val status: BrowserReadStatus = BrowserReadStatus.LOGIN, val retryAt: Long = 0)
+    val status: BrowserReadStatus = BrowserReadStatus.LOGIN, val retryAt: Long = 0,
+    val failure: FailureKind? = null)
 
 /** No JavaScript interface is exposed to pages. Only a nonce-scoped result on the exact origin is read. */
 @SuppressLint("SetJavaScriptEnabled")
@@ -28,6 +30,7 @@ internal class QuotaBrowserView(
     private val onState: (QuotaBrowserView, BrowserPageState) -> Unit,
     private val onPopup: (QuotaBrowserView, Boolean) -> Unit,
     private val intercept: ((WebResourceRequest) -> WebResourceResponse?)? = null,
+    private val interactive: Boolean = true,
 ) : WebView(context) {
     private val handler = Handler(Looper.getMainLooper())
     private val reader = context.assets.open("subscription_quota_reader.js").bufferedReader().use { it.readText() }
@@ -62,8 +65,9 @@ internal class QuotaBrowserView(
         webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 if (!request.isForMainFrame) return false
-                val blocked = !provider.canNavigate(request.url.toString())
-                if (blocked) state(pageState.copy(status = BrowserReadStatus.BLOCKED))
+                val blocked = if (interactive) !provider.canNavigate(request.url.toString())
+                    else !provider.canRead(request.url.toString())
+                if (blocked) state(pageState.copy(status = BrowserReadStatus.BLOCKED, failure = FailureKind.AUTH))
                 return blocked
             }
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? = intercept?.invoke(request)
@@ -77,17 +81,32 @@ internal class QuotaBrowserView(
                     status = if (now() < pageState.retryAt) BrowserReadStatus.LIMITED else BrowserReadStatus.LOGIN,
                     retryAt = pageState.retryAt))
             }
-            override fun onPageFinished(view: WebView, url: String) { state(pageState.copy(loading = false)) }
+            override fun onPageFinished(view: WebView, url: String) {
+                if (!active) return
+                if (!interactive && (!provider.canRead(url) || !hasLoginCookie())) {
+                    automatic = false
+                    state(pageState.copy(loading = false, status = BrowserReadStatus.AUTH_REQUIRED, failure = FailureKind.AUTH))
+                } else state(pageState.copy(loading = false))
+            }
             override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
                 handler.cancel()
                 automatic = false
-                state(pageState.copy(loading = false, status = BrowserReadStatus.BLOCKED))
+                state(pageState.copy(loading = false, status = BrowserReadStatus.BLOCKED, failure = FailureKind.NETWORK))
             }
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                 if (request.isForMainFrame) {
                     automatic = false
-                    state(pageState.copy(loading = false, status = BrowserReadStatus.RETRY))
+                    state(pageState.copy(loading = false, status = BrowserReadStatus.RETRY, failure = FailureKind.NETWORK))
                 }
+            }
+            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                automatic = false
+                state(pageState.copy(loading = false, status = BrowserReadStatus.RETRY, failure = FailureKind.NETWORK))
+                if (active) {
+                    (parent as? android.view.ViewGroup)?.removeView(this@QuotaBrowserView)
+                    destroy()
+                }
+                return true
             }
         }
         webChromeClient = object : WebChromeClient() {
@@ -95,7 +114,7 @@ internal class QuotaBrowserView(
             override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean = true
             override fun onPermissionRequest(request: PermissionRequest) { request.deny() }
             override fun onCreateWindow(view: WebView, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message): Boolean {
-                if (!isUserGesture) return false
+                if (!interactive || !isUserGesture) return false
                 val child = QuotaBrowserView(context, provider, onQuota, onState, onPopup, intercept)
                 onPopup(child, true)
                 (resultMsg.obj as WebView.WebViewTransport).webView = child
@@ -139,7 +158,7 @@ internal class QuotaBrowserView(
             if (!active || page != revision || !provider.canRead(url)) return
             if (android.os.SystemClock.elapsedRealtime() >= expires) {
                 pending = false; automatic = false
-                state(pageState.copy(status = BrowserReadStatus.RETRY))
+                state(pageState.copy(status = BrowserReadStatus.RETRY, failure = FailureKind.NETWORK))
                 return
             }
             evaluateJavascript("location.origin===$origin ? JSON.stringify(window[$quotedKey] || {kind:'pending'}) : null") { encoded ->
@@ -158,17 +177,20 @@ internal class QuotaBrowserView(
                             }.isSuccess) {
                             CookieManager.getInstance().flush()
                             onQuota(raw)
-                        } else state(pageState.copy(status = BrowserReadStatus.RETRY))
+                        } else state(pageState.copy(status = BrowserReadStatus.RETRY, failure = FailureKind.PROTOCOL))
                     }
                     "login", "origin" -> {
                         pending = false; nextRead = now() + 15
-                        state(pageState.copy(status = BrowserReadStatus.LOGIN))
+                        state(pageState.copy(status = BrowserReadStatus.AUTH_REQUIRED, failure = FailureKind.AUTH))
                     }
                     else -> {
                         pending = false; automatic = false
-                        val limited = result?.get("status")?.jsonPrimitive?.intOrNull == 429
+                        val status = result?.get("status")?.jsonPrimitive?.intOrNull
+                        val limited = status == 429
                         val retryAt = if (limited) now() + (result?.get("retrySeconds")?.jsonPrimitive?.longOrNull ?: 60).coerceIn(1, 86400) else 0
-                        state(pageState.copy(status = if (limited) BrowserReadStatus.LIMITED else BrowserReadStatus.RETRY, retryAt = retryAt))
+                        state(pageState.copy(status = if (limited) BrowserReadStatus.LIMITED else BrowserReadStatus.RETRY, retryAt = retryAt,
+                            failure = when { limited -> FailureKind.LIMITED; status == null || status == 0 -> FailureKind.NETWORK
+                                status >= 500 -> FailureKind.SERVER; else -> FailureKind.PROTOCOL }))
                     }
                 }
             }
@@ -179,6 +201,7 @@ internal class QuotaBrowserView(
     private fun state(next: BrowserPageState) { pageState = next; onState(this, next) }
     private fun now() = Instant.now().epochSecond
     override fun destroy() {
+        if (!active) return
         active = false
         handler.removeCallbacksAndMessages(null)
         stopLoading()

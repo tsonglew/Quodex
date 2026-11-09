@@ -355,7 +355,7 @@
     <string name="token_heatmap_status_unavailable">"データなし"</string>
     <string name="subscriptions">"プラン"</string>
     <string name="subscriptions_intro">"各サービスの残高とプラン使用量を確認できます。接続は端末内で個別に保存されます。"</string>
-    <string name="subscriptions_scope">"API 接続はページを開くと更新します。Web ログインは前回のデータを表示し、「公式サイトで更新」で再取得します。ウィジェットは現在 Codex のみです。"</string>
+    <string name="subscriptions_scope">"接続済みアカウントはアプリの前面表示中に自動更新し、5分間のキャッシュを使います。サイト認証のため再ログインが必要な場合があります。ウィジェットは現在 Codex のみです。"</string>
     <string name="subscription_connect">"接続"</string>
     <string name="subscription_refresh">"更新"</string>
     <string name="subscription_disconnect">"接続を解除"</string>
@@ -476,7 +476,7 @@
     <string name="subscription_kimi_help">"Kimi の公式ページにログインすると、会員使用量と追加残高を自動取得します。トークンのコピーは不要です。"</string>
     <string name="subscription_workbuddy_description">"WorkBuddy 国際版の有効なクレジットパックです。ログインは専用のブラウザープロファイルに保持します。中国版は未対応です。"</string>
     <string name="subscription_workbuddy_help">"WorkBuddy 国際版の公式ページにログインして、有効なクレジットパックを取得します。セッションやブラウザー情報のコピーは不要です。独自モデルの API 残高は各モデル提供者に属します。"</string>
-    <string name="subscription_grok_description">"Grok / Cursor の共有サブスクリプション枠と料金です。公式サイトでログインや更新ができ、Cookie や JSON のコピーは不要です。"</string>
+    <string name="subscription_grok_description">"Grok / Cursor の共有サブスクリプション枠と料金です。公式ログイン後、アプリの前面表示中に自動更新します。Cookie や JSON のコピーは不要です。"</string>
     <string name="subscription_grok_help">"Grok / Cursor の公式ダッシュボードにログインし、共有の週間枠、追加使用料金、取得可能な残高を確認します。xAI 開発者 API の残高は別の接続です。"</string>
     <string name="subscription_extra_balance">"追加利用残高"</string>
     <string name="subscription_credits_remaining">"残りクレジット"</string>
@@ -498,7 +498,8 @@
     <string name="subscription_browser_title">"%1$s にログイン"</string>
     <string name="subscription_browser_connect">"公式サイトでログイン"</string>
     <string name="subscription_browser_refresh">"公式サイトで更新"</string>
-    <string name="subscription_browser_cached">"ログイン済みの公式ページから取得した前回のデータです。「公式サイトで更新」で再取得できます。"</string>
+    <string name="subscription_browser_cached">"アプリを開いている間、保存済みのログインで自動更新します。キャッシュは5分間有効です。更新に失敗しても前回のデータを保持します。"</string>
+    <string name="subscription_browser_auth_required">"自動更新を一時停止しました。公式ログインを開き、再ログインまたはサイトの認証を完了してください。"</string>
     <string name="subscription_browser_reading">"使用量を取得中です。完了すると Quodex に自動で戻ります。"</string>
     <string name="subscription_browser_retry">"使用量を取得できませんでした。ページでログインや認証を完了してから再試行してください。"</string>
     <string name="subscription_browser_limited">"サービスから待機が要求されました。待機時間が過ぎてから再取得できます。"</string>
