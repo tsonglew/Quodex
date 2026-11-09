@@ -80,9 +80,6 @@ fun QuodexApp(model: MainViewModel) {
     }
     var subscriptionExamples by rememberSaveable { mutableStateOf(false) }
     val subscriptions by model.subscriptions.collectAsStateWithLifecycle()
-    LaunchedEffect(state.initialized, state.demo) {
-        if (state.initialized && !state.demo) model.loadSubscriptions()
-    }
     BackHandler(route.isNotEmpty()) { route = "" }
     val heatmapLaunch by model.heatmapLaunch.collectAsStateWithLifecycle()
     var handledHeatmapLaunch by rememberSaveable { mutableStateOf<String?>(null) }

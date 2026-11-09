@@ -57,11 +57,14 @@ open class QuodexApplication : Application() {
     open val subscriptionSource: com.tsonglew.quodex.subscriptions.SubscriptionSource by lazy {
         com.tsonglew.quodex.subscriptions.SubscriptionApi()
     }
+    open suspend fun readSubscriptionBrowser(provider: com.tsonglew.quodex.subscriptions.SubscriptionProvider): String =
+        com.tsonglew.quodex.subscriptions.browser.BrowserSession.refresh(this, provider)
     val subscriptions by lazy {
         com.tsonglew.quodex.subscriptions.SubscriptionRepository(
             subscriptionSource,
             com.tsonglew.quodex.subscriptions.EncryptedSubscriptionStore(this),
-            clearBrowserProfile = { com.tsonglew.quodex.subscriptions.browser.BrowserSession.clear(this, it) })
+            clearBrowserProfile = { com.tsonglew.quodex.subscriptions.browser.BrowserSession.clear(this, it) },
+            readBrowser = ::readSubscriptionBrowser)
     }
     val subscriptionActions by lazy {
         com.tsonglew.quodex.subscriptions.SubscriptionActions(subscriptions, scope)

@@ -37,7 +37,7 @@
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/all-glass-alpha36/all-glass-quota-light.png" width="230" alt="alpha36 debug：多服务总览，API 37 模拟器，示例数据" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-subscriptions-light.png" width="230" alt="alpha36 debug：统一账号入口，API 37 模拟器，示例模式" /> | <img src="docs/screenshots/all-glass-alpha36/all-glass-settings-light.png" width="230" alt="alpha36 debug：紧凑设置列表，API 37 模拟器" /> |
 
-上方为融合导航改版的 alpha36 历史截图；alpha37 新服务见下方原生截图，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。历史发布 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1) 保留四页导航；当前可安装版本请查看 [Releases 的实际产物](https://github.com/tsonglew/Quodex/releases)。
+上方为融合导航改版的 alpha36 历史截图；alpha39 订阅自动更新见下方原生截图，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。历史发布 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1) 保留四页导航；当前可安装版本请查看 [Releases 的实际产物](https://github.com/tsonglew/Quodex/releases)。
 
 ## 界面一览
 
@@ -49,7 +49,7 @@
 
 <img src="docs/screenshots/reset-credits-alpha34/reset-details-zh-Hans-light.png" width="280" alt="alpha34 debug Codex 重置卡区域，展开卡片状态和到期时间，示例数据" />
 
-重置卡界面来自 alpha34 开发版的原生组件截图，使用合成示例数据，不代表真实账号权益。[截图来源与验收范围](docs/screenshots/reset-credits-alpha34/README.md)。功能是否已发布请以 Releases 中的实际 APK 为准。
+重置卡界面保留为 alpha34 开发版的历史原生组件截图，使用合成示例数据，不代表真实账号权益。[截图来源与验收范围](docs/screenshots/reset-credits-alpha34/README.md)。功能是否已发布请以 Releases 中的实际 APK 为准。
 
 | alpha35 玻璃材质 · 浅色 | alpha35 玻璃材质 · 深色 |
 | :---: | :---: |
@@ -63,11 +63,11 @@
 
 以上为历史 alpha36 debug / API 37 模拟器原生截图，未裁切或重绘；赠送额度均为合成示例，不代表真实账号。[截图来源与范围](docs/screenshots/all-glass-alpha36/README.md)。
 
-| alpha38 Kimi 官方登录 | alpha38 WorkBuddy 官方登录 | alpha38 Grok／Cursor 官方登录 |
+| alpha39 Kimi 自动更新 | alpha39 WorkBuddy 自动更新 | alpha39 Grok／Cursor 自动更新 |
 | --- | --- | --- |
-| <img src="docs/screenshots/browser-login-alpha38/login-kimi-sample.png" width="240" alt="alpha38 原生 Kimi 官网登录入口，合成额度" /> | <img src="docs/screenshots/browser-login-alpha38/login-workbuddy-sample.png" width="240" alt="alpha38 原生 WorkBuddy 官网登录与刷新，合成额度" /> | <img src="docs/screenshots/browser-login-alpha38/login-grok-sample.png" width="240" alt="alpha38 原生 Grok Cursor 共享额度官网登录入口，合成额度" /> |
+| <img src="docs/screenshots/auto-refresh-alpha39/login-kimi-sample.png" width="240" alt="alpha39 Kimi 自动更新说明与普通刷新按钮，合成额度" /> | <img src="docs/screenshots/auto-refresh-alpha39/login-workbuddy-sample.png" width="240" alt="alpha39 WorkBuddy 自动更新说明与普通刷新按钮，合成额度" /> | <img src="docs/screenshots/auto-refresh-alpha39/auto-refresh-grok-sample.png" width="240" alt="alpha39 Grok Cursor 共享额度自动更新与普通刷新按钮，合成额度" /> |
 
-alpha38 debug / API 36 原生截图，合成测试数据；完整登录由服务方页面处理，真实 Android 账号流程尚未全量验收。[来源与验证](docs/screenshots/browser-login-alpha38/README.md)。alpha37 的粘贴／导入截图保留为历史资料。
+2026-11-09，alpha39 debug / API 36 原生截图，使用合成测试数据，未裁切或重绘；不代表真实 Android 账号完整登录已验收。截图对应本轮源码，安装包发布状态以 [Releases](https://github.com/tsonglew/Quodex/releases) 为准。[来源与验证](docs/screenshots/auto-refresh-alpha39/README.md)。[alpha38 登录截图](docs/screenshots/browser-login-alpha38/README.md)保留为历史资料。
 
 ## 下载与开始使用
 
@@ -89,15 +89,15 @@ alpha38 debug / API 36 原生截图，合成测试数据；完整登录由服务
 | **Token 趋势** | 近 7／30 天条形图与日历热力图切换，记住图表偏好；缺失数据与真实零值分别展示。 |
 | **桌面一览** | 标准额度、2×1 紧凑额度、2×2 的 30 天热力图，以及带百分比的桌面额度图标；支持手动刷新。 |
 | **API 赠送额度** | alpha36 新增 ChatGPT Pro／Business API 福利卡：资格、每周期金额、可领取金额和到期时间。实验性只读接入；不表示消费后的剩余余额。[接入边界](docs/API_CREDITS.md) |
-| **订阅与 API 账单** | alpha37 增加 Kimi 会员／Code／国内与国际 API 余额、WorkBuddy 国际站积分、Grok／Cursor 共享订阅池、xAI API 预付余额和 Cursor 团队费用。按“订阅额度”／“API 账单”筛选，独立连接；alpha38 中 Kimi、WorkBuddy、Grok／Cursor 使用 App 内官网登录，登录后自动读取；无需复制 Cookie 或 JSON，官网刷新复用登录。 |
+| **订阅与 API 账单** | alpha37 增加 Kimi 会员／Code／国内与国际 API 余额、WorkBuddy 国际站积分、Grok／Cursor 共享订阅池、xAI API 预付余额和 Cursor 团队费用。按“订阅额度”／“API 账单”筛选，独立连接；alpha38 中 Kimi、WorkBuddy、Grok／Cursor 使用 App 内官网登录，登录后自动读取；无需复制 Cookie 或 JSON。alpha39 补充前台自动更新，复用登录态与五分钟缓存。 |
 | **玻璃材质** | alpha36 源码将额度、Token、重置卡、订阅、设置、页头、导航和全部桌面组件统一为玻璃材质；设置 → 外观分别调整浅深色底色，或启用“减少透明效果”。Android 13+ 支持边缘折射，旧版采用模糊或实色。 |
 | **日常体验** | 简体中文／English／日本語、浅色／深色／跟随系统、大字体与宽屏适配、应用内更新。 |
 
-**玻璃材质。** 文字区域优先保证对比度，低浓度仍保留可读性下限；所有桌面组件使用静态玻璃位图，不读取或模糊壁纸；Token 热力图保持用量配色。“减少透明效果”也适用于既有悬浮导航。alpha38 为本轮源码版本，是否已发布以 Releases 的实际 APK 为准。[实现与验证](docs/LIQUID_GLASS.md)
+**玻璃材质。** 文字区域优先保证对比度，低浓度仍保留可读性下限；所有桌面组件使用静态玻璃位图，不读取或模糊壁纸；Token 热力图保持用量配色。“减少透明效果”也适用于既有悬浮导航。alpha39 为本轮源码版本，是否已发布以 Releases 的实际 APK 为准。[实现与验证](docs/LIQUID_GLASS.md)
 
 **重置卡查询。** 在总览 → Codex 明细查看张数，点“查看明细”获取卡片；已展开时，额度刷新后会检查五分钟明细缓存，也可点“刷新明细”。服务端可能只返回部分明细，数量未知不会显示为零；到期时间按手机时区显示，实际可用性以服务端为准。明细失败不影响额度，不新增后台明细请求。使用卡片请前往 Codex。真实账号覆盖仍待验证。
 
-**订阅查询有明确边界。** 新服务仅前台查询，不进入 Codex 桌面组件、Token 图表或后台同步。Kimi、WorkBuddy、Grok／Cursor 在 App 内官网登录，成功后自动读取；点击“官网刷新”复用登录，平时显示上次成功数据与时间；已迁移的 Cursor 与 Grok 共用额度池，只看一张卡。WorkBuddy 自定义模型的 API 账单归模型服务商，不提供虚构的独立钱包。Kimi／WorkBuddy 网页接口为实验性兼容接入；开发者 API 尚未使用真实密钥验收，Go 存在迁移风险。[接入步骤与兼容说明](docs/SUBSCRIPTIONS.md)
+**订阅查询有明确边界。** 新服务仅前台查询，不进入 Codex 桌面组件、Token 图表或后台同步。Kimi、WorkBuddy、Grok／Cursor 在 App 内官网登录，成功后自动读取；alpha39 在打开或返回 App 后检查五分钟缓存，停留期间继续自动更新，普通刷新也无需打开网页；退到后台停止自动读取。会话过期或网页验证时提示“官网登录”，失败保留上次成功数据与时间，临时网络失败可手动重试，服务端限流则等待指定时间；已迁移的 Cursor 与 Grok 共用额度池，只看一张卡。WorkBuddy 自定义模型的 API 账单归模型服务商，不提供虚构的独立钱包。Kimi／WorkBuddy 网页接口为实验性兼容接入；开发者 API 尚未使用真实密钥验收，Go 存在迁移风险。[接入步骤与兼容说明](docs/SUBSCRIPTIONS.md)
 
 ## 隐私与可靠性
 

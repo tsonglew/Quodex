@@ -97,6 +97,7 @@ internal fun ServicesOverview(state: AppState, prefs: PreferencesState, model: M
                 if (snapshot?.available == false) Text(texts(R.string.subscription_api_unavailable), color = MaterialTheme.colorScheme.error)
                 account.failure?.let {
                     Text(if (it == FailureKind.LIMITED) texts(R.string.subscription_error_limited, absoluteTime(account.retryAt, true))
+                        else if (account.browser && it == FailureKind.AUTH) texts(R.string.subscription_browser_auth_required)
                         else texts(it.subscriptionErrorResource()), color = MaterialTheme.colorScheme.error)
                 }
                 if (account.browser) Text(texts(R.string.subscription_browser_cached), style = MaterialTheme.typography.bodySmall)

@@ -64,6 +64,7 @@ data class SubscriptionState(
     val retryAt: Long = 0,
     val imported: Boolean = false,
     val browser: Boolean = false,
+    val automaticRetryAt: Long = 0,
 )
 
 object SubscriptionParser {

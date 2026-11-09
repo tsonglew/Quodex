@@ -15,6 +15,7 @@ class SubscriptionRepository(
     private val store: SubscriptionStore,
     private val clearBrowserProfile: suspend (SubscriptionProvider) -> Unit = {},
     private val now: () -> Long = { Instant.now().epochSecond },
+    private val readBrowser: suspend (SubscriptionProvider) -> String = { throw ApiFailure(FailureKind.PROTOCOL) },
 ) {
     private val storageLock = Mutex()
     private val locks = SubscriptionProvider.entries.associateWith { Mutex() }
@@ -148,22 +149,27 @@ class SubscriptionRepository(
             val previous = state.value.getValue(provider)
             // Even a manual refresh must respect Retry-After for this account.
             if (replacement == null && now() < previous.retryAt) return@withLock
+            if (replacement == null && !force && now() < previous.automaticRetryAt) return@withLock
             if (replacement == null && !force && previous.failure == null &&
                 previous.snapshot?.let { now() - it.fetchedAt in 0L until 300L } == true) return@withLock
             val account = storageLock.withLock { accounts[provider] }
-            if (replacement == null && (account?.imported == true || account?.browser == true)) return@withLock
+            if (replacement == null && account?.imported == true) return@withLock
+            // A website challenge needs user interaction, not another automatic page load.
+            if (replacement == null && account?.browser == true && !force && previous.failure == FailureKind.AUTH) return@withLock
             val credential = replacement ?: account?.credential ?: return@withLock
             update(provider) { it.copy(busy = true, failure = null) }
             try {
-                val snapshot = source.fetch(provider, credential)
+                val browser = replacement == null && account?.browser == true
+                val snapshot = if (browser) SubscriptionParser.parse(provider, readBrowser(provider), now())
+                    else source.fetch(provider, credential)
                 require(snapshot.provider == provider)
                 currentCoroutineContext().ensureActive()
                 storageLock.withLock commit@ {
                     if (!current()) return@commit
-                    val next = accounts + (provider to SubscriptionAccount(credential, snapshot))
+                    val next = accounts + (provider to SubscriptionAccount(credential, snapshot, browser = browser))
                     store.write(next)
                     accounts = next
-                    update(provider) { SubscriptionState(true, snapshot) }
+                    update(provider) { SubscriptionState(true, snapshot, browser = browser) }
                 }
             } catch (cancel: CancellationException) {
                 if (current()) update(provider) { previous.copy(busy = false) }
@@ -171,7 +177,9 @@ class SubscriptionRepository(
             } catch (failure: Exception) {
                 if (current()) update(provider) { it.copy(busy = false,
                     failure = (failure as? ApiFailure)?.kind ?: FailureKind.STORAGE,
-                    retryAt = (failure as? ApiFailure)?.retryAt ?: 0) }
+                    retryAt = (failure as? ApiFailure)?.retryAt ?: 0,
+                    automaticRetryAt = if (account?.browser == true && (failure as? ApiFailure)?.retryAt == null &&
+                        (failure as? ApiFailure)?.kind != FailureKind.AUTH) now() + 300 else 0) }
             } finally {
                 if (current()) update(provider) { it.copy(busy = false) }
             }

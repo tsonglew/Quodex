@@ -22,6 +22,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val subscriptions = app.subscriptions.state
     val subscriptionsInitialized = app.subscriptions.initialized
     val subscriptionStorageUnavailable = app.subscriptions.storageUnavailable
+    /** The Activity owns this loop, so pausing, rotation and demo mode cancel pending reads. */
+    suspend fun refreshSubscriptionsWhileActive() {
+        state.map { it.initialized && !it.demo }.distinctUntilChanged().collectLatest { enabled ->
+            if (enabled) coroutineScope {
+                while (isActive) {
+                    app.subscriptionActions.refreshAll()
+                    delay(60_000) // Repository applies the five-minute cache and server cooldown.
+                }
+            }
+        }
+    }
     fun loadSubscriptions() {
         SubscriptionProvider.entries.forEach { provider ->
             app.subscriptionActions.refresh(provider, viewModelScope)

@@ -59,6 +59,66 @@ internal object BrowserSession {
 
     private fun marker(context: Context, profile: BrowserProvider) = File(context.noBackupFilesDir, "browser-profiles/${profile.profile}")
 
+    suspend fun refresh(context: Context, provider: SubscriptionProvider): String = withContext(Dispatchers.Main.immediate) {
+        val profile = BrowserProvider.forProvider(provider) ?: throw ApiFailure(FailureKind.PROTOCOL)
+        val service = when (profile) {
+            BrowserProvider.KIMI -> KimiBrowserRefreshService::class.java
+            BrowserProvider.WORKBUDDY -> WorkBuddyBrowserRefreshService::class.java
+            BrowserProvider.GROK -> GrokBrowserRefreshService::class.java
+        }
+        var bound = false
+        var endpoint: Messenger? = null
+        val requestId = java.util.UUID.randomUUID().toString()
+        lateinit var connection: ServiceConnection
+        try {
+            withTimeoutOrNull(45_000) {
+                suspendCancellableCoroutine { continuation ->
+                    val reply = object : ResultReceiver(Handler(Looper.getMainLooper())) {
+                        override fun onReceiveResult(code: Int, data: Bundle?) {
+                            if (!continuation.isActive) return
+                            val raw = data?.getString(QUOTA)
+                            if (code == SUCCESS && raw != null && raw.length <= 131072) continuation.resume(raw)
+                            else {
+                                val kind = FailureKind.entries.find { it.name == data?.getString("failure") } ?: FailureKind.PROTOCOL
+                                continuation.resumeWithException(ApiFailure(kind, data?.getLong("retry-at")?.takeIf { it > 0 }))
+                            }
+                        }
+                    }
+                    connection = object : ServiceConnection {
+                        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+                            if (!continuation.isActive) return
+                            endpoint = Messenger(service)
+                            try {
+                                endpoint?.send(Message.obtain().apply {
+                                    what = BrowserRefreshService.READ
+                                    data = Bundle().apply {
+                                        putString(BrowserRefreshService.REQUEST_ID, requestId)
+                                        putParcelable(REPLY, remote(reply))
+                                    }
+                                })
+                            } catch (_: RemoteException) { onServiceDisconnected(name) }
+                        }
+                        override fun onServiceDisconnected(name: ComponentName) {
+                            if (continuation.isActive) continuation.resumeWithException(ApiFailure(FailureKind.NETWORK))
+                        }
+                        override fun onNullBinding(name: ComponentName) = onServiceDisconnected(name)
+                        override fun onBindingDied(name: ComponentName) = onServiceDisconnected(name)
+                    }
+                    bound = context.bindService(Intent(context, service), connection, Context.BIND_AUTO_CREATE)
+                    if (!bound) continuation.resumeWithException(ApiFailure(FailureKind.NETWORK))
+                }
+            } ?: throw ApiFailure(FailureKind.NETWORK)
+        } finally {
+            try {
+                endpoint?.send(Message.obtain().apply {
+                    what = BrowserRefreshService.CANCEL
+                    data = Bundle().apply { putString(BrowserRefreshService.REQUEST_ID, requestId) }
+                })
+            } catch (_: RemoteException) { /* The remote process is already gone. */ }
+            if (bound) context.unbindService(connection)
+        }
+    }
+
     suspend fun read(context: Context, profile: BrowserProvider, prefs: PreferencesState): String = withContext(Dispatchers.Main.immediate) {
         withContext(Dispatchers.IO) {
             val file = marker(context, profile)
