@@ -67,7 +67,11 @@
 | --- | --- | --- |
 | <img src="docs/screenshots/auto-refresh-alpha39/login-kimi-sample.png" width="240" alt="alpha39 Kimi 自动更新说明与普通刷新按钮，合成额度" /> | <img src="docs/screenshots/auto-refresh-alpha39/login-workbuddy-sample.png" width="240" alt="alpha39 WorkBuddy 自动更新说明与普通刷新按钮，合成额度" /> | <img src="docs/screenshots/auto-refresh-alpha39/auto-refresh-grok-sample.png" width="240" alt="alpha39 Grok Cursor 共享额度自动更新与普通刷新按钮，合成额度" /> |
 
-2026-11-09，alpha39 debug / API 36 原生截图，使用合成测试数据，未裁切或重绘；不代表真实 Android 账号完整登录已验收。截图对应本轮源码，安装包发布状态以 [Releases](https://github.com/tsonglew/Quodex/releases) 为准。[来源与验证](docs/screenshots/auto-refresh-alpha39/README.md)。[alpha38 登录截图](docs/screenshots/browser-login-alpha38/README.md)保留为历史资料。
+历史资料：2026-11-09，alpha39 debug / API 36 原生截图，使用合成测试数据，未裁切或重绘；不代表真实 Android 账号完整登录已验收。截图对应 alpha39 源码，安装包发布状态以 [Releases](https://github.com/tsonglew/Quodex/releases) 为准。[来源与验证](docs/screenshots/auto-refresh-alpha39/README.md)。[alpha38 登录截图](docs/screenshots/browser-login-alpha38/README.md)保留为历史资料。
+
+<img src="docs/screenshots/google-login-alpha40/google-account-picker-sample.png" width="270" alt="alpha40 原生 Google 账号选择入口，网页为明确标注的合成登录表单，不连接 Google" />
+
+alpha40 原生登录界面与合成网页，展示“选择手机中的 Google 账号”入口；没有使用真实 Google 账号。[截图来源与验收范围](docs/screenshots/google-login-alpha40/README.md)。
 
 ## 下载与开始使用
 
@@ -96,6 +100,8 @@
 **玻璃材质。** 文字区域优先保证对比度，低浓度仍保留可读性下限；所有桌面组件使用静态玻璃位图，不读取或模糊壁纸；Token 热力图保持用量配色。“减少透明效果”也适用于既有悬浮导航。alpha39 为本轮源码版本，是否已发布以 Releases 的实际 APK 为准。[实现与验证](docs/LIQUID_GLASS.md)
 
 **重置卡查询。** 在总览 → Codex 明细查看张数，点“查看明细”获取卡片；已展开时，额度刷新后会检查五分钟明细缓存，也可点“刷新明细”。服务端可能只返回部分明细，数量未知不会显示为零；到期时间按手机时区显示，实际可用性以服务端为准。明细失败不影响额度，不新增后台明细请求。使用卡片请前往 Codex。真实账号覆盖仍待验证。
+
+**alpha40 源码：Google 登录辅助。** 修复内置网页表单未传给 Android 密码管理器的问题；在 Google 邮箱输入页增加系统账号选择入口，选择手机已有账号后填入邮箱。需要启用系统自动填充服务；不会共享 Chrome 登录状态或跳过 Google 验证。[使用步骤与限制](docs/SUBSCRIPTIONS.md)
 
 **订阅查询有明确边界。** 新服务仅前台查询，不进入 Codex 桌面组件、Token 图表或后台同步。Kimi、WorkBuddy、Grok／Cursor 在 App 内官网登录，成功后自动读取；alpha39 在打开或返回 App 后检查五分钟缓存，停留期间继续自动更新，普通刷新也无需打开网页；退到后台停止自动读取。会话过期或网页验证时提示“官网登录”，失败保留上次成功数据与时间，临时网络失败可手动重试，服务端限流则等待指定时间；已迁移的 Cursor 与 Grok 共用额度池，只看一张卡。WorkBuddy 自定义模型的 API 账单归模型服务商，不提供虚构的独立钱包。Kimi／WorkBuddy 网页接口为实验性兼容接入；开发者 API 尚未使用真实密钥验收，Go 存在迁移风险。[接入步骤与兼容说明](docs/SUBSCRIPTIONS.md)
 

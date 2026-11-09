@@ -1,23 +1,24 @@
 package com.tsonglew.quodex.subscriptions.browser
 
+import android.accounts.AccountManager
+import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.os.*
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.compose.setContent
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.graphics.toArgb
 import com.tsonglew.quodex.R
 import com.tsonglew.quodex.data.GlassPreferences
 import com.tsonglew.quodex.i18n.AppLanguages
-import com.tsonglew.quodex.i18n.localTextResources
+import com.tsonglew.quodex.i18n.AndroidTextResources
 import com.tsonglew.quodex.ui.*
 
 /** A normal official login page in a service-specific browser profile. No password/token text fields exist in native UI. */
@@ -29,6 +30,33 @@ abstract class BrowserLoginActivity : AppCompatActivity() {
     private var page by mutableStateOf(BrowserPageState())
     private val closeForCleanup: () -> Unit = { complete(BrowserSession.CANCELLED) }
     private lateinit var frame: FrameLayout
+    private var accountTarget: Pair<QuotaBrowserView, Long>? = null
+    private val accountPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val target = accountTarget.also { accountTarget = null } ?: return@registerForActivityResult
+        if (result.resultCode != Activity.RESULT_OK || result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE) != "com.google") return@registerForActivityResult
+        val email = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME) ?: return@registerForActivityResult
+        if (views.lastOrNull() !== target.first) return@registerForActivityResult
+        target.first.fillGoogleAccount(email, target.second) { filled ->
+            if (!filled && !isFinishing && !isDestroyed) notice(R.string.subscription_browser_google_field)
+        }
+    }
+
+    private fun chooseGoogleAccount() {
+        val browser = views.lastOrNull() ?: return
+        if (!GoogleAccountSelection.canFill(browser.url)) return
+        accountTarget = browser to browser.documentRevision
+        try {
+            accountPicker.launch(AccountManager.newChooseAccountIntent(null, null, arrayOf("com.google"), null, null, null, null))
+        } catch (_: ActivityNotFoundException) {
+            accountTarget = null
+            notice(R.string.subscription_browser_google_unavailable)
+        } catch (_: SecurityException) {
+            accountTarget = null
+            notice(R.string.subscription_browser_google_unavailable)
+        }
+    }
+
+    private fun notice(resource: Int) = Toast.makeText(this, AndroidTextResources(this)(resource), Toast.LENGTH_LONG).show()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +75,9 @@ abstract class BrowserLoginActivity : AppCompatActivity() {
                 }
             }))
         })
-        frame = FrameLayout(this)
+        val layout = BrowserLoginLayout(this)
+        frame = layout.browserContainer
+        setContentView(layout)
         try {
             val first = createBrowser()
             show(first)
@@ -65,36 +95,16 @@ abstract class BrowserLoginActivity : AppCompatActivity() {
         })
         val glass = GlassPreferences(intent.getFloatExtra("light-tint", 1f), intent.getFloatExtra("dark-tint", 1f),
             intent.getBooleanExtra("reduce-transparency", false))
-        setContent {
+        layout.header.setContent {
             QuotaTheme(intent.getStringExtra("theme") ?: "system", glass) {
-                val texts = localTextResources()
-                Column(Modifier.fillMaxSize().glassSceneBackground().safeDrawingPadding().imePadding()) {
-                    GlassPanel(modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
-                                Text(texts(R.string.subscription_browser_title, profile.provider.displayName), style = MaterialTheme.typography.titleMedium)
-                                Text(page.host.ifBlank { java.net.URI(profile.origin).host }, style = MaterialTheme.typography.labelSmall, maxLines = 2)
-                            }
-                            TextButton(onClick = { complete(BrowserSession.CANCELLED) }) { Text(texts(R.string.close)) }
-                        }
-                    }
-                    if (page.loading || page.status == BrowserReadStatus.READING) LinearProgressIndicator(Modifier.fillMaxWidth())
-                    AndroidView(factory = { frame }, modifier = Modifier.fillMaxWidth().weight(1f))
-                    GlassPanel(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(texts(when (page.status) {
-                                BrowserReadStatus.READING -> R.string.subscription_browser_reading
-                                BrowserReadStatus.RETRY -> R.string.subscription_browser_retry
-                                BrowserReadStatus.LIMITED -> R.string.subscription_browser_limited
-                                BrowserReadStatus.BLOCKED -> R.string.subscription_browser_blocked
-                                else -> R.string.subscription_browser_sign_in
-                            }), style = MaterialTheme.typography.bodySmall)
-                            TextButton(onClick = { views.lastOrNull()?.readAgain() }, enabled = page.status != BrowserReadStatus.READING) {
-                                Text(texts(R.string.subscription_browser_read))
-                            }
-                        }
-                    }
-                }
+                val background = MaterialTheme.colorScheme.background.toArgb()
+                SideEffect { layout.setBackgroundColor(background) }
+                BrowserLoginHeader(profile, page) { complete(BrowserSession.CANCELLED) }
+            }
+        }
+        layout.footer.setContent {
+            QuotaTheme(intent.getStringExtra("theme") ?: "system", glass) {
+                BrowserLoginFooter(page, ::chooseGoogleAccount) { views.lastOrNull()?.readAgain() }
             }
         }
     }
@@ -129,6 +139,7 @@ abstract class BrowserLoginActivity : AppCompatActivity() {
     }
 
     private fun disposeBrowsers() {
+        accountTarget = null
         views.forEach { (it.parent as? ViewGroup)?.removeView(it); it.destroy() }
         views.clear()
     }
