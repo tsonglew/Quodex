@@ -2,6 +2,7 @@ package com.tsonglew.quodex.subscriptions
 
 import com.tsonglew.quodex.data.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -19,19 +20,24 @@ class SubscriptionActionsTest {
         SubscriptionSnapshot(p, 1000, listOf(SubscriptionMetric(SubscriptionMetricKind.BALANCE, "20", "USD")))
     }, store)
 
-    @Test fun slowBrowserDoesNotDelayApiAndBrowserReadsRemainSerial() = runBlocking {
+    @Test fun slowBrowserDoesNotDelayApiAndBrowserReadsRemainSerial() = verifyConcurrentRefresh(false)
+
+    @Test fun legacyGrokHttpSessionDoesNotWaitForBrowserReads() = verifyConcurrentRefresh(true)
+
+    private fun verifyConcurrentRefresh(legacyGrok: Boolean) = runBlocking {
         withTimeout(5000) {
             val store = MemoryStore()
-            val browserProviders = SubscriptionRepository.browserProviders
-            store.accounts = (browserProviders + provider).associateWith {
+            val browserProviders = SubscriptionRepository.browserProviders.filterNot { legacyGrok && it == SubscriptionProvider.GROK }
+            val apiProviders = if (legacyGrok) setOf(provider, SubscriptionProvider.GROK) else setOf(provider)
+            store.accounts = (browserProviders + apiProviders).associateWith {
                 SubscriptionAccount("", SubscriptionSnapshot(it, 1, emptyList()), browser = it in browserProviders)
             }
-            val apiRead = CompletableDeferred<Unit>()
+            val apiRead = Channel<SubscriptionProvider>(Channel.UNLIMITED)
             val browserRead = CompletableDeferred<Unit>()
             val releaseBrowser = CompletableDeferred<Unit>()
             val reads = java.util.Collections.synchronizedList(mutableListOf<SubscriptionProvider>())
             val repo = SubscriptionRepository({ p, _ ->
-                apiRead.complete(Unit)
+                apiRead.send(p)
                 SubscriptionSnapshot(p, 1000, emptyList())
             }, store, now = { 1000 }, readBrowser = {
                 reads += it
@@ -42,7 +48,7 @@ class SubscriptionActionsTest {
             val actions = SubscriptionActions(repo, this)
             val refresh = launch { actions.refreshAll() }
             browserRead.await()
-            apiRead.await()
+            assertEquals(apiProviders, List(apiProviders.size) { apiRead.receive() }.toSet())
             assertEquals(listOf(SubscriptionProvider.KIMI), reads.toList())
             releaseBrowser.complete(Unit)
             refresh.join()

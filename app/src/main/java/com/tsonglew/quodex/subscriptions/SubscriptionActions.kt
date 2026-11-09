@@ -35,7 +35,8 @@ class SubscriptionActions(
 
     /** Keep browser memory bounded without making API accounts wait for a slow website. */
     suspend fun refreshAll() = coroutineScope {
-        val (browser, api) = SubscriptionProvider.entries.partition { it in SubscriptionRepository.browserProviders }
+        repository.initialize()
+        val (browser, api) = SubscriptionProvider.entries.partition { repository.state.value.getValue(it).browser }
         api.forEach { refresh(it, this) }
         browser.forEach { refresh(it, this).join() }
     }
