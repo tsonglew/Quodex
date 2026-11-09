@@ -27,8 +27,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         state.map { it.initialized && !it.demo }.distinctUntilChanged().collectLatest { enabled ->
             if (enabled) coroutineScope {
                 while (isActive) {
-                    // Serial browser reads avoid keeping three Chromium pages alive together.
-                    SubscriptionProvider.entries.forEach { app.subscriptionActions.refresh(it, this).join() }
+                    app.subscriptionActions.refreshAll()
                     delay(60_000) // Repository applies the five-minute cache and server cooldown.
                 }
             }

@@ -149,6 +149,7 @@ class SubscriptionRepository(
             val previous = state.value.getValue(provider)
             // Even a manual refresh must respect Retry-After for this account.
             if (replacement == null && now() < previous.retryAt) return@withLock
+            if (replacement == null && !force && now() < previous.automaticRetryAt) return@withLock
             if (replacement == null && !force && previous.failure == null &&
                 previous.snapshot?.let { now() - it.fetchedAt in 0L until 300L } == true) return@withLock
             val account = storageLock.withLock { accounts[provider] }
@@ -176,7 +177,8 @@ class SubscriptionRepository(
             } catch (failure: Exception) {
                 if (current()) update(provider) { it.copy(busy = false,
                     failure = (failure as? ApiFailure)?.kind ?: FailureKind.STORAGE,
-                    retryAt = (failure as? ApiFailure)?.retryAt ?: if (account?.browser == true &&
+                    retryAt = (failure as? ApiFailure)?.retryAt ?: 0,
+                    automaticRetryAt = if (account?.browser == true && (failure as? ApiFailure)?.retryAt == null &&
                         (failure as? ApiFailure)?.kind != FailureKind.AUTH) now() + 300 else 0) }
             } finally {
                 if (current()) update(provider) { it.copy(busy = false) }

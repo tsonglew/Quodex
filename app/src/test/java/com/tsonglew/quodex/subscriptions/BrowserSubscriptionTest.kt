@@ -136,6 +136,29 @@ class BrowserSubscriptionTest {
         assertNull(repo.state.value[provider]?.failure)
     }
 
+    @Test fun transientFailureBacksOffAutomaticReadsButAllowsImmediateManualRetry() = runBlocking {
+        var time = 1000L
+        var reads = 0
+        val repo = SubscriptionRepository({ _, _ -> error("no native HTTP") }, Store(), now = { time }, readBrowser = {
+            reads++
+            if (reads == 1) throw ApiFailure(FailureKind.NETWORK)
+            raw
+        })
+        repo.acceptBrowser(provider, raw)
+        time = 1300
+        repo.refresh(provider)
+        assertEquals(0L, repo.state.value.getValue(provider).retryAt)
+        assertEquals(1600L, repo.state.value.getValue(provider).automaticRetryAt)
+        time = 1301
+        repo.refresh(provider)
+        assertEquals(1, reads)
+        assertEquals(1000L, repo.state.value[provider]?.snapshot?.fetchedAt)
+        repo.refresh(provider, true)
+        assertEquals(2, reads)
+        assertEquals(1301L, repo.state.value[provider]?.snapshot?.fetchedAt)
+        assertEquals(0L, repo.state.value.getValue(provider).automaticRetryAt)
+    }
+
     @Test fun expiredLoginPausesAutomaticReadsUntilWebsiteLoginSucceeds() = runBlocking {
         var time = 1000L
         var reads = 0

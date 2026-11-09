@@ -33,6 +33,13 @@ class SubscriptionActions(
     fun refresh(provider: SubscriptionProvider, scope: CoroutineScope, force: Boolean = false) =
         query(provider, scope, replace = false) { repository.refresh(provider, force) }
 
+    /** Keep browser memory bounded without making API accounts wait for a slow website. */
+    suspend fun refreshAll() = coroutineScope {
+        val (browser, api) = SubscriptionProvider.entries.partition { it in SubscriptionRepository.browserProviders }
+        api.forEach { refresh(it, this) }
+        browser.forEach { refresh(it, this).join() }
+    }
+
     @Synchronized private fun query(provider: SubscriptionProvider, scope: CoroutineScope,
         replace: Boolean, operation: suspend () -> Unit): Job {
         if (!replace) requests[provider]?.takeIf { it.isActive }?.let { return it }
