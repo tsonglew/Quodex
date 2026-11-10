@@ -1,6 +1,8 @@
 package com.tsonglew.quodex.subscriptions.browser
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -29,17 +31,22 @@ internal fun BrowserLoginHeader(profile: BrowserProvider, page: BrowserPageState
 @Composable
 internal fun BrowserLoginFooter(page: BrowserPageState, onChooseGoogle: () -> Unit, compact: Boolean = false, onRead: () -> Unit) {
     val texts = localTextResources()
-    val google = page.host == "accounts.google.com"
+    val statusText = when (page.status) {
+        BrowserReadStatus.READING -> R.string.subscription_browser_reading
+        BrowserReadStatus.RETRY -> R.string.subscription_browser_retry
+        BrowserReadStatus.LIMITED -> R.string.subscription_browser_limited
+        BrowserReadStatus.BLOCKED -> R.string.subscription_browser_blocked
+        else -> null
+    }
+    val google = page.host == "accounts.google.com" && statusText == null
     Column(Modifier.fillMaxWidth().glassSceneBackground()) {
         GlassPanel(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (!compact) Text(texts(if (google) R.string.subscription_browser_google_hint else when (page.status) {
-                    BrowserReadStatus.READING -> R.string.subscription_browser_reading
-                    BrowserReadStatus.RETRY -> R.string.subscription_browser_retry
-                    BrowserReadStatus.LIMITED -> R.string.subscription_browser_limited
-                    BrowserReadStatus.BLOCKED -> R.string.subscription_browser_blocked
-                    else -> R.string.subscription_browser_sign_in
-                }), style = MaterialTheme.typography.bodySmall)
+                if (!compact || statusText != null) Text(
+                    texts(statusText ?: if (google) R.string.subscription_browser_google_hint else R.string.subscription_browser_sign_in),
+                    modifier = Modifier.heightIn(max = 120.dp).verticalScroll(rememberScrollState()),
+                    style = MaterialTheme.typography.bodySmall,
+                )
                 if (google) {
                     TextButton(onClick = onChooseGoogle, enabled = !page.loading) {
                         Text(texts(R.string.subscription_browser_google_choose))
