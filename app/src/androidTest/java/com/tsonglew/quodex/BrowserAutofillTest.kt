@@ -62,10 +62,16 @@ class BrowserAutofillTest {
                     }
                     assertTrue(ready.await(5, TimeUnit.SECONDS))
                     shell("input tap ${x.toInt()} ${y.toInt()}")
-                    val focused = CountDownLatch(1)
                     var focusedField = ""
-                    scenario.onActivity { browser.evaluateJavascript("document.activeElement.id") { focusedField = it; focused.countDown() } }
-                    assertTrue(focused.await(5, TimeUnit.SECONDS))
+                    // Input injection returns before the WebView renderer necessarily processes focus.
+                    // Wait for that observable state without tapping again or bypassing the form.
+                    val focusDeadline = android.os.SystemClock.uptimeMillis() + 10000
+                    while (focusedField != "\"email\"" && android.os.SystemClock.uptimeMillis() < focusDeadline) {
+                        val focused = CountDownLatch(1)
+                        scenario.onActivity { browser.evaluateJavascript("document.activeElement.id") { focusedField = it; focused.countDown() } }
+                        assertTrue(focused.await(5, TimeUnit.SECONDS))
+                        if (focusedField != "\"email\"") android.os.SystemClock.sleep(100)
+                    }
                     assertEquals("\"email\"", focusedField)
                     val fields = FixtureAutofillService.requests.poll(15, TimeUnit.SECONDS)
                     assertNotNull("Password manager received no request", fields)
