@@ -507,4 +507,8 @@
     <string name="subscription_browser_sign_in">"请在官方页面登录并完成所需验证，Quodex 会读取额度并自动返回。"</string>
     <string name="subscription_browser_read">"读取额度"</string>
     <string name="subscription_browser_clear">"清除登录状态"</string>
+    <string name="subscription_browser_google_choose">"选择手机中的 Google 账号"</string>
+    <string name="subscription_browser_google_hint">"可选择手机已有 Google 账号填写邮箱。点输入框可使用密码管理器建议；仍需完成 Google 要求的验证。"</string>
+    <string name="subscription_browser_google_field">"请先进入 Google 邮箱输入页，再选择账号。"</string>
+    <string name="subscription_browser_google_unavailable">"系统账号选择器不可用，请使用密码管理器或在网页中填写邮箱。"</string>
 </resources>

@@ -510,4 +510,8 @@
     <string name="subscription_browser_sign_in">"Sign in on the official page and complete any verification. Quodex will read your quota and return automatically."</string>
     <string name="subscription_browser_read">"Read quota"</string>
     <string name="subscription_browser_clear">"Clear saved sign-in"</string>
+    <string name="subscription_browser_google_choose">"Choose a Google account on this phone"</string>
+    <string name="subscription_browser_google_hint">"Choose a saved Google account to fill your email. Tap a field for password-manager suggestions; Google may still require verification."</string>
+    <string name="subscription_browser_google_field">"Open the Google email-entry page, then choose an account again."</string>
+    <string name="subscription_browser_google_unavailable">"The system account picker is unavailable. Use your password manager or enter your email on the page."</string>
 </resources>

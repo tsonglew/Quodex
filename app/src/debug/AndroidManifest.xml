@@ -5,6 +5,11 @@
         <package android:name="com.android.systemui" />
     </queries>
     <application>
+        <activity android:name=".AutofillTestHostActivity" android:exported="false" />
+        <service android:name=".FixtureAutofillService" android:exported="true" android:permission="android.permission.BIND_AUTOFILL_SERVICE">
+            <intent-filter><action android:name="android.service.autofill.AutofillService" /></intent-filter>
+            <meta-data android:name="android.autofill" android:resource="@xml/fixture_autofill_service" />
+        </service>
         <activity android:name=".BrowserTestHostActivity" android:exported="false" />
         <activity android:name=".KimiProfileProbeActivity" android:exported="false" android:process=":subscription_kimi" />
         <activity android:name=".WorkBuddyProfileProbeActivity" android:exported="false" android:process=":subscription_workbuddy" />

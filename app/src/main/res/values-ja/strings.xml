@@ -507,4 +507,8 @@
     <string name="subscription_browser_sign_in">"公式ページでログインと必要な認証を行ってください。使用量を取得すると自動で戻ります。"</string>
     <string name="subscription_browser_read">"使用量を取得"</string>
     <string name="subscription_browser_clear">"ログイン状態を削除"</string>
+    <string name="subscription_browser_google_choose">"端末の Google アカウントを選択"</string>
+    <string name="subscription_browser_google_hint">"端末の Google アカウントからメールアドレスを入力できます。入力欄をタップするとパスワード管理の候補が表示されます。Google の認証が必要な場合があります。"</string>
+    <string name="subscription_browser_google_field">"Google のメールアドレス入力画面を開いてから、もう一度アカウントを選択してください。"</string>
+    <string name="subscription_browser_google_unavailable">"システムのアカウント選択を利用できません。パスワード管理を使うか、ページにメールアドレスを入力してください。"</string>
 </resources>

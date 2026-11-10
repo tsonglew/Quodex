@@ -35,6 +35,7 @@ internal class QuotaBrowserView(
     private val handler = Handler(Looper.getMainLooper())
     private val reader = context.assets.open("subscription_quota_reader.js").bufferedReader().use { it.readText() }
     private var revision = 0L
+    val documentRevision: Long get() = revision
     private var active = true
     private var pending = false
     private var automatic = true
@@ -49,6 +50,8 @@ internal class QuotaBrowserView(
     }
 
     init {
+        id = android.view.View.generateViewId()
+        importantForAutofill = if (interactive) IMPORTANT_FOR_AUTOFILL_YES else IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
         settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -124,6 +127,15 @@ internal class QuotaBrowserView(
             override fun onCloseWindow(window: WebView) { onPopup(this@QuotaBrowserView, false) }
         }
         handler.post(poll)
+    }
+
+    fun fillGoogleAccount(email: String, expectedRevision: Long, done: (Boolean) -> Unit) {
+        val script = GoogleAccountSelection.script(email)
+        if (!active || !interactive || revision != expectedRevision || !GoogleAccountSelection.canFill(url) || script == null) {
+            done(false)
+            return
+        }
+        evaluateJavascript(script) { result -> done(active && revision == expectedRevision && result == "true") }
     }
 
     private fun hasLoginCookie(): Boolean {
