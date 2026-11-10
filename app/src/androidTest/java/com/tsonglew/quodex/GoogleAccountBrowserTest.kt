@@ -3,6 +3,7 @@ package com.tsonglew.quodex
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.*
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.tsonglew.quodex.subscriptions.browser.*
@@ -19,14 +20,14 @@ class GoogleAccountBrowserTest {
         val inst = InstrumentationRegistry.getInstrumentation()
         ActivityScenario.launch(AutofillTestHostActivity::class.java).use { scenario ->
             lateinit var browser: QuotaBrowserView
+            var page by mutableStateOf(BrowserPageState(host = "accounts.google.com", loading = false, documentReady = true))
             val loaded = LinkedBlockingQueue<Boolean>()
             scenario.onActivity { activity ->
                     activity.enableEdgeToEdge()
-                browser = QuotaBrowserView(activity, BrowserProvider.GROK, {}, { _, state -> if (!state.loading) loaded.offer(true) }, { _, _ -> }, intercept = {
+                browser = QuotaBrowserView(activity, BrowserProvider.GROK, {}, { _, state -> if (!state.loading) loaded.offer(state.documentReady) }, { _, _ -> }, intercept = {
                     WebResourceResponse("text/html", "UTF-8", """<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font:18px sans-serif;padding:24px}input{display:block;margin:12px 0;padding:12px;width:85%}</style><h2>登录表单测试样例</h2><p>合成数据 · 不连接 Google</p><form onsubmit="window.submitted=true;return false"><label>邮箱<input id="identifierId" type="email" autocomplete="username"></label><label>密码<input id="password" type="password" value="untouched" autocomplete="current-password"></label></form><script>window.changes=0;window.submitted=false;identifierId.addEventListener('input',()=>window.changes++);identifierId.addEventListener('change',()=>window.changes++);</script>""".byteInputStream())
                 })
                 val layout = BrowserLoginLayout(activity)
-                val page = BrowserPageState(host = "accounts.google.com", loading = false)
                 layout.header.setContent { QuotaTheme("light") { BrowserLoginHeader(BrowserProvider.GROK, page, layout.compactChrome) {} } }
                 layout.footer.setContent { QuotaTheme("light") { BrowserLoginFooter(page, {}, layout.compactChrome) {} } }
                 layout.browserContainer.addView(browser)
@@ -35,7 +36,7 @@ class GoogleAccountBrowserTest {
             fun load(url: String) {
                 loaded.clear()
                 scenario.onActivity { browser.loadUrl(url) }
-                assertNotNull("Fixture page did not load", loaded.poll(15, TimeUnit.SECONDS))
+                assertEquals("Fixture page did not become usable", true, loaded.poll(15, TimeUnit.SECONDS))
                 val drawn = CountDownLatch(1)
                 scenario.onActivity { browser.postVisualStateCallback(1, object : WebView.VisualStateCallback() {
                     override fun onComplete(requestId: Long) { drawn.countDown() }
@@ -81,6 +82,13 @@ class GoogleAccountBrowserTest {
                 inst.uiAutomation.waitForIdle(300, 5000)
                 inst.uiAutomation.takeScreenshot()?.let { bitmap ->
                     java.io.File(inst.targetContext.getExternalFilesDir(null), "google-login-alpha40.png").outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+                    bitmap.recycle()
+                }
+                scenario.onActivity { page = page.copy(status = BrowserReadStatus.RETRY, documentReady = false) }
+                inst.waitForIdleSync()
+                inst.uiAutomation.waitForIdle(300, 5000)
+                inst.uiAutomation.takeScreenshot()?.let { bitmap ->
+                    java.io.File(inst.targetContext.getExternalFilesDir(null), "google-login-recovery-alpha40.png").outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
                     bitmap.recycle()
                 }
                 load("https://accounts.google.com.evil.test/signin")

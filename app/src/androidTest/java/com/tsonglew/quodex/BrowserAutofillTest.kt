@@ -32,7 +32,7 @@ class BrowserAutofillTest {
                         WebResourceResponse("text/html", "UTF-8", """<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{padding:24px}input{display:block;padding:12px;margin:12px 0;width:80%}</style><form><label>Email<input id="email" type="email" autocomplete="username"></label><label>Password<input id="password" type="password" autocomplete="current-password"></label></form>""".byteInputStream())
                     })
                     val layout = BrowserLoginLayout(activity)
-                    val state = BrowserPageState(host = "accounts.google.com", loading = false)
+                    val state = BrowserPageState(host = "accounts.google.com", loading = false, documentReady = true)
                     layout.header.setContent { com.tsonglew.quodex.ui.QuotaTheme("light") { BrowserLoginHeader(BrowserProvider.GROK, state, layout.compactChrome) {} } }
                     layout.footer.setContent { com.tsonglew.quodex.ui.QuotaTheme("light") { BrowserLoginFooter(state, {}, layout.compactChrome) {} } }
                     layout.browserContainer.addView(browser)
@@ -48,24 +48,37 @@ class BrowserAutofillTest {
                     assertTrue(drawn.await(10, TimeUnit.SECONDS))
                     inst.waitForIdleSync()
                     inst.uiAutomation.waitForIdle(300, 5000)
-                    val position = IntArray(2)
-                    val ready = CountDownLatch(1)
-                    var x = 0f; var y = 0f
-                    scenario.onActivity {
-                        browser.getLocationOnScreen(position)
-                        browser.evaluateJavascript("JSON.stringify((()=>{const r=document.getElementById('email').getBoundingClientRect();return [(r.left+r.width/2)/innerWidth,(r.top+r.height/2)/innerWidth]})())") { raw ->
-                            val coords = org.json.JSONArray(org.json.JSONTokener(raw).nextValue() as String)
-                            x = position[0] + coords.getDouble(0).toFloat() * browser.width
-                            y = position[1] + coords.getDouble(1).toFloat() * browser.width
-                            ready.countDown()
+                    fun emailField(node: android.view.accessibility.AccessibilityNodeInfo?): android.view.accessibility.AccessibilityNodeInfo? {
+                        if (node == null) return null
+                        if (node.packageName == inst.targetContext.packageName && node.isEditable && !node.isPassword && node.isVisibleToUser) return node
+                        for (i in 0 until node.childCount) {
+                            emailField(node.getChild(i))?.let { return it }
                         }
+                        return null
                     }
-                    assertTrue(ready.await(5, TimeUnit.SECONDS))
-                    shell("input tap ${x.toInt()} ${y.toInt()}")
-                    val focused = CountDownLatch(1)
+                    // WebView CSS coordinates can change while native insets and chrome settle.
+                    // Use the rendered field's system bounds, as a user-facing accessibility client does.
+                    var field: android.view.accessibility.AccessibilityNodeInfo? = null
+                    val fieldDeadline = android.os.SystemClock.uptimeMillis() + 15000
+                    while (field == null && android.os.SystemClock.uptimeMillis() < fieldDeadline) {
+                        field = emailField(inst.uiAutomation.rootInActiveWindow)
+                        if (field == null) android.os.SystemClock.sleep(100)
+                    }
+                    assertNotNull("Rendered email field was not available to accessibility", field)
+                    val bounds = android.graphics.Rect()
+                    field!!.getBoundsInScreen(bounds)
+                    assertFalse("Rendered email field has empty bounds", bounds.isEmpty)
+                    shell("input tap ${bounds.centerX()} ${bounds.centerY()}")
                     var focusedField = ""
-                    scenario.onActivity { browser.evaluateJavascript("document.activeElement.id") { focusedField = it; focused.countDown() } }
-                    assertTrue(focused.await(5, TimeUnit.SECONDS))
+                    // Input injection returns before the WebView renderer necessarily processes focus.
+                    // Wait for that observable state without tapping again or bypassing the form.
+                    val focusDeadline = android.os.SystemClock.uptimeMillis() + 10000
+                    while (focusedField != "\"email\"" && android.os.SystemClock.uptimeMillis() < focusDeadline) {
+                        val focused = CountDownLatch(1)
+                        scenario.onActivity { browser.evaluateJavascript("document.activeElement.id") { focusedField = it; focused.countDown() } }
+                        assertTrue(focused.await(5, TimeUnit.SECONDS))
+                        if (focusedField != "\"email\"") android.os.SystemClock.sleep(100)
+                    }
                     assertEquals("\"email\"", focusedField)
                     val fields = FixtureAutofillService.requests.poll(15, TimeUnit.SECONDS)
                     assertNotNull("Password manager received no request", fields)
