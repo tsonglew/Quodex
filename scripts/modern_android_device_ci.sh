@@ -53,7 +53,7 @@ grep '^image.sysdir.1=' "$ANDROID_AVD_HOME/quodex-ci.avd/config.ini" | tee scree
 printf '\ndisk.dataPartition.size=4G\n' >> "$ANDROID_AVD_HOME/quodex-ci.avd/config.ini"
 "$emulator_binary" -list-avds
 "$emulator_binary" -avd quodex-ci -no-window -no-audio -no-boot-anim \
-  -no-snapshot -partition-size 4096 -memory 4096 -cores 2 -gpu software \
+  -no-snapshot -partition-size 4096 -memory 4096 -cores 2 -gpu software -feature -Vulkan \
   -verbose > screenshots/emulator-startup.txt 2>&1 &
 emulator_pid=$!
 sleep 2

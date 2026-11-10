@@ -179,6 +179,9 @@ jobs:
           ram-size: ${{ matrix.ram-size || '2048M' }}
           profile: pixel_6
           disable-animations: true
+          # Keep headless UI tests on software GLES, avoiding the extra Vulkan
+          # path implicated by the emulator's repeated ColorBuffer failures.
+          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           script: bash scripts/device_ci.sh
       - name: Android 16+ device tests with framework and home readiness checks
         if: ${{ matrix.api-level == 36 || startsWith(format('{0}', matrix.api-level), '37.') }}
