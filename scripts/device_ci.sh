@@ -22,14 +22,14 @@ if [[ "$test_result" -eq 0 ]]; then
   fi
 fi
 mkdir -p screenshots
-adb pull /sdcard/Pictures/QuodexTest/. ./screenshots/ || true
-adb shell dumpsys appwidget > screenshots/widget-host-diagnostics.txt
-adb logcat -d -s AndroidRuntime GlanceAppWidget AppWidgetServiceImpl QuotaDeviceEnvironment > screenshots/device-diagnostics.txt
-adb logcat -d -s ActivityManager WindowManager InputDispatcher lmkd > screenshots/system-diagnostics.txt
+python3 scripts/bounded_command.py 30 adb -e pull /sdcard/Pictures/QuodexTest/. ./screenshots/ || true
+python3 scripts/bounded_command.py 10 adb -e shell dumpsys appwidget > screenshots/widget-host-diagnostics.txt
+python3 scripts/bounded_command.py 10 adb -e logcat -d -s AndroidRuntime GlanceAppWidget AppWidgetServiceImpl QuotaDeviceEnvironment > screenshots/device-diagnostics.txt
+python3 scripts/bounded_command.py 10 adb -e logcat -d -s ActivityManager WindowManager InputDispatcher lmkd > screenshots/system-diagnostics.txt
 if [[ "$test_result" -eq 0 && -n "${RELEASE_APK:-}" ]]; then
   bash scripts/release_smoke.sh "$RELEASE_APK" > screenshots/release-smoke.log 2>&1
   test_result=$?
   cat screenshots/release-smoke.log
-  adb logcat -d -s AndroidRuntime > screenshots/release-runtime.txt
+  python3 scripts/bounded_command.py 10 adb -e logcat -d -s AndroidRuntime > screenshots/release-runtime.txt
 fi
 exit "$test_result"
