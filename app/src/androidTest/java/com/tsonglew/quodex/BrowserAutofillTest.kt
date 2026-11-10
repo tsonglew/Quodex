@@ -32,7 +32,7 @@ class BrowserAutofillTest {
                         WebResourceResponse("text/html", "UTF-8", """<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{padding:24px}input{display:block;padding:12px;margin:12px 0;width:80%}</style><form><label>Email<input id="email" type="email" autocomplete="username"></label><label>Password<input id="password" type="password" autocomplete="current-password"></label></form>""".byteInputStream())
                     })
                     val layout = BrowserLoginLayout(activity)
-                    val state = BrowserPageState(host = "accounts.google.com", loading = false)
+                    val state = BrowserPageState(host = "accounts.google.com", loading = false, documentReady = true)
                     layout.header.setContent { com.tsonglew.quodex.ui.QuotaTheme("light") { BrowserLoginHeader(BrowserProvider.GROK, state, layout.compactChrome) {} } }
                     layout.footer.setContent { com.tsonglew.quodex.ui.QuotaTheme("light") { BrowserLoginFooter(state, {}, layout.compactChrome) {} } }
                     layout.browserContainer.addView(browser)

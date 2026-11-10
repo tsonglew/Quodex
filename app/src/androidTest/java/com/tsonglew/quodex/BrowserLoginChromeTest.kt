@@ -17,13 +17,14 @@ class BrowserLoginChromeTest {
     @Test fun googleFailuresKeepRecoveryAndLargeTextKeepsOperationalStatus() {
         var status by mutableStateOf(BrowserReadStatus.LOGIN)
         var compact by mutableStateOf(false)
+        var documentReady by mutableStateOf(true)
         var choices = 0
         var recoveries = 0
         compose.setContent {
             val density = LocalDensity.current.density
             CompositionLocalProvider(LocalDensity provides Density(density, if (compact) 2f else 1f)) {
                 QuotaTheme("light") {
-                    BrowserLoginFooter(BrowserPageState(host = "accounts.google.com", loading = false, status = status),
+                    BrowserLoginFooter(BrowserPageState(host = "accounts.google.com", loading = false, status = status, documentReady = documentReady),
                         { choices++ }, compact) { recoveries++ }
                 }
             }
@@ -32,7 +33,7 @@ class BrowserLoginChromeTest {
         compose.onNodeWithText(texts(R.string.subscription_browser_google_choose)).performClick()
         compose.runOnIdle { assertEquals(1, choices) }
         for (small in listOf(false, true)) {
-            compose.runOnIdle { compact = small }
+            compose.runOnIdle { compact = small; documentReady = false }
             for ((state, message) in listOf(
                 BrowserReadStatus.RETRY to R.string.subscription_browser_retry,
                 BrowserReadStatus.BLOCKED to R.string.subscription_browser_blocked,
@@ -47,7 +48,13 @@ class BrowserLoginChromeTest {
                 }
             }
         }
-        compose.runOnIdle { assertEquals(4, recoveries); status = BrowserReadStatus.LOGIN }
+        compose.runOnIdle { assertEquals(4, recoveries); documentReady = true }
+        for (state in listOf(BrowserReadStatus.BLOCKED, BrowserReadStatus.LIMITED)) {
+            compose.runOnIdle { status = state }
+            compose.onNodeWithText(texts(R.string.subscription_browser_google_choose)).performClick()
+            compose.onNodeWithText(texts(R.string.subscription_browser_read)).assertIsDisplayed()
+        }
+        compose.runOnIdle { assertEquals(3, choices); status = BrowserReadStatus.LOGIN }
         compose.onNodeWithText(texts(R.string.subscription_browser_google_choose)).assertIsDisplayed()
     }
 }

@@ -19,7 +19,7 @@ import java.util.UUID
 internal enum class BrowserReadStatus { LOGIN, READING, RETRY, LIMITED, BLOCKED, AUTH_REQUIRED }
 internal data class BrowserPageState(val host: String = "", val loading: Boolean = true,
     val status: BrowserReadStatus = BrowserReadStatus.LOGIN, val retryAt: Long = 0,
-    val failure: FailureKind? = null)
+    val failure: FailureKind? = null, val documentReady: Boolean = false)
 
 /** No JavaScript interface is exposed to pages. Only a nonce-scoped result on the exact origin is read. */
 @SuppressLint("SetJavaScriptEnabled")
@@ -89,22 +89,24 @@ internal class QuotaBrowserView(
                 if (!interactive && (!provider.canRead(url) || !hasLoginCookie())) {
                     automatic = false
                     state(pageState.copy(loading = false, status = BrowserReadStatus.AUTH_REQUIRED, failure = FailureKind.AUTH))
-                } else state(pageState.copy(loading = false))
+                } else state(pageState.copy(loading = false, documentReady =
+                    pageState.status != BrowserReadStatus.RETRY &&
+                        !(pageState.status == BrowserReadStatus.BLOCKED && pageState.failure == FailureKind.NETWORK)))
             }
             override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
                 handler.cancel()
                 automatic = false
-                state(pageState.copy(loading = false, status = BrowserReadStatus.BLOCKED, failure = FailureKind.NETWORK))
+                state(pageState.copy(loading = false, status = BrowserReadStatus.BLOCKED, failure = FailureKind.NETWORK, documentReady = false))
             }
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                 if (request.isForMainFrame) {
                     automatic = false
-                    state(pageState.copy(loading = false, status = BrowserReadStatus.RETRY, failure = FailureKind.NETWORK))
+                    state(pageState.copy(loading = false, status = BrowserReadStatus.RETRY, failure = FailureKind.NETWORK, documentReady = false))
                 }
             }
             override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
                 automatic = false
-                state(pageState.copy(loading = false, status = BrowserReadStatus.RETRY, failure = FailureKind.NETWORK))
+                state(pageState.copy(loading = false, status = BrowserReadStatus.RETRY, failure = FailureKind.NETWORK, documentReady = false))
                 if (active) {
                     (parent as? android.view.ViewGroup)?.removeView(this@QuotaBrowserView)
                     destroy()

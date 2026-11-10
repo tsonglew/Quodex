@@ -38,7 +38,9 @@ internal fun BrowserLoginFooter(page: BrowserPageState, onChooseGoogle: () -> Un
         BrowserReadStatus.BLOCKED -> R.string.subscription_browser_blocked
         else -> null
     }
-    val google = page.host == "accounts.google.com" && statusText == null
+    val google = page.host == "accounts.google.com"
+    val chooseGoogle = google && (page.documentReady || page.loading)
+    val recover = !google || statusText != null || (!page.documentReady && !page.loading)
     Column(Modifier.fillMaxWidth().glassSceneBackground()) {
         GlassPanel(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -47,13 +49,17 @@ internal fun BrowserLoginFooter(page: BrowserPageState, onChooseGoogle: () -> Un
                     modifier = Modifier.heightIn(max = 120.dp).verticalScroll(rememberScrollState()),
                     style = MaterialTheme.typography.bodySmall,
                 )
-                if (google) {
-                    TextButton(onClick = onChooseGoogle, enabled = !page.loading) {
-                        Text(texts(R.string.subscription_browser_google_choose))
+                Row(Modifier.fillMaxWidth()) {
+                    val actionModifier = if (chooseGoogle && recover) Modifier.weight(1f) else Modifier
+                    if (chooseGoogle) {
+                        TextButton(onClick = onChooseGoogle, enabled = !page.loading, modifier = actionModifier) {
+                            Text(texts(R.string.subscription_browser_google_choose))
+                        }
                     }
-                } else {
-                    TextButton(onClick = { onRead() }, enabled = page.status != BrowserReadStatus.READING) {
-                        Text(texts(R.string.subscription_browser_read))
+                    if (recover) {
+                        TextButton(onClick = { onRead() }, enabled = page.status != BrowserReadStatus.READING, modifier = actionModifier) {
+                            Text(texts(R.string.subscription_browser_read))
+                        }
                     }
                 }
             }
