@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -81,14 +82,7 @@ fun TokenUsageCard(
         Column(Modifier.fillMaxWidth().padding(20.dp).testTag("token-usage-card"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             PanelHeading(texts(R.string.token_usage_trend), Icons.Outlined.BarChart)
             Text(if (demo) texts(R.string.sample_data_preview_only) else texts(R.string.account_wide_token_totals_service_dates), fontSize = 12.sp, color = secondary)
-            FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(7, 30).forEach { days ->
-                    FilterChip(shape = RoundedCornerShape(50), selected = period == days, onClick = { pendingScroll = null; period = days },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer),
-                        label = { Text(texts(R.string.last_value_days, days)) }, modifier = Modifier.testTag("token-trend-$days"))
-                }
-            }
+            TokenPeriodSelector(period, onPeriodChange = { pendingScroll = null; period = it })
             FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TokenChartStyle.entries.forEach { style ->
                     FilterChip(shape = RoundedCornerShape(50), selected = selectedStyle == style,
@@ -177,6 +171,27 @@ fun TokenUsageCard(
                     }
                 }
             }, confirmButton = { TextButton(onClick = { details = false }, modifier = Modifier.testTag("token-trend-details-close")) { Text(texts(R.string.close)) } })
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun TokenPeriodSelector(period: Int, onPeriodChange: (Int) -> Unit) {
+    val texts = localTextResources()
+    LiquidSelectionGroup(period, MaterialTheme.colorScheme.primaryContainer,
+        Modifier.testTag("token-period-selector")) { itemModifier ->
+        FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(7, 30).forEach { days ->
+                FilterChip(shape = RoundedCornerShape(50), selected = period == days,
+                    onClick = { onPeriodChange(days) },
+                    colors = FilterChipDefaults.filterChipColors(containerColor = Color.Transparent,
+                        selectedContainerColor = Color.Transparent,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer),
+                    label = { Text(texts(R.string.last_value_days, days)) }, modifier = Modifier.heightIn(min = 48.dp)
+                        .then(itemModifier(days)).testTag("token-trend-$days"))
+            }
+        }
     }
 }
 

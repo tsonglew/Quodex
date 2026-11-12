@@ -39,6 +39,14 @@
 
 上方为融合导航改版的 alpha36 历史截图；alpha39 订阅自动更新见下方原生截图，未裁切或重绘；开发界面不等同于已发布 APK。[页面职责、路径与验证](docs/NAVIGATION.md)。历史发布 [alpha35](https://github.com/tsonglew/Quodex/releases/tag/build-42045239967-1) 保留四页导航；当前可安装版本请查看 [Releases 的实际产物](https://github.com/tsonglew/Quodex/releases)。
 
+## 流动选中态（alpha41 源码）
+
+底部「总览／账号／设置」的选中胶囊移动时轻微拉伸，Codex 明细中的「近 7 天／近 30 天」背景随选择连续移动并适应宽度。连续点击可中途转向；大字体换行或窗口变化时直接定位；系统关闭动画时立即完成。保留玻璃材质、多语言、热力图、实际数值和滚动位置。
+
+<img src="docs/screenshots/liquid-selection-alpha41/token-selection.png" width="270" alt="alpha41 debug Codex 30 天筛选与玻璃底部导航，API 31 原生截图，示例数据" />
+
+2026-11-12 · alpha41 debug / API 31 模拟器原生截图，示例数据，未裁切或重绘；安装包发布状态以 [Releases](https://github.com/tsonglew/Quodex/releases) 为准。[动效与验证](docs/MOTION.md) · [截图来源及大字体界面](docs/screenshots/liquid-selection-alpha41/README.md)。
+
 ## 界面一览
 
 | 订阅与余额 | Codex 用量趋势 | 桌面小组件 |
