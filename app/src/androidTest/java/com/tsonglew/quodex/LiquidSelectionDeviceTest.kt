@@ -59,18 +59,23 @@ class LiquidSelectionDeviceTest {
         var ink = Color.Unspecified
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity -> activity.setContent {
-                SelectionTestTheme("light") {
+                CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 2f)) {
+                  SelectionTestTheme("light") {
                     ink = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f).compositeOver(MaterialTheme.colorScheme.surface)
-                    FloatingNavigation(listOf(Triple("quota", "额度", Icons.Outlined.Dashboard),
-                        Triple("widgets", "小组件", Icons.Outlined.Widgets),
-                        Triple("settings", "设置", Icons.Outlined.Settings)), selected, { selected = it },
+                    FloatingNavigation(listOf(Triple("quota", "概要", Icons.Outlined.Dashboard),
+                        Triple("widgets", "アカウント", Icons.Outlined.Widgets),
+                        Triple("settings", "設定", Icons.Outlined.Settings)), selected, { selected = it },
                         NavigationBackdrop(rememberGraphicsLayer()))
+                  }
                 }
             } }
             val group = compose.onNodeWithTag("floating-navigation")
             val quota = compose.onNodeWithTag("tab-quota")
             val settings = compose.onNodeWithTag("tab-settings")
             val targetBounds = settings.fetchSemanticsNode().boundsInRoot
+            val accountBounds = compose.onNodeWithTag("tab-widgets").fetchSemanticsNode().boundsInRoot
+            assertEquals("Wrapped labels must retain the same capsule height", targetBounds.height, accountBounds.height, 0.5f)
+            assertEquals(targetBounds.center.y, accountBounds.center.y, 0.5f)
             val start = centerOfInk(group, ink)
             compose.mainClock.autoAdvance = false
             settings.performClick()

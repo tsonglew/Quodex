@@ -84,12 +84,12 @@ internal fun FloatingNavigation(
             })
             LiquidSelectionGroup(selected, colors.primary.copy(alpha = if (dark) 0.17f else 0.10f),
                 Modifier.padding(5.dp), outlineColor = Color.White.copy(alpha = if (dark) 0.13f else 0.55f)) { itemModifier ->
-                Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(Modifier.height(IntrinsicSize.Min).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     destinations.forEach { (id, label, icon) ->
                         val active = selected == id
                         val foreground by animateColorAsState(if (active) colors.primary else colors.onSurfaceVariant,
                             label = "navigation-color")
-                        Column(Modifier.weight(1f).then(itemModifier(id)).clip(shape)
+                        Column(Modifier.weight(1f).fillMaxHeight().then(itemModifier(id)).clip(shape)
                             .selectable(active, role = Role.Tab, onClick = { onSelect(id) })
                             .testTag("tab-$id").heightIn(min = 56.dp).padding(horizontal = 4.dp, vertical = 7.dp),
                             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
