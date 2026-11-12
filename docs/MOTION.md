@@ -1,5 +1,21 @@
 # Quodex 动效说明与录屏
 
+## alpha41：流动选中态
+
+参考 [kev 的 Liquid UI 演示](https://x.com/koppkev/status/2120471771602092136)，底部「总览／账号／设置」和 Codex 的 7／30 天筛选使用共享胶囊背景。保留主分支的玻璃背景、描边、多语言和图表模式；文字、图标与点击区域保持稳定。
+
+- Compose 弹簧阻尼 0.85、刚度 650，主要移动约 200–300ms。速度驱动有限拉伸，静止后恢复；连续点击从当前位置转向。
+- 实际控件边界决定位置与宽度，支持 RTL。初次布局、窗口变化或选项跨行直接定位；筛选点击高度至少 48dp。
+- 逐帧状态只在绘制阶段读取，无循环动画、新滤镜或依赖；遵循系统动画倍率，包括 0。
+- 页面滚动、筛选周期、热力图入口和服务端数值保持原有行为；宽屏沿用侧栏。
+
+2026-11-12：在最新 master bafd4fe 上移植并验证，310 项 JVM 单测通过，debug/release 构建与 lint 通过；API 31 的 4 项动效专项、2 项页面回归、6 项 Token 检查通过。动效专项使用显式 1x/0x Compose 测试时钟，避免 CI 系统关闭动画后跳过中间帧；关闭原生触摸涟漪以隔离背景像素，页面回归保留涟漪。包含中途反向、深色 RTL、两倍字体与中途窗口变窄。没有新增真机性能或宽屏验证结论。完整六组设备与 release 冒烟结果以关联 PR 检查为准。
+
+[alpha41 原生截图与来源](screenshots/liquid-selection-alpha41/README.md)。源码版本与已发布 APK 需分别核对 [Releases](https://github.com/tsonglew/Quodex/releases)。
+
+## alpha22 历史动效
+
+
 [在官网播放动效](https://tsonglew.github.io/quodex/#motion) · [打开 MP4](assets/motion/quodex-motion.mp4) · [下载 alpha22](https://github.com/tsonglew/Quodex/releases/tag/build-40285639293-1)
 
 <a href="https://tsonglew.github.io/quodex/#motion"><img src="assets/motion/poster.jpg" width="300" alt="Quodex 原生动效录屏海报，点击前往官网播放" /></a>
