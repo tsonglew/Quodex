@@ -85,7 +85,7 @@ class NetworkConstraintDeviceTest {
             assertEquals(WorkInfo.State.ENQUEUED, offlineWork.state)
             assertEquals(NetworkType.CONNECTED, offlineWork.constraints.requiredNetworkType)
             // WorkManager increments runAttemptCount before startWork and can then stop and
-            // re-enqueue it when constraints arrive. Count actual HTTP attempts, not dispatches.
+            // re-enqueue it when network constraints are unmet. Count actual HTTP attempts here.
             assertEquals("Offline constraints must prevent HTTP attempts (dispatches=${offlineWork.runAttemptCount})",
                 requests, app.usageRequests.get())
             assertEquals(cached, app.repository.state.value.snapshot)

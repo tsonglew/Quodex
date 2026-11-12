@@ -109,6 +109,8 @@ alpha12 新增 `scripts/system_time_smoke.sh`：仅在自建测试模拟器执�
 
 断网探针核对实际任务的 CONNECTED 约束和 ENQUEUED 状态，并直接检查 HTTP 计数、缓存以及重连结果。WorkManager 2.10.1 的 WorkerWrapper 在调用 startWork 前递增 runAttemptCount；随后因约束取消并重新入队时，计数可以大于零，因此不把内部调度计数当成网络请求次数。离线发生任何真实测试请求仍使探针失败；不修改系统网络约束、不使用 TestDriver，也不覆盖计数。
 
+当前生产 Worker 按 WorkManager 的尝试次数限制单轮重试，因约束撤回的调度也可能消耗预算；该探针不承诺撤回后仍有固定数量的 HTTP 重试。网络持续有效时的三次 503 请求及 30／60 秒退避，由下文的独立 scheduled_retry_smoke 探针验证。本次修正只校准断网探针的观察指标，沿用现有重试策略。
+
 TalkBack 专项仅在装有 Google TalkBack 的 API 37 测试模拟器显式执行：`adb -s emulator-5580 shell am instrument --no-hidden-api-checks -w -e class com.tsonglew.quodex.TalkBackDeviceTest -e talkbackProbe true com.tsonglew.quodex.test/com.tsonglew.quodex.QuotaTestRunner`。会临时启用真实 TalkBack，分别检查默认字体下额度文本的焦点／探索，以及 200% 字体下标准／紧凑组件的双击刷新和共享请求，保存截图后恢复设置。探针反射调用平台测试 API `injectInputEventToInputFilter`，缺失或不可访问直接失败；默认字体探索还必须收到 `TYPE_TOUCH_EXPLORATION_GESTURE_START`。普通 `injectInputEvent` 会跳过无障碍输入过滤器，不能作为 TalkBack 手势证据；此前基于该入口的双击通过记录应按普通注入刷新理解，见 [证据校正](VALIDATION_XIAOMI_WIDGET_TOUCH.md)。普通套件按条件跳过该显式探针。
 
 2026-10-20 的固定 v3 APK 在 API 37 两项专项均通过（60.637 秒），普通字体标准／slim 探索焦点包含 62%；200% 字体先真实探索刷新入口建立 TalkBack 焦点，再以明确手指类型、受系统双击时限约束的输入触发刷新点击事件，确认各一次请求、仓库额度和可访问摘要更新到 83%。同一 APK 的六项打开应用测试通过（63.617 秒），证据在 `artifacts/xiaomi-alpha18/emulator-widget-fix-v3/`，结束字体恢复 1.0、无障碍服务恢复关闭。此结果证明输入处理和可访问内容，未录制实际语音；`talkback-slim-updated (3).png` 捕获时仍绘制 62%，因此不把该帧作为已显示 83% 的视觉证据。
